@@ -53,7 +53,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       };
 
       if (!res.ok) {
-        throw new Error(data.error ?? "Ошибка авторизации");
+        throw new Error(
+          data.error ??
+            (res.redirected
+              ? "Сессия не создана. Обновите страницу и попробуйте снова."
+              : "Ошибка авторизации"),
+        );
       }
 
       if (isLogin) {
