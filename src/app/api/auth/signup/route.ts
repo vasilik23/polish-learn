@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   if (!url || !key) {
     return NextResponse.json(
-      { error: "Supabase не настроен. Проверьте .env.local" },
+      { error: "Supabase не настроен. Проверьте переменные на Vercel." },
       { status: 500 },
     );
   }
@@ -36,12 +36,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createRouteHandlerClient();
+  const response = NextResponse.json({ ok: true });
+  const supabase = createRouteHandlerClient(request, response);
   const { error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true });
+  return response;
 }
