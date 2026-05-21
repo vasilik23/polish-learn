@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export function createRouteHandlerClient(
-  request: Request,
+  request: NextRequest,
   response: NextResponse,
 ) {
   return createServerClient(
