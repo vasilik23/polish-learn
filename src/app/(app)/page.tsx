@@ -3,29 +3,52 @@ import { MobileShell } from "@/components/MobileShell";
 import { SignOutButton } from "@/components/SignOutButton";
 import { TaskCard } from "@/components/TaskCard";
 import { dailyPlanItems, taskCards } from "@/lib/data/mock";
+import { ensureProfile, formatStreak } from "@/lib/supabase/profile";
+import { getTodayCompletions } from "@/lib/supabase/progress";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
-  let email = "ученик";
+  let displayName = "ученик";
+  let level = "A1";
+  let streakDays = 0;
 
-  if (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user?.email) email = user.email;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let planItems = dailyPlanItems;
+
+  if (user) {
+    try {
+      const profile = await ensureProfile(supabase, user.id, user.email);
+      displayName =
+        profile.display_name ?? user.email?.split("@")[0] ?? displayName;
+      level = profile.level;
+      streakDays = profile.streak_days ?? 0;
+
+      const completions = await getTodayCompletions(supabase, user.id);
+      const completedLessonIds = new Set(completions.map((item) => item.lesson_id));
+
+      planItems = dailyPlanItems.map((item) => ({
+        ...item,
+        completed: completedLessonIds.has(item.lessonId),
+      }));
+    } catch {
+      displayName = user.email?.split("@")[0] ?? displayName;
+    }
   }
-  const displayName = email.split("@")[0];
-  const completedCount = dailyPlanItems.filter((i) => i.completed).length;
+
+  const completedCount = planItems.filter((item) => item.completed).length;
 
   const today = new Intl.DateTimeFormat("ru-RU", {
     weekday: "long",
     day: "numeric",
     month: "long",
   }).format(new Date());
+
+  const streakLabel =
+    streakDays > 0 ? formatStreak(streakDays) : "0 дней";
 
   return (
     <MobileShell headerRight={<SignOutButton />}>
@@ -35,12 +58,12 @@ export default async function HomePage() {
           Cześć, {displayName}! 👋
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Уровень A1 · серия 0 дней
+          Уровень {level} · серия {streakLabel}
         </p>
       </section>
 
       <div className="mb-6">
-        <DailyPlan items={dailyPlanItems} completedCount={completedCount} />
+        <DailyPlan items={planItems} completedCount={completedCount} />
       </div>
 
       <section>

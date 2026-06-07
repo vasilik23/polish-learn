@@ -17,7 +17,8 @@
 3. Для локальной разработки отключите подтверждение email:  
    **Authentication → Providers → Email → Confirm email** = OFF
 4. **Project Settings → API** — скопируйте URL и `anon` key
-5. **SQL Editor** — выполните скрипт `supabase/schema.sql` (профили, опционально)
+5. **SQL Editor** — выполните скрипт `supabase/schema.sql`  
+   Если база уже была создана раньше — дополнительно `supabase/migrations/002_progress.sql`
 
 ### 2. Переменные окружения
 
@@ -63,12 +64,12 @@ src/
   app/(app)/      — главная, уроки (за middleware)
   components/     — UI
   lib/data/mock.ts — демо-данные плана и карточек
-  lib/supabase/   — клиенты и middleware
+  lib/supabase/   — клиенты, профиль, прогресс
 ```
 
 ## Дальше
 
-- [ ] Сохранение прогресса плана в Supabase
+- [x] Сохранение прогресса плана в Supabase
 - [ ] Spaced repetition (SM-2)
 - [ ] PWA + Capacitor для магазинов
 - [ ] Playwright E2E: register → home → lesson

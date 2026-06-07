@@ -2,6 +2,7 @@ export type TaskType = "words" | "grammar" | "review" | "quiz";
 
 export type DailyPlanItem = {
   id: string;
+  lessonId: TaskType;
   title: string;
   subtitle: string;
   completed: boolean;
@@ -19,24 +20,28 @@ export type TaskCard = {
 export const dailyPlanItems: DailyPlanItem[] = [
   {
     id: "1",
+    lessonId: "words",
     title: "Новые слова",
     subtitle: "5 слов · A1",
     completed: false,
   },
   {
     id: "2",
+    lessonId: "grammar",
     title: "Грамматика",
     subtitle: "Род существительных",
     completed: false,
   },
   {
     id: "3",
+    lessonId: "review",
     title: "Повторение",
     subtitle: "12 карточек",
     completed: false,
   },
   {
     id: "4",
+    lessonId: "quiz",
     title: "Мини-тест",
     subtitle: "5 вопросов",
     completed: false,

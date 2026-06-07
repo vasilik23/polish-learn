@@ -1,6 +1,8 @@
 import { FlashcardLesson } from "@/components/FlashcardLesson";
 import { MobileShell } from "@/components/MobileShell";
-import { sampleFlashcards, taskCards } from "@/lib/data/mock";
+import { sampleFlashcards, taskCards, type TaskType } from "@/lib/data/mock";
+import { isLessonCompletedToday } from "@/lib/supabase/progress";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
 const lessonTitles: Record<string, string> = {
@@ -23,11 +25,34 @@ export default async function LessonPage({ params }: PageProps) {
   }
 
   const title = lessonTitles[id] ?? card.title;
+  let alreadyCompleted = false;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user && (id === "words" || id === "review")) {
+    try {
+      alreadyCompleted = await isLessonCompletedToday(
+        supabase,
+        user.id,
+        id as TaskType,
+      );
+    } catch {
+      alreadyCompleted = false;
+    }
+  }
 
   return (
     <MobileShell title={title} showBack backHref="/">
       {id === "words" || id === "review" ? (
-        <FlashcardLesson cards={sampleFlashcards} title={card.title} />
+        <FlashcardLesson
+          cards={sampleFlashcards}
+          title={card.title}
+          lessonId={id}
+          alreadyCompleted={alreadyCompleted}
+        />
       ) : (
         <div className="rounded-2xl bg-[var(--app-surface)] p-6 text-center shadow-sm ring-1 ring-[var(--border)]">
           <p className="text-4xl mb-4">🚧</p>
