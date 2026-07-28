@@ -1,6 +1,10 @@
 import { FlashcardLesson } from "@/components/FlashcardLesson";
+import { GrammarLesson } from "@/components/GrammarLesson";
 import { MobileShell } from "@/components/MobileShell";
+import { QuizLesson } from "@/components/QuizLesson";
+import { grammarLesson } from "@/lib/data/grammar-lesson";
 import { sampleFlashcards, taskCards, type TaskType } from "@/lib/data/mock";
+import { quizQuestions } from "@/lib/data/quiz-lesson";
 import { isLessonCompletedToday } from "@/lib/supabase/progress";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -16,6 +20,23 @@ type PageProps = {
   params: Promise<{ id: string }>;
 };
 
+async function getAlreadyCompleted(lessonId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  try {
+    return await isLessonCompletedToday(supabase, user.id, lessonId as TaskType);
+  } catch {
+    return false;
+  }
+}
+
 export default async function LessonPage({ params }: PageProps) {
   const { id } = await params;
   const card = taskCards.find((c) => c.id === id);
@@ -25,24 +46,7 @@ export default async function LessonPage({ params }: PageProps) {
   }
 
   const title = lessonTitles[id] ?? card.title;
-  let alreadyCompleted = false;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user && (id === "words" || id === "review")) {
-    try {
-      alreadyCompleted = await isLessonCompletedToday(
-        supabase,
-        user.id,
-        id as TaskType,
-      );
-    } catch {
-      alreadyCompleted = false;
-    }
-  }
+  const alreadyCompleted = await getAlreadyCompleted(id);
 
   return (
     <MobileShell title={title} showBack backHref="/">
@@ -53,16 +57,19 @@ export default async function LessonPage({ params }: PageProps) {
           lessonId={id}
           alreadyCompleted={alreadyCompleted}
         />
-      ) : (
-        <div className="rounded-2xl bg-[var(--app-surface)] p-6 text-center shadow-sm ring-1 ring-[var(--border)]">
-          <p className="text-4xl mb-4">🚧</p>
-          <p className="font-semibold text-[var(--text)]">Скоро здесь</p>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Тип задания «{card.title}» добавим на следующем шаге. Пока
-            попробуйте «Słówka dnia» или «Powtórka».
-          </p>
-        </div>
-      )}
+      ) : id === "grammar" ? (
+        <GrammarLesson
+          lesson={grammarLesson}
+          lessonId={id}
+          alreadyCompleted={alreadyCompleted}
+        />
+      ) : id === "quiz" ? (
+        <QuizLesson
+          questions={quizQuestions}
+          lessonId={id}
+          alreadyCompleted={alreadyCompleted}
+        />
+      ) : null}
     </MobileShell>
   );
 }
