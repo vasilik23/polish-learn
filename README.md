@@ -70,9 +70,13 @@ src/
 ## Дальше
 
 - [x] Сохранение прогресса плана в Supabase
-- [ ] Spaced repetition (SM-2)
+- [~] Spaced repetition (SM-2): алгоритм и запись результата готовы локально,
+  подключение очереди повторения и production-миграция ещё не завершены
 - [ ] PWA + Capacitor для магазинов
 - [ ] Playwright E2E: register → home → lesson
+
+План и контракт поэтапного переноса проекта на Python описаны в
+[`docs/python-migration.md`](docs/python-migration.md).
 
 ## Деплой (Vercel)
 
