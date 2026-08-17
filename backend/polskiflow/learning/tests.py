@@ -1,12 +1,29 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from django.test import TestCase
+from django.db import connection
+from django.test import TransactionTestCase
 
 from .models import FlashcardReview, LessonCompletion, Profile
 
 
-class LearningModelsTests(TestCase):
+class LearningModelsTests(TransactionTestCase):
+    """Exercise mappings against temporary stand-ins for Supabase-owned tables."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        with connection.schema_editor() as editor:
+            for model in (Profile, LessonCompletion, FlashcardReview):
+                editor.create_model(model)
+
+    @classmethod
+    def tearDownClass(cls):
+        with connection.schema_editor() as editor:
+            for model in (FlashcardReview, LessonCompletion, Profile):
+                editor.delete_model(model)
+        super().tearDownClass()
+
     def test_profile_defaults_match_current_mvp(self):
         profile = Profile.objects.create(id=uuid.uuid4())
 

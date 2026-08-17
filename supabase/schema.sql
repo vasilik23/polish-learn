@@ -18,7 +18,8 @@ create policy "Users can read own profile"
 
 create policy "Users can update own profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 create policy "Users can insert own profile"
   on public.profiles for insert
@@ -41,6 +42,8 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
 -- Прогресс уроков (и плана на день — один урок = один пункт плана)
 create table if not exists public.lesson_completions (
@@ -66,4 +69,36 @@ create policy "Users can insert own lesson completions"
 
 create policy "Users can update own lesson completions"
   on public.lesson_completions for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Состояние интервального повторения (SM-2)
+create table if not exists public.flashcard_reviews (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  card_id text not null,
+  ease_factor float not null default 2.5 check (ease_factor >= 1.3),
+  interval_days int not null default 0,
+  repetitions int not null default 0,
+  next_review_date date not null default (timezone('utc', now()))::date,
+  last_reviewed_at timestamptz,
+  primary key (user_id, card_id)
+);
+
+alter table public.flashcard_reviews enable row level security;
+
+create policy "Users can read own flashcard reviews"
+  on public.flashcard_reviews for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own flashcard reviews"
+  on public.flashcard_reviews for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own flashcard reviews"
+  on public.flashcard_reviews for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete own flashcard reviews"
+  on public.flashcard_reviews for delete
   using (auth.uid() = user_id);
