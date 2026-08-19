@@ -27,14 +27,35 @@ Django не создаёт и не изменяет их своими мигра
 preview/staging-проекте Supabase и только после ручной проверки применяется к
 production.
 
-Для проверки access token Django обращается к Supabase Auth. Настройте только
-публичные параметры (service-role key для этого не нужен):
+Для авторизации Django обращается к Supabase Auth. Настройте только публичные
+параметры (service-role/secret key для этого не нужен):
 
 ```bash
 export SUPABASE_URL=https://PROJECT.supabase.co
 export SUPABASE_ANON_KEY=PUBLIC_ANON_KEY
 ```
 
-Клиент передаёт текущий access token в `Authorization: Bearer …`. Защищённый
-диагностический маршрут `GET /api/auth/me/` возвращает идентификатор и email
-проверенного пользователя; отсутствие или отклонение токена даёт `401`.
+Доступны браузерные маршруты `/login/`, `/register/`, `/logout/` и защищённая
+страница `/`. Access и refresh tokens сохраняются в `HttpOnly`, `SameSite=Lax`
+cookies; истёкший access token автоматически обновляется через Supabase Auth.
+В production cookies помечаются `Secure`; локально это управляется переменной
+`AUTH_COOKIE_SECURE`.
+
+Минимальные production-переменные Django:
+
+```bash
+export DJANGO_DEBUG=false
+export DJANGO_SECRET_KEY='long-random-production-secret'
+export DJANGO_ALLOWED_HOSTS='your-domain.example'
+export AUTH_COOKIE_SECURE=true
+export DJANGO_SECURE_SSL_REDIRECT=true
+```
+
+HSTS намеренно не включается автоматически: после проверки HTTPS на настоящем
+домене задайте `DJANGO_SECURE_HSTS_SECONDS` постепенно, затем при необходимости
+включите `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS` и `DJANGO_SECURE_HSTS_PRELOAD`.
+Ошибочная HSTS-конфигурация долго кэшируется браузерами и трудно откатывается.
+
+API-клиент также может передавать access token в `Authorization: Bearer …`.
+Защищённый диагностический маршрут `GET /api/auth/me/` возвращает идентификатор
+и email проверенного пользователя; отсутствие или отклонение токена даёт `401`.
