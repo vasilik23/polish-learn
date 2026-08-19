@@ -4,21 +4,38 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}PolskiFlow{% endblock %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
     <style>
       :root { color-scheme: light; font-family: system-ui, sans-serif; }
       body { margin: 0; background: #f7f4f1; color: #251f1f; }
-      main { width: min(100% - 2rem, 28rem); margin: 0 auto; padding: 3rem 0; }
+      main { width: min(100% - 2rem, 28rem); margin: 0 auto; padding: 1.5rem 0 3rem; }
       .card { background: white; border: 1px solid #eadfda; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 20px #3c20200d; }
       h1 { margin: 0 0 .5rem; }
       p { line-height: 1.5; }
       label { display: block; margin: 1rem 0 .35rem; font-weight: 600; }
       input { box-sizing: border-box; width: 100%; padding: .85rem 1rem; border: 1px solid #d8c9c2; border-radius: .75rem; font: inherit; }
       button { width: 100%; margin-top: 1.25rem; padding: .9rem; border: 0; border-radius: .75rem; background: #c8102e; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+      button.secondary { background: white; color: #251f1f; border: 1px solid #d8c9c2; }
       a { color: #a00d26; }
+      a.card { display: block; color: inherit; text-decoration: none; margin-top: .75rem; }
       .muted { color: #746767; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+      .topbar form, .topbar button { margin: 0; width: auto; }
+      .plan { list-style: none; padding: 0; }
+      .plan li { padding: .7rem 0; border-top: 1px solid #eee5e1; }
+      .task-row { display: flex; gap: .9rem; align-items: center; }
+      .emoji { font-size: 1.8rem; }
+      .progress { text-align: center; color: #746767; font-size: .9rem; }
+      .word { font-size: 2.4rem; margin: 1rem 0 .5rem; }
+      .options { display: grid; gap: .65rem; }
+      .options button { margin: 0; text-align: left; background: white; color: #251f1f; border: 1px solid #d8c9c2; }
+      .options button.correct { border-color: #27965a; background: #edf9f1; }
+      .options button.wrong { border-color: #c8102e; background: #fff0f2; }
+      .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+      .htmx-request { opacity: .65; pointer-events: none; }
       .error { color: #a4001c; background: #fff0f2; padding: .75rem; border-radius: .75rem; }
       .message { color: #17643b; background: #edf9f1; padding: .75rem; border-radius: .75rem; }
     </style>
   </head>
-  <body><main>{% block content %}{% endblock %}</main></body>
+  <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'><main>{% block content %}{% endblock %}</main></body>
 </html>

@@ -126,7 +126,7 @@ docs/python-migration.md подробный контракт и план пер�
 - [x] Перенести SM-2 и расчёт серии дней в Python с тестами.
 - [x] Создать Django-проект и модели Supabase.
 - [x] Перенести авторизацию и защищённые маршруты.
-- [ ] Перенести страницы на Django Templates + HTMX.
+- [x] Перенести страницы на Django Templates + HTMX.
 - [ ] Перенести учебный контент в PostgreSQL и Django Admin.
 - [ ] Настроить полный CI, preview и production для Python-приложения.
 - [ ] Провести E2E-проверку и удалить старую Next.js-реализацию.

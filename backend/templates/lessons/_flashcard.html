@@ -1,0 +1,14 @@
+<div class="progress">Карточка {{ index|add:1 }} из {{ total }}</div>
+<div class="card" style="text-align:center">
+  <p class="muted">{% if lesson_id == "review" %}Powtórka{% else %}Słówka dnia{% endif %}</p>
+  <h2 class="word">{{ card.polish }}</h2>
+  {% if revealed %}<p>{{ card.translation }}</p><p class="muted"><em>{{ card.example }}</em></p>{% else %}<p class="muted">Открой перевод и оцени ответ</p>{% endif %}
+</div>
+{% if revealed %}
+  <div class="actions">
+    <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">{% csrf_token %}<input type="hidden" name="action" value="again"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><button class="secondary">Ещё раз</button></form>
+    <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">{% csrf_token %}<input type="hidden" name="action" value="know"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><button>Знаю →</button></form>
+  </div>
+{% else %}
+  <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">{% csrf_token %}<input type="hidden" name="action" value="reveal"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><button>Показать перевод</button></form>
+{% endif %}
