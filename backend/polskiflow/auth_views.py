@@ -17,7 +17,7 @@ from polskiflow.auth import (
     sign_out,
     sign_up,
 )
-from polskiflow.content import TASKS
+from polskiflow.content import tasks
 
 
 def require_browser_user(view):
@@ -104,7 +104,7 @@ def home(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "home.html",
-        {"user": request.supabase_user, "display_name": display_name, "tasks": TASKS},
+        {"user": request.supabase_user, "display_name": display_name, "tasks": tasks()},
     )
 
 

@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.urls import path
+from django.contrib import admin
 
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import home, login_view, logout_view, register_view
@@ -18,6 +19,7 @@ def current_user(request):
 
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("", home, name="home"),
     path("login/", login_view, name="login"),
     path("register/", register_view, name="register"),

@@ -1,11 +1,48 @@
 from unittest.mock import patch
 
-from django.test import SimpleTestCase
+from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
+from polskiflow.learning.models import Flashcard, Lesson, Question
 
 
-class LessonViewsTests(SimpleTestCase):
+class LessonViewsTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        Lesson.objects.all().delete()
+        Flashcard.objects.all().delete()
+        lesson_data = [
+            ("words", "Słówka dnia", "Новые слова"),
+            ("grammar", "Gramatyka", "Грамматика"),
+            ("review", "Powtórka", "Повторение"),
+            ("quiz", "Quiz", "Мини-тест"),
+        ]
+        for position, (lesson_id, title, plan_title) in enumerate(lesson_data):
+            Lesson.objects.create(
+                id=lesson_id,
+                title=title,
+                plan_title=plan_title,
+                subtitle="5 заданий",
+                description="Описание",
+                position=position,
+                theory_title="Rodzajnik i ród rzeczownika" if lesson_id == "grammar" else "",
+                theory_sections=[["Род существительных", "Короткая теория"]] if lesson_id == "grammar" else [],
+            )
+        cards = [
+            ("czesc", "cześć", "привет"),
+            ("dziekuje", "dziękuję", "спасибо"),
+            ("prosze", "proszę", "пожалуйста"),
+            ("tak", "tak", "да"),
+            ("nie", "nie", "нет"),
+        ]
+        for position, (card_id, polish, translation) in enumerate(cards):
+            Flashcard.objects.create(id=card_id, polish=polish, translation=translation, position=position)
+        grammar_prompts = ["Слово «kawa»", "Слово «dom»", "Слово «miasto»"]
+        for position, prompt in enumerate(grammar_prompts):
+            Question.objects.create(lesson_id="grammar", prompt=prompt, options=["мужской", "женский", "средний"], correct=position % 3, explanation="Пояснение", position=position)
+        quiz_prompts = ["Как переводится «cześć»?", "Что значит «dziękuję»?", "Выберите перевод", "Как будет «да»?", "Как будет «нет»?"]
+        for position, prompt in enumerate(quiz_prompts):
+            Question.objects.create(lesson_id="quiz", prompt=prompt, options=["нет", "привет", "спасибо"], correct=1, explanation="Cześć — неформальное «привет».", position=position)
     def setUp(self):
         self.client.cookies[ACCESS_COOKIE] = "access"
         self.auth_patch = patch(
