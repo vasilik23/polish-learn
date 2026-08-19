@@ -90,6 +90,11 @@ python manage.py createsuperuser
 Без `DATABASE_URL` локальная разработка и тесты используют SQLite. Учётные
 данные администратора Django отделены от пользовательской Supabase Auth.
 
+Для Vercel используйте URI Supabase Transaction Pooler (порт `6543`). Django
+отключает persistent connections и prepared statements, поскольку transaction
+mode Supavisor предназначен для serverless, но не поддерживает prepared
+statements. Для локальных migrations удобнее Direct или Session Pooler URI.
+
 ## CI и Vercel
 
 GitHub Actions запускает тесты, system check и проверку миграций при каждом PR,

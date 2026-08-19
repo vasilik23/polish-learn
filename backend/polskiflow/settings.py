@@ -63,8 +63,8 @@ if database_url := os.environ.get("DATABASE_URL"):
         "PASSWORD": unquote(parsed_database_url.password or ""),
         "HOST": parsed_database_url.hostname or "",
         "PORT": parsed_database_url.port or 5432,
-        "CONN_MAX_AGE": 60,
-        "OPTIONS": {"sslmode": "require"},
+        "CONN_MAX_AGE": int(os.environ.get("DATABASE_CONN_MAX_AGE", "0")),
+        "OPTIONS": {"sslmode": "require", "prepare_threshold": None},
     }
 
 LANGUAGE_CODE = "ru-ru"
