@@ -41,6 +41,21 @@ cookies; истёкший access token автоматически обновля
 В production cookies помечаются `Secure`; локально это управляется переменной
 `AUTH_COOKIE_SECURE`.
 
+Минимальные production-переменные Django:
+
+```bash
+export DJANGO_DEBUG=false
+export DJANGO_SECRET_KEY='long-random-production-secret'
+export DJANGO_ALLOWED_HOSTS='your-domain.example'
+export AUTH_COOKIE_SECURE=true
+export DJANGO_SECURE_SSL_REDIRECT=true
+```
+
+HSTS намеренно не включается автоматически: после проверки HTTPS на настоящем
+домене задайте `DJANGO_SECURE_HSTS_SECONDS` постепенно, затем при необходимости
+включите `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS` и `DJANGO_SECURE_HSTS_PRELOAD`.
+Ошибочная HSTS-конфигурация долго кэшируется браузерами и трудно откатывается.
+
 API-клиент также может передавать access token в `Authorization: Bearer …`.
 Защищённый диагностический маршрут `GET /api/auth/me/` возвращает идентификатор
 и email проверенного пользователя; отсутствие или отклонение токена даёт `401`.
