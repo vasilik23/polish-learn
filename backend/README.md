@@ -27,14 +27,20 @@ Django не создаёт и не изменяет их своими мигра
 preview/staging-проекте Supabase и только после ручной проверки применяется к
 production.
 
-Для проверки access token Django обращается к Supabase Auth. Настройте только
-публичные параметры (service-role key для этого не нужен):
+Для авторизации Django обращается к Supabase Auth. Настройте только публичные
+параметры (service-role/secret key для этого не нужен):
 
 ```bash
 export SUPABASE_URL=https://PROJECT.supabase.co
 export SUPABASE_ANON_KEY=PUBLIC_ANON_KEY
 ```
 
-Клиент передаёт текущий access token в `Authorization: Bearer …`. Защищённый
-диагностический маршрут `GET /api/auth/me/` возвращает идентификатор и email
-проверенного пользователя; отсутствие или отклонение токена даёт `401`.
+Доступны браузерные маршруты `/login/`, `/register/`, `/logout/` и защищённая
+страница `/`. Access и refresh tokens сохраняются в `HttpOnly`, `SameSite=Lax`
+cookies; истёкший access token автоматически обновляется через Supabase Auth.
+В production cookies помечаются `Secure`; локально это управляется переменной
+`AUTH_COOKIE_SECURE`.
+
+API-клиент также может передавать access token в `Authorization: Bearer …`.
+Защищённый диагностический маршрут `GET /api/auth/me/` возвращает идентификатор
+и email проверенного пользователя; отсутствие или отклонение токена даёт `401`.

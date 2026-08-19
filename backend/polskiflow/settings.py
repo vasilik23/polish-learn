@@ -14,7 +14,11 @@ INSTALLED_APPS = [
     "polskiflow.learning",
 ]
 
-MIDDLEWARE = ["polskiflow.auth.SupabaseAuthMiddleware"]
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "polskiflow.auth.SupabaseAuthMiddleware",
+]
 ROOT_URLCONF = "polskiflow.urls"
 TEMPLATES = [
     {
@@ -42,3 +46,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_AUTH_TIMEOUT = float(os.environ.get("SUPABASE_AUTH_TIMEOUT", "5"))
+AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"

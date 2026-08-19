@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="card">
+    <p class="muted">Защищённая Django-страница</p>
+    <h1>Cześć!</h1>
+    <p>Вы вошли как <strong>{{ user.email|default:user.id }}</strong>.</p>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit">Выйти</button>
+    </form>
+  </section>
+{% endblock %}
