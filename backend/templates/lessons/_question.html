@@ -1,0 +1,16 @@
+<div class="progress">Вопрос {{ index|add:1 }} из {{ total }}</div>
+<div class="card"><h2>{{ question.prompt }}</h2></div>
+{% if selected == None %}
+  <form class="options" hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
+    {% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}">
+    {% for option in question.options %}<button type="submit" name="choice" value="{{ forloop.counter0 }}">{{ option }}</button>{% endfor %}
+  </form>
+{% else %}
+  <div class="options">
+    {% for option in question.options %}<button disabled class="{% if forloop.counter0 == question.correct %}correct{% elif forloop.counter0 == selected %}wrong{% endif %}">{{ option }}</button>{% endfor %}
+  </div>
+  <p class="card">{{ question.explanation }}</p>
+  <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
+    {% csrf_token %}<input type="hidden" name="action" value="next"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><input type="hidden" name="selected" value="{{ selected }}"><button>{% if index|add:1 == total %}Завершить{% else %}Дальше →{% endif %}</button>
+  </form>
+{% endif %}

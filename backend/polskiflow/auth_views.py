@@ -17,6 +17,7 @@ from polskiflow.auth import (
     sign_out,
     sign_up,
 )
+from polskiflow.content import TASKS
 
 
 def require_browser_user(view):
@@ -99,7 +100,12 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 
 @require_browser_user
 def home(request: HttpRequest) -> HttpResponse:
-    return render(request, "home.html", {"user": request.supabase_user})
+    display_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    return render(
+        request,
+        "home.html",
+        {"user": request.supabase_user, "display_name": display_name, "tasks": TASKS},
+    )
 
 
 def _safe_next(request: HttpRequest) -> str:

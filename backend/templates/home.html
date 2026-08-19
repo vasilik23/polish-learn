@@ -1,12 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="card">
-    <p class="muted">Защищённая Django-страница</p>
-    <h1>Cześć!</h1>
-    <p>Вы вошли как <strong>{{ user.email|default:user.id }}</strong>.</p>
-    <form method="post" action="{% url 'logout' %}">
-      {% csrf_token %}
-      <button type="submit">Выйти</button>
-    </form>
+  <header class="topbar">
+    <strong>PolskiFlow</strong>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="secondary" type="submit">Выйти</button></form>
+  </header>
+  <section>
+    <p class="muted">План на сегодня</p>
+    <h1>Cześć, {{ display_name }}! 👋</h1>
+    <p class="muted">Уровень A1 · серия 0 дней</p>
   </section>
+  <section class="card">
+    <h2>0 из {{ tasks|length }} заданий</h2>
+    <ul class="plan">
+      {% for task in tasks %}<li>○ <strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></li>{% endfor %}
+    </ul>
+  </section>
+  <h2>Задания</h2>
+  {% for task in tasks %}
+    <a class="card" href="{% url 'lesson' task.id %}"><span class="task-row"><span class="emoji">{{ task.emoji }}</span><span><strong>{{ task.title }}</strong><br><span class="muted">{{ task.description }} · ~{{ task.minutes }} мин</span></span></span></a>
+  {% endfor %}
 {% endblock %}
