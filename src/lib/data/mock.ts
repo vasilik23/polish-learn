@@ -83,10 +83,22 @@ export const taskCards: TaskCard[] = [
   },
 ];
 
-export const sampleFlashcards = [
-  { polish: "cześć", translation: "привет", example: "Cześć, jak się masz?" },
-  { polish: "dziękuję", translation: "спасибо", example: "Dziękuję bardzo!" },
-  { polish: "proszę", translation: "пожалуйста", example: "Proszę bardzo." },
-  { polish: "tak", translation: "да", example: "Tak, zgadzam się." },
-  { polish: "nie", translation: "нет", example: "Nie, dziękuję." },
+export type Flashcard = {
+  id: string;
+  polish: string;
+  translation: string;
+  example: string;
+};
+
+export const sampleFlashcards: Flashcard[] = [
+  { id: "cześć", polish: "cześć", translation: "привет", example: "Cześć, jak się masz?" },
+  { id: "dziękuję", polish: "dziękuję", translation: "спасибо", example: "Dziękuję bardzo!" },
+  { id: "proszę", polish: "proszę", translation: "пожалуйста", example: "Proszę bardzo." },
+  { id: "tak", polish: "tak", translation: "да", example: "Tak, zgadzam się." },
+  { id: "nie", polish: "nie", translation: "нет", example: "Nie, dziękuję." },
 ];
+
+export function flashcardsByIds(ids: string[]): Flashcard[] {
+  const map = new Map(sampleFlashcards.map((card) => [card.id, card]));
+  return ids.map((id) => map.get(id)).filter((card): card is Flashcard => Boolean(card));
+}
