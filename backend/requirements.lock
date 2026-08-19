@@ -1,4 +1,7 @@
 # Runtime dependencies resolved and verified on 2026-08-17.
 Django==5.2.17
 asgiref==3.12.1
+psycopg==3.3.4
+psycopg-binary==3.3.4
 sqlparse==0.6.0
+typing_extensions==4.16.0

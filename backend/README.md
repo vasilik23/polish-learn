@@ -67,6 +67,25 @@ Django уже воспроизводит главную страницу и ма
 карточками и вопросами возвращают HTML-фрагменты через HTMX 2.0.10; формы
 защищены CSRF. Без JavaScript остаются обычные серверные POST-ответы.
 
-Учебный контент пока находится в `polskiflow/content.py`, а результаты уроков
-на этом этапе не сохраняются. Перенос контента и прогресса в PostgreSQL и
-Django Admin выполняется на этапе 6.
+Учебный контент хранится в таблицах PostgreSQL `lessons`, `flashcards` и
+`questions`. `polskiflow/content.py` читает только активные записи через Django
+ORM, а `/admin/` позволяет управлять уроками, вопросами и карточками. Источником
+DDL и начальных данных остаются `supabase/migrations/005_content_admin.sql` и
+`006_revoke_profile_trigger_rpc.sql`. Database router не даёт Django повторно
+создавать эти таблицы в PostgreSQL, но разрешает migrations создавать их в
+локальной SQLite.
+
+Завершение урока сохраняется в `lesson_completions` через Supabase Data API с
+access token текущего пользователя. Upsert проходит через RLS и не использует
+`service_role`.
+
+Для прямого подключения ORM/Admin к PostgreSQL задайте стандартный URI:
+
+```bash
+export DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/postgres
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+Без `DATABASE_URL` локальная разработка и тесты используют SQLite. Учётные
+данные администратора Django отделены от пользовательской Supabase Auth.

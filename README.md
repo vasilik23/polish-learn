@@ -127,7 +127,7 @@ docs/python-migration.md подробный контракт и план пер�
 - [x] Создать Django-проект и модели Supabase.
 - [x] Перенести авторизацию и защищённые маршруты.
 - [x] Перенести страницы на Django Templates + HTMX.
-- [ ] Перенести учебный контент в PostgreSQL и Django Admin.
+- [x] Перенести учебный контент в PostgreSQL и Django Admin.
 - [ ] Настроить полный CI, preview и production для Python-приложения.
 - [ ] Провести E2E-проверку и удалить старую Next.js-реализацию.
 
