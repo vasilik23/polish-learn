@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "unsafe-local-development-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host]
+ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,.vercel.app").split(",") if host]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -63,8 +63,8 @@ if database_url := os.environ.get("DATABASE_URL"):
         "PASSWORD": unquote(parsed_database_url.password or ""),
         "HOST": parsed_database_url.hostname or "",
         "PORT": parsed_database_url.port or 5432,
-        "CONN_MAX_AGE": 60,
-        "OPTIONS": {"sslmode": "require"},
+        "CONN_MAX_AGE": int(os.environ.get("DATABASE_CONN_MAX_AGE", "0")),
+        "OPTIONS": {"sslmode": "require", "prepare_threshold": None},
     }
 
 LANGUAGE_CODE = "ru-ru"
@@ -73,6 +73,7 @@ USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DATABASE_ROUTERS = ["polskiflow.learning.router.SupabaseSchemaRouter"]
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -80,6 +81,14 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_AUTH_TIMEOUT = float(os.environ.get("SUPABASE_AUTH_TIMEOUT", "5"))
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
+SESSION_COOKIE_SECURE = AUTH_COOKIE_SECURE
+CSRF_TRUSTED_ORIGINS = [
+    origin
+    for origin in os.environ.get(
+        "DJANGO_CSRF_TRUSTED_ORIGINS", "https://*.vercel.app"
+    ).split(",")
+    if origin
+]
 SECURE_SSL_REDIRECT = os.environ.get(
     "DJANGO_SECURE_SSL_REDIRECT", str(not DEBUG)
 ).lower() == "true"
