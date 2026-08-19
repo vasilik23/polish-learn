@@ -14,7 +14,7 @@ INSTALLED_APPS = [
     "polskiflow.learning",
 ]
 
-MIDDLEWARE = []
+MIDDLEWARE = ["polskiflow.auth.SupabaseAuthMiddleware"]
 ROOT_URLCONF = "polskiflow.urls"
 TEMPLATES = [
     {
@@ -38,3 +38,7 @@ TIME_ZONE = os.environ.get("APP_TIME_ZONE", "Europe/Warsaw")
 USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+SUPABASE_AUTH_TIMEOUT = float(os.environ.get("SUPABASE_AUTH_TIMEOUT", "5"))

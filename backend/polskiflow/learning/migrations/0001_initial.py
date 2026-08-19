@@ -24,6 +24,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'profiles',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -40,6 +41,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'flashcard_reviews',
+                'managed': False,
                 'constraints': [models.CheckConstraint(condition=models.Q(('ease_factor__gte', 1.3)), name='flashcard_review_minimum_ease')],
             },
         ),
@@ -56,6 +58,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'lesson_completions',
+                'managed': False,
                 'constraints': [models.UniqueConstraint(fields=('user_id', 'lesson_id', 'plan_date'), name='unique_daily_lesson_completion'), models.CheckConstraint(condition=models.Q(('cards_known__lte', models.F('cards_total'))), name='cards_known_not_above_total')],
             },
         ),

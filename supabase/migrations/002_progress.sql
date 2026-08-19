@@ -27,7 +27,8 @@ create policy "Users can insert own lesson completions"
 
 create policy "Users can update own lesson completions"
   on public.lesson_completions for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- Профили для пользователей, созданных до триггера
 insert into public.profiles (id, display_name)

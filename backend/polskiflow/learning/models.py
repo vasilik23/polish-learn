@@ -29,6 +29,7 @@ class Profile(models.Model):
 
     class Meta:
         db_table = "profiles"
+        managed = False
 
 
 class LessonCompletion(models.Model):
@@ -42,6 +43,7 @@ class LessonCompletion(models.Model):
 
     class Meta:
         db_table = "lesson_completions"
+        managed = False
         constraints = [
             models.UniqueConstraint(
                 fields=("user_id", "lesson_id", "plan_date"),
@@ -66,6 +68,7 @@ class FlashcardReview(models.Model):
 
     class Meta:
         db_table = "flashcard_reviews"
+        managed = False
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(ease_factor__gte=1.3),

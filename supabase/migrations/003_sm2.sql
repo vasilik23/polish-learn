@@ -13,14 +13,18 @@ create table if not exists public.flashcard_reviews (
 
 alter table public.flashcard_reviews enable row level security;
 
+drop policy if exists "Users can read own flashcard reviews" on public.flashcard_reviews;
 create policy "Users can read own flashcard reviews"
   on public.flashcard_reviews for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own flashcard reviews" on public.flashcard_reviews;
 create policy "Users can insert own flashcard reviews"
   on public.flashcard_reviews for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update own flashcard reviews" on public.flashcard_reviews;
 create policy "Users can update own flashcard reviews"
   on public.flashcard_reviews for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
