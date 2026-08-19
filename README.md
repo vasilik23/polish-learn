@@ -1,85 +1,144 @@
 # PolskiFlow
 
-Веб-приложение для изучения польского (mobile-first). MVP: регистрация, главный экран с планом на день, карточки заданий, пример урока со словами.
+Mobile-first приложение для ежедневного изучения польского языка. Проект
+работает на Next.js и поэтапно переносится на Python/Django без остановки
+production-версии.
 
-## Стек
+## Возможности MVP
 
-- **Next.js 16** (App Router, TypeScript)
-- **Tailwind CSS 4**
-- **Supabase** — регистрация и сессии
+- регистрация, вход и сессии через Supabase Auth;
+- ежедневный план и серия дней;
+- уроки слов, грамматики, повторения и мини-тест;
+- сохранение завершённых уроков в Supabase;
+- расчёт интервальных повторений SM-2;
+- адаптивный интерфейс для телефона.
 
-## Быстрый старт
+## Технологии
 
-### 1. Supabase
+| Часть | Технологии | Статус |
+| --- | --- | --- |
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | production |
+| Backend | Python 3.11+, Django 5.2 | перенос в процессе |
+| Данные и Auth | Supabase Postgres, Auth, RLS | production |
+| Деплой | GitHub + Vercel | настроен |
 
-1. Создайте проект на [supabase.com](https://supabase.com)
-2. **Authentication → Providers → Email** — включён по умолчанию
-3. Для локальной разработки отключите подтверждение email:  
-   **Authentication → Providers → Email → Confirm email** = OFF
-4. **Project Settings → API** — скопируйте URL и `anon` key
-5. **SQL Editor** — выполните скрипт `supabase/schema.sql`  
-   Если база уже была создана раньше — дополнительно `supabase/migrations/002_progress.sql`
+## Быстрый запуск Next.js
 
-### 2. Переменные окружения
-
-```bash
-cp .env.local.example .env.local
-# отредактируйте .env.local
-```
-
-### 3. Запуск
+Требования: Node.js 20+ и npm.
 
 ```bash
 npm install
+cp .env.local.example .env.local
 npm run dev
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000) — вас перенаправит на `/login`.
+Заполните в `.env.local` публичные параметры из Supabase:
 
-Для проверки с телефона в той же Wi‑Fi сети:
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_PUBLIC_KEY
+```
+
+Приложение откроется на [http://localhost:3000](http://localhost:3000) и
+перенаправит гостя на `/login`. Для проверки с телефона в той же Wi-Fi сети:
 
 ```bash
 npm run dev -- -H 0.0.0.0
 ```
 
-и откройте `http://<IP-вашего-Mac>:3000`.
+После этого откройте `http://<IP-адрес-компьютера>:3000`.
+
+## Запуск Django
+
+Требования: Python 3.11+.
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.lock
+python manage.py check
+python manage.py test
+python manage.py runserver
+```
+
+Для проверки Supabase access token добавьте публичные параметры:
+
+```bash
+export SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+export SUPABASE_ANON_KEY=YOUR_PUBLIC_KEY
+```
+
+Диагностический endpoint `GET /api/auth/me/` принимает заголовок
+`Authorization: Bearer <access-token>`. Django-модели имеют
+`managed = False`, поэтому `manage.py migrate` не изменяет таблицы Supabase.
+
+## Supabase
+
+Для новой пустой базы выполните `supabase/schema.sql`. Для уже существующей
+базы SQL применяется строго по порядку:
+
+1. `supabase/migrations/002_progress.sql`;
+2. `supabase/migrations/003_sm2.sql`;
+3. `supabase/migrations/004_harden_rls.sql`.
+
+Миграции `003` и `004` пока не применены к production. Перед применением нужны
+проверка на временном Supabase-проекте, тесты RLS от имени двух пользователей,
+резервная копия и отдельное подтверждение production-изменения.
+
+## Полезные команды
+
+```bash
+# Next.js
+npm run lint
+npm run build
+
+# Django и доменное ядро
+cd backend
+.venv/bin/python manage.py check
+.venv/bin/python manage.py test
+```
 
 ## Маршруты
 
-| Путь | Описание |
-|------|----------|
-| `/login` | Вход |
-| `/register` | Регистрация |
-| `/` | Главная: план на день + карточки заданий |
-| `/lesson/words` | Флеш-карточки (пример) |
-| `/lesson/grammar` | Грамматика: теория + упражнения |
-| `/lesson/review` | Флеш-карточки |
-| `/lesson/quiz` | Мини-тест: 5 вопросов |
+| Путь | Назначение |
+| --- | --- |
+| `/login` | вход |
+| `/register` | регистрация |
+| `/` | ежедневный план |
+| `/lesson/words` | новые слова |
+| `/lesson/grammar` | грамматика |
+| `/lesson/review` | повторение карточек |
+| `/lesson/quiz` | мини-тест |
 
-## Структура проекта
+## Структура
 
-```
-src/
-  app/(auth)/     — login, register
-  app/(app)/      — главная, уроки (за middleware)
-  components/     — UI
-  lib/data/mock.ts — демо-данные плана и карточек
-  lib/supabase/   — клиенты, профиль, прогресс
+```text
+src/                    текущий Next.js-интерфейс и API
+backend/                Django и независимое Python-доменное ядро
+supabase/               эталонная схема и последовательные SQL-миграции
+docs/python-migration.md подробный контракт и план переноса
 ```
 
-## Дальше
+## План переноса на Python
 
-- [x] Сохранение прогресса плана в Supabase
-- [~] Spaced repetition (SM-2): алгоритм и запись результата готовы локально,
-  подключение очереди повторения и production-миграция ещё не завершены
-- [ ] PWA + Capacitor для магазинов
-- [ ] Playwright E2E: register → home → lesson
+- [x] Зафиксировать поведение MVP и инфраструктуру.
+- [x] Перенести SM-2 и расчёт серии дней в Python с тестами.
+- [x] Создать Django-проект и модели Supabase.
+- [ ] Перенести авторизацию и защищённые маршруты.
+- [ ] Перенести страницы на Django Templates + HTMX.
+- [ ] Перенести учебный контент в PostgreSQL и Django Admin.
+- [ ] Настроить полный CI, preview и production для Python-приложения.
+- [ ] Провести E2E-проверку и удалить старую Next.js-реализацию.
 
-План и контракт поэтапного переноса проекта на Python описаны в
+Подробности и критерии совместимости находятся в
 [`docs/python-migration.md`](docs/python-migration.md).
 
-## Деплой (Vercel)
+## Деплой
 
-1. Репозиторий на GitHub
-2. [vercel.com](https://vercel.com) → Import → добавьте env `NEXT_PUBLIC_SUPABASE_*`
-3. В Supabase **Authentication → URL Configuration** добавьте Site URL и Redirect URLs вашего домена
+- GitHub: ветка `main` запускает production-сборку.
+- Vercel: preview создаётся для каждого pull request.
+- В Vercel должны быть заданы `NEXT_PUBLIC_SUPABASE_URL` и
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- В Supabase Auth → URL Configuration должны быть добавлены production- и
+  preview-адреса приложения.
