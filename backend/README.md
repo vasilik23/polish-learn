@@ -89,3 +89,14 @@ python manage.py createsuperuser
 
 Без `DATABASE_URL` локальная разработка и тесты используют SQLite. Учётные
 данные администратора Django отделены от пользовательской Supabase Auth.
+
+## CI и Vercel
+
+GitHub Actions запускает тесты, system check и проверку миграций при каждом PR,
+затрагивающем `backend/`. Для Vercel используется отдельный проект с Root
+Directory `backend`; платформа автоматически определяет Django по `manage.py`.
+
+Обязательные переменные для Preview и Production перечислены в `.env.example`.
+Секреты (`DJANGO_SECRET_KEY`, `DATABASE_URL`) задаются только в Vercel Dashboard.
+Перед первым входом в `/admin/` выполните Django migrations и создайте отдельного
+superuser через доверенное локальное окружение с тем же `DATABASE_URL`.
