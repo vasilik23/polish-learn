@@ -22,11 +22,11 @@
           <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">⌂</span><span>Сегодня</span>
           </a>
-          <a href="{% url 'home' %}#tasks" class="nav-link">
-            <span class="nav-icon" aria-hidden="true">◇</span><span>Учиться</span>
+          <a href="{% url 'reading-library' %}" class="nav-link {% if request.resolver_match.url_name == 'reading-library' or request.resolver_match.url_name == 'reader' %}active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">▤</span><span>Читать</span>
           </a>
-          <a href="{% url 'home' %}#daily-plan" class="nav-link">
-            <span class="nav-icon" aria-hidden="true">↗</span><span>Прогресс</span>
+          <a href="{% url 'dictionary' %}" class="nav-link {% if request.resolver_match.url_name == 'dictionary' %}active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">◇</span><span>Словарь</span>
           </a>
         </div>
         <form class="nav-logout" method="post" action="{% url 'logout' %}">
@@ -37,5 +37,6 @@
     <main class="page-shell {% if request.supabase_user %}with-nav{% endif %}">
       {% block content %}{% endblock %}
     </main>
+    {% block scripts %}{% endblock %}
   </body>
 </html>

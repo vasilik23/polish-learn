@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ text.title }} · PolskiFlow{% endblock %}
+{% block content %}
+  <div class="reader-layout">
+    <article class="reader-article">
+      <header class="lesson-header reader-header"><a class="back-button" href="{% url 'reading-library' %}" aria-label="Назад">←</a><strong>{{ text.title }}</strong><span class="level-badge">{{ text.level }}</span></header>
+      <div class="reader-meta"><span>{{ text.emoji }} {{ text.description }}</span><span>◷ {{ text.minutes }} мин</span></div>
+      <div class="reading-paper">
+        {% for paragraph in paragraphs %}
+          <p>{% for token in paragraph %}{% if token.translation %}<button type="button" class="reader-word" data-word="{{ token.word }}" data-translation="{{ token.translation }}">{{ token.text }}</button>{% else %}{{ token.text }}{% endif %}{% endfor %}</p>
+        {% endfor %}
+      </div>
+    </article>
+    <aside class="word-panel" id="word-panel">
+      <div class="word-panel-placeholder"><span>👆</span><strong>Нажми на слово</strong><p>Здесь появится перевод, и слово можно будет сохранить.</p></div>
+      <div class="word-panel-result" hidden>
+        <p class="eyebrow">Перевод</p><h2 id="selected-word"></h2><p class="selected-translation" id="selected-translation"></p>
+        <form hx-post="{% url 'add-dictionary-word' text.id %}" hx-target="#dictionary-status" hx-swap="innerHTML">
+          {% csrf_token %}<input type="hidden" name="word" id="word-input"><input type="hidden" name="translation" id="translation-input"><input type="hidden" name="context" id="context-input">
+          <button type="submit">＋ Добавить в словарь</button>
+        </form>
+        <div id="dictionary-status" aria-live="polite"></div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script>
+    document.querySelectorAll('.reader-word').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('.reader-word.selected').forEach((word) => word.classList.remove('selected'));
+      button.classList.add('selected');
+      document.querySelector('.word-panel-placeholder').hidden = true;
+      document.querySelector('.word-panel-result').hidden = false;
+      document.querySelector('#selected-word').textContent = button.dataset.word;
+      document.querySelector('#selected-translation').textContent = button.dataset.translation;
+      document.querySelector('#word-input').value = button.dataset.word;
+      document.querySelector('#translation-input').value = button.dataset.translation;
+      document.querySelector('#context-input').value = button.closest('p').textContent.trim();
+      document.querySelector('#dictionary-status').textContent = '';
+      if (window.innerWidth < 850) document.querySelector('#word-panel').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }));
+  </script>
+{% endblock %}

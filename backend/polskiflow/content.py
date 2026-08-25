@@ -1,6 +1,6 @@
 """Database-backed lesson content queries."""
 
-from polskiflow.learning.models import Flashcard, Lesson
+from polskiflow.learning.models import Flashcard, Lesson, ReadingText
 
 
 def tasks() -> list[dict]:
@@ -63,3 +63,15 @@ def _questions(lesson: Lesson) -> list[dict]:
             "prompt", "options", "correct", "explanation"
         )
     )
+
+
+def reading_texts() -> list[dict]:
+    return list(
+        ReadingText.objects.filter(is_active=True).values(
+            "id", "title", "description", "level", "minutes", "emoji"
+        )
+    )
+
+
+def reading_text(text_id: str) -> ReadingText | None:
+    return ReadingText.objects.filter(id=text_id, is_active=True).first()

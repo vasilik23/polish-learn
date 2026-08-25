@@ -11,7 +11,9 @@ from .models import (
     Lesson,
     LessonCompletion,
     LessonFlashcard,
+    PersonalWord,
     Profile,
+    ReadingText,
     Topic,
 )
 
@@ -23,13 +25,13 @@ class LearningModelsTests(TransactionTestCase):
     def setUpClass(cls):
         super().setUpClass()
         with connection.schema_editor() as editor:
-            for model in (Profile, LessonCompletion, FlashcardReview):
+            for model in (Profile, LessonCompletion, FlashcardReview, PersonalWord):
                 editor.create_model(model)
 
     @classmethod
     def tearDownClass(cls):
         with connection.schema_editor() as editor:
-            for model in (FlashcardReview, LessonCompletion, Profile):
+            for model in (PersonalWord, FlashcardReview, LessonCompletion, Profile):
                 editor.delete_model(model)
         super().tearDownClass()
 
@@ -89,3 +91,22 @@ class LearningModelsTests(TransactionTestCase):
 
         self.assertEqual(topic.lessons.get(), lesson)
         self.assertEqual(lesson.flashcard_links.get().flashcard, card)
+
+    def test_reading_text_and_personal_word_models_match_content_flow(self):
+        text = ReadingText.objects.create(
+            id="reading-test",
+            title="Reading test",
+            description="Test",
+            paragraphs=["To jest dom."],
+            glossary={"dom": "дом"},
+        )
+        user_id = uuid.uuid4()
+        word = PersonalWord.objects.create(
+            user_id=user_id,
+            word="dom",
+            translation="дом",
+            source_text_id=text.id,
+        )
+
+        self.assertEqual(ReadingText.objects.get().glossary["dom"], "дом")
+        self.assertEqual(PersonalWord.objects.get(pk=word.pk).user_id, user_id)

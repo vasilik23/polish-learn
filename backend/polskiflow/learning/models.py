@@ -127,6 +127,33 @@ class LessonFlashcard(models.Model):
         ]
 
 
+class ReadingText(models.Model):
+    id = models.SlugField(primary_key=True, max_length=80)
+    topic = models.ForeignKey(
+        Topic,
+        on_delete=models.SET_NULL,
+        related_name="reading_texts",
+        blank=True,
+        null=True,
+    )
+    title = models.CharField(max_length=160)
+    description = models.CharField(max_length=240)
+    level = models.CharField(max_length=2, choices=Level.choices, default=Level.A1)
+    minutes = models.PositiveSmallIntegerField(default=5)
+    emoji = models.CharField(max_length=8, blank=True)
+    paragraphs = models.JSONField(default=list)
+    glossary = models.JSONField(default=dict)
+    position = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "reading_texts"
+        ordering = ("position", "id")
+
+    def __str__(self):
+        return f"{self.level} · {self.title}"
+
+
 class Question(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="questions")
     prompt = models.TextField()
@@ -203,5 +230,25 @@ class FlashcardReview(models.Model):
             models.CheckConstraint(
                 condition=models.Q(ease_factor__gte=1.3),
                 name="flashcard_review_minimum_ease",
+            )
+        ]
+
+
+class PersonalWord(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField(db_index=True)
+    word = models.CharField(max_length=160)
+    translation = models.CharField(max_length=240)
+    context = models.TextField(blank=True)
+    source_text_id = models.CharField(max_length=80, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "personal_words"
+        managed = False
+        ordering = ("-created_at",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user_id", "word"), name="unique_personal_word"
             )
         ]

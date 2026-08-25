@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Чтение · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header">
+    <div><p class="eyebrow">Czytelnia</p><h1>Читай по-польски</h1><p class="muted">Короткие адаптированные истории с переводом слов по нажатию.</p></div>
+    <a class="compact-button" href="{% url 'dictionary' %}">Мой словарь →</a>
+  </header>
+  <section class="reading-grid" aria-label="Доступные тексты">
+    {% for text in texts %}
+      <a class="reading-card" href="{% url 'reader' text.id %}">
+        <span class="reading-cover">{{ text.emoji|default:"📖" }}</span>
+        <span class="reading-card-copy"><span class="level-badge">{{ text.level }}</span><strong>{{ text.title }}</strong><small>{{ text.description }}</small><span>◷ {{ text.minutes }} мин · Читать →</span></span>
+      </a>
+    {% empty %}
+      <div class="card empty-state"><span>📚</span><h2>Тексты скоро появятся</h2><p class="muted">Добавьте первый материал через Django Admin.</p></div>
+    {% endfor %}
+  </section>
+{% endblock %}
