@@ -74,9 +74,10 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/")
 
         self.assertContains(response, "Cześć, Василий!")
-        self.assertContains(response, "Уровень A2 · серия 4 дн.")
-        self.assertContains(response, "2 из 4 заданий")
-        self.assertContains(response, "Słówka dnia · готово")
+        self.assertContains(response, "Уровень A2")
+        self.assertContains(response, "4 дн. подряд")
+        self.assertContains(response, "2 из 4")
+        self.assertContains(response, 'class="task-complete"', count=2)
 
     def test_unknown_lesson_returns_404(self):
         self.assertEqual(self.client.get("/lesson/unknown/").status_code, 404)
@@ -93,7 +94,7 @@ class LessonViewsTests(TestCase):
                 "/lesson/words/step/",
                 {"action": "know", "index": index, "score": index},
             )
-        self.assertContains(response, "5 из 5")
+        self.assertContains(response, "5 / 5")
         self.assertContains(response, "Урок завершён")
 
     def test_quiz_answer_shows_explanation_and_next_question(self):

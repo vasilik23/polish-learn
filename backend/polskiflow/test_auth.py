@@ -109,6 +109,13 @@ class SupabaseAuthTests(SimpleTestCase):
 
 @override_settings(AUTH_COOKIE_SECURE=False)
 class BrowserAuthTests(SimpleTestCase):
+    def test_login_uses_product_shell(self):
+        response = self.client.get("/login/")
+
+        self.assertContains(response, "Рады видеть!")
+        self.assertContains(response, "Польский становится привычкой.")
+        self.assertContains(response, "/static/polskiflow/app.css")
+
     @patch("polskiflow.auth_views.sign_in")
     def test_login_sets_http_only_cookies_and_redirects(self, login):
         login.return_value = SupabaseSession(
