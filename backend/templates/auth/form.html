@@ -1,24 +1,34 @@
 {% extends "base.html" %}
 {% block title %}{% if mode == "login" %}Вход{% else %}Регистрация{% endif %} — PolskiFlow{% endblock %}
+{% block body_class %}auth-page{% endblock %}
 {% block content %}
-  <section class="card">
-    <p class="muted">PolskiFlow</p>
-    <h1>{% if mode == "login" %}Вход{% else %}Регистрация{% endif %}</h1>
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
-    {% if message %}<p class="message">{{ message }}</p>{% endif %}
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ next }}">
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" autocomplete="email" required>
-      <label for="password">Пароль</label>
-      <input id="password" name="password" type="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}" minlength="6" required>
-      <button type="submit">{% if mode == "login" %}Войти{% else %}Создать аккаунт{% endif %}</button>
-    </form>
-    {% if mode == "login" %}
-      <p class="muted">Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
-    {% else %}
-      <p class="muted">Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
-    {% endif %}
-  </section>
+  <div class="auth-layout">
+    <aside class="auth-brand">
+      <span class="brand-mark">P</span>
+      <h2>Польский становится привычкой.</h2>
+      <p>Короткие уроки, живые фразы и понятный прогресс каждый день.</p>
+    </aside>
+    <section class="auth-panel">
+      <a class="brand" href="{% url 'login' %}"><span class="brand-mark">P</span> PolskiFlow</a>
+      <p class="eyebrow">Witaj ponownie</p>
+      <h1>{% if mode == "login" %}Рады видеть!{% else %}Начнём учиться{% endif %}</h1>
+      <p class="muted">{% if mode == "login" %}Продолжи с того места, где остановился.{% else %}Создай аккаунт и начни первый урок.{% endif %}</p>
+      {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+      {% if message %}<p class="message">{{ message }}</p>{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+        <label for="password">Пароль</label>
+        <input id="password" name="password" type="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}" minlength="6" placeholder="Не менее 6 символов" required>
+        <button type="submit">{% if mode == "login" %}Войти в PolskiFlow{% else %}Создать аккаунт{% endif %}</button>
+      </form>
+      {% if mode == "login" %}
+        <p class="auth-switch muted">Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
+      {% else %}
+        <p class="auth-switch muted">Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+      {% endif %}
+    </section>
+  </div>
 {% endblock %}

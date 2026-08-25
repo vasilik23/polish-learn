@@ -111,6 +111,9 @@ def home(request: HttpRequest) -> HttpResponse:
     for lesson_task in lesson_tasks:
         lesson_task["completed"] = lesson_task["id"] in dashboard.completed_lesson_ids
     completed_count = sum(task["completed"] for task in lesson_tasks)
+    progress_percent = (
+        round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
+    )
     return render(
         request,
         "home.html",
@@ -119,6 +122,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "dashboard": dashboard,
             "tasks": lesson_tasks,
             "completed_count": completed_count,
+            "progress_percent": progress_percent,
         },
     )
 

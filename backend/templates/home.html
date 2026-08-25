@@ -1,23 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-  <header class="topbar">
-    <strong>PolskiFlow</strong>
-    <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="secondary" type="submit">Выйти</button></form>
+  <header class="dashboard-header">
+    <div class="mobile-brand"><span class="brand-mark">P</span> PolskiFlow</div>
+    <div class="avatar" aria-label="Профиль {{ dashboard.display_name }}">{{ dashboard.display_name|first|upper }}</div>
   </header>
-  <section>
-    <p class="muted">План на сегодня</p>
+
+  <section class="hero">
+    <p class="eyebrow">Dobry dzień na polski</p>
     <h1>Cześć, {{ dashboard.display_name }}! 👋</h1>
-    <p class="muted">Уровень {{ dashboard.level }} · серия {{ dashboard.streak_days }} дн.</p>
+    <div class="hero-meta">
+      <span class="pill">◆ Уровень {{ dashboard.level }}</span>
+      <span class="pill">🔥 {{ dashboard.streak_days }} дн. подряд</span>
+    </div>
   </section>
-  <section class="card">
-    <h2>{{ completed_count }} из {{ tasks|length }} заданий</h2>
-    <ul class="plan">
-      {% for task in tasks %}<li>{% if task.completed %}✓{% else %}○{% endif %} <strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></li>{% endfor %}
-    </ul>
-    {% if not dashboard.available %}<p class="muted">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
-  </section>
-  <h2>Задания</h2>
-  {% for task in tasks %}
-    <a class="card" href="{% url 'lesson' task.id %}"><span class="task-row"><span class="emoji">{{ task.emoji }}</span><span><strong>{{ task.title }}{% if task.completed %} · готово{% endif %}</strong><br><span class="muted">{{ task.description }} · ~{{ task.minutes }} мин</span></span></span></a>
-  {% endfor %}
+
+  <div class="dashboard-grid">
+    <section class="card daily-card" id="daily-plan">
+      <div class="progress-ring" style="--value: {{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
+      <div class="daily-copy">
+        <p class="eyebrow">Цель на сегодня</p>
+        <h2>{{ completed_count }} из {{ tasks|length }}</h2>
+        <p class="muted">Небольшой шаг каждый день — большой результат.</p>
+      </div>
+      <ul class="plan">
+        {% for task in tasks %}
+          <li><span class="plan-status {% if task.completed %}done{% endif %}">✓</span><span><strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></span></li>
+        {% endfor %}
+      </ul>
+      {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
+    </section>
+
+    <section id="tasks">
+      <div class="section-heading"><h2>Твои задания</h2><span>≈ 20 минут</span></div>
+      <div class="task-list">
+        {% for task in tasks %}
+          <a class="task-card" href="{% url 'lesson' task.id %}">
+            <span class="task-icon">{{ task.emoji }}</span>
+            <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
+            <span class="task-arrow" aria-hidden="true">→</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 {% endblock %}

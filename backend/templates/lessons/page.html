@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ task.plan_title }} — PolskiFlow{% endblock %}
 {% block content %}
-  <header class="topbar"><a href="{% url 'home' %}">← Назад</a><strong>{{ task.plan_title }}</strong><span></span></header>
-  <section id="lesson-flow">
-    {% if lesson_id == "words" or lesson_id == "review" %}
-      {% include "lessons/_flashcard.html" %}
-    {% elif lesson_id == "grammar" %}
-      <div class="card">
-        <p class="muted">{{ grammar.title }}</p>
-        {% for heading, body in grammar.sections %}<h2>{{ heading }}</h2><p>{{ body }}</p>{% endfor %}
-      </div>
-      <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
-        {% csrf_token %}<input type="hidden" name="action" value="start"><input type="hidden" name="index" value="0"><input type="hidden" name="score" value="0">
-        <button type="submit">К упражнениям →</button>
-      </form>
-    {% else %}
-      {% include "lessons/_question.html" %}
-    {% endif %}
-  </section>
+  <div class="lesson-shell">
+    <header class="lesson-header"><a class="back-button" href="{% url 'home' %}" aria-label="Вернуться на главную">←</a><strong>{{ task.plan_title }}</strong><span></span></header>
+    <section id="lesson-flow">
+      {% if lesson_id == "words" or lesson_id == "review" %}
+        {% include "lessons/_flashcard.html" %}
+      {% elif lesson_id == "grammar" %}
+        <div class="card lesson-card theory-card">
+          <p class="eyebrow">Короткая теория</p>
+          <h1>{{ grammar.title }}</h1>
+          {% for heading, body in grammar.sections %}<div class="theory-section"><h2>{{ heading }}</h2><p class="muted">{{ body }}</p></div>{% endfor %}
+        </div>
+        <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
+          {% csrf_token %}<input type="hidden" name="action" value="start"><input type="hidden" name="index" value="0"><input type="hidden" name="score" value="0">
+          <button type="submit">Перейти к практике →</button>
+        </form>
+      {% else %}
+        {% include "lessons/_question.html" %}
+      {% endif %}
+    </section>
+  </div>
 {% endblock %}
