@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
 from polskiflow.learning.models import Flashcard, Lesson, Question
+from polskiflow.progress_store import DashboardProgress
 
 
 class LessonViewsTests(TestCase):
@@ -59,6 +60,23 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Gramatyka")
         self.assertContains(response, "Powtórka")
         self.assertContains(response, "Quiz")
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_home_marks_today_progress(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A2",
+            streak_days=4,
+            completed_lesson_ids=frozenset({"words", "grammar"}),
+            available=True,
+        )
+
+        response = self.client.get("/")
+
+        self.assertContains(response, "Cześć, Василий!")
+        self.assertContains(response, "Уровень A2 · серия 4 дн.")
+        self.assertContains(response, "2 из 4 заданий")
+        self.assertContains(response, "Słówka dnia · готово")
 
     def test_unknown_lesson_returns_404(self):
         self.assertEqual(self.client.get("/lesson/unknown/").status_code, 404)

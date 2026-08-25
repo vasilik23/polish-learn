@@ -18,7 +18,7 @@ production-версии.
 | Часть | Технологии | Статус |
 | --- | --- | --- |
 | Web | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | production |
-| Backend | Python 3.11+, Django 5.2 | перенос в процессе |
+| Backend | Python 3.12, Django 5.2, Templates + HTMX | production-кандидат |
 | Данные и Auth | Supabase Postgres, Auth, RLS | production |
 | Деплой | GitHub + Vercel | настроен |
 
@@ -70,21 +70,17 @@ export SUPABASE_ANON_KEY=YOUR_PUBLIC_KEY
 ```
 
 Диагностический endpoint `GET /api/auth/me/` принимает заголовок
-`Authorization: Bearer <access-token>`. Django-модели имеют
-`managed = False`, поэтому `manage.py migrate` не изменяет таблицы Supabase.
+`Authorization: Bearer <access-token>`. Модели пользовательского прогресса
+отображают существующие таблицы Supabase как `managed = False`; служебные
+таблицы Django создаются обычной командой `manage.py migrate`.
 
 ## Supabase
 
-Для новой пустой базы выполните `supabase/schema.sql`. Для уже существующей
-базы SQL применяется строго по порядку:
-
-1. `supabase/migrations/002_progress.sql`;
-2. `supabase/migrations/003_sm2.sql`;
-3. `supabase/migrations/004_harden_rls.sql`.
-
-Миграции `003` и `004` пока не применены к production. Перед применением нужны
-проверка на временном Supabase-проекте, тесты RLS от имени двух пользователей,
-резервная копия и отдельное подтверждение production-изменения.
+Для новой пустой базы сначала выполните `supabase/schema.sql`, затем применяйте
+последовательные миграции из `supabase/migrations/` по номеру. Production
+приведён к состоянию миграций `002`–`007`: пользовательские данные защищены
+RLS, учебный контент доступен в Django Admin, а служебные таблицы Django закрыты
+от браузерных ролей Supabase.
 
 ## Полезные команды
 
@@ -128,7 +124,7 @@ docs/python-migration.md подробный контракт и план пер�
 - [x] Перенести авторизацию и защищённые маршруты.
 - [x] Перенести страницы на Django Templates + HTMX.
 - [x] Перенести учебный контент в PostgreSQL и Django Admin.
-- [ ] Настроить полный CI, preview и production для Python-приложения.
+- [x] Настроить полный CI, preview и production для Python-приложения.
 - [ ] Провести E2E-проверку и удалить старую Next.js-реализацию.
 
 Подробности и критерии совместимости находятся в
@@ -137,8 +133,9 @@ docs/python-migration.md подробный контракт и план пер�
 ## Деплой
 
 - GitHub: ветка `main` запускает production-сборку.
-- Vercel: preview создаётся для каждого pull request.
-- В Vercel должны быть заданы `NEXT_PUBLIC_SUPABASE_URL` и
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Vercel: preview создаётся для каждого pull request; Django развёрнут отдельным
+  проектом `polskiflow-python` с Root Directory `backend`.
+- Для Django в Vercel задаются `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+  `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` и `AUTH_COOKIE_SECURE`.
 - В Supabase Auth → URL Configuration должны быть добавлены production- и
   preview-адреса приложения.

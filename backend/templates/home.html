@@ -6,17 +6,18 @@
   </header>
   <section>
     <p class="muted">План на сегодня</p>
-    <h1>Cześć, {{ display_name }}! 👋</h1>
-    <p class="muted">Уровень A1 · серия 0 дней</p>
+    <h1>Cześć, {{ dashboard.display_name }}! 👋</h1>
+    <p class="muted">Уровень {{ dashboard.level }} · серия {{ dashboard.streak_days }} дн.</p>
   </section>
   <section class="card">
-    <h2>0 из {{ tasks|length }} заданий</h2>
+    <h2>{{ completed_count }} из {{ tasks|length }} заданий</h2>
     <ul class="plan">
-      {% for task in tasks %}<li>○ <strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></li>{% endfor %}
+      {% for task in tasks %}<li>{% if task.completed %}✓{% else %}○{% endif %} <strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></li>{% endfor %}
     </ul>
+    {% if not dashboard.available %}<p class="muted">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
   </section>
   <h2>Задания</h2>
   {% for task in tasks %}
-    <a class="card" href="{% url 'lesson' task.id %}"><span class="task-row"><span class="emoji">{{ task.emoji }}</span><span><strong>{{ task.title }}</strong><br><span class="muted">{{ task.description }} · ~{{ task.minutes }} мин</span></span></span></a>
+    <a class="card" href="{% url 'lesson' task.id %}"><span class="task-row"><span class="emoji">{{ task.emoji }}</span><span><strong>{{ task.title }}{% if task.completed %} · готово{% endif %}</strong><br><span class="muted">{{ task.description }} · ~{{ task.minutes }} мин</span></span></span></a>
   {% endfor %}
 {% endblock %}

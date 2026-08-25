@@ -1,7 +1,7 @@
 from datetime import date
 from unittest import TestCase
 
-from polskiflow.domain.progress import next_streak
+from polskiflow.domain.progress import current_streak, next_streak
 
 
 class NextStreakTests(TestCase):
@@ -22,3 +22,18 @@ class NextStreakTests(TestCase):
     def test_negative_streak_is_rejected(self):
         with self.assertRaises(ValueError):
             next_streak(-1, None, self.TODAY)
+
+    def test_current_streak_counts_unique_consecutive_dates(self):
+        self.assertEqual(
+            current_streak(
+                [self.TODAY, self.TODAY, date(2026, 8, 16), date(2026, 8, 15)],
+                self.TODAY,
+            ),
+            3,
+        )
+
+    def test_current_streak_survives_until_next_day(self):
+        self.assertEqual(current_streak([date(2026, 8, 16)], self.TODAY), 1)
+
+    def test_current_streak_expires_after_a_gap(self):
+        self.assertEqual(current_streak([date(2026, 8, 15)], self.TODAY), 0)
