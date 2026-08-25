@@ -4,9 +4,9 @@
   <div class="lesson-shell">
     <header class="lesson-header"><a class="back-button" href="{% url 'home' %}" aria-label="Вернуться на главную">←</a><strong>{{ task.plan_title }}</strong><span></span></header>
     <section id="lesson-flow">
-      {% if lesson_id == "words" or lesson_id == "review" %}
+      {% if lesson_kind == "words" or lesson_kind == "review" %}
         {% include "lessons/_flashcard.html" %}
-      {% elif lesson_id == "grammar" %}
+      {% elif lesson_kind == "grammar" %}
         <div class="card lesson-card theory-card">
           <p class="eyebrow">Короткая теория</p>
           <h1>{{ grammar.title }}</h1>

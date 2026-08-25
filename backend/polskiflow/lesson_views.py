@@ -14,21 +14,24 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
     lesson_task = task(lesson_id)
     if lesson_task is None:
         raise Http404
-    context = {"task": lesson_task, "lesson_id": lesson_id}
-    if lesson_id in {"words", "review"}:
-        context.update(_flashcard_context(lesson_id, 0, 0, False))
-    elif lesson_id == "grammar":
-        context["grammar"] = grammar()
+    lesson_kind = lesson_task["kind"]
+    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind}
+    if lesson_kind in {"words", "review"}:
+        context.update(_flashcard_context(lesson_id, lesson_kind, 0, 0, False))
+    elif lesson_kind == "grammar":
+        context["grammar"] = grammar(lesson_id)
     else:
-        context.update(_question_context(lesson_id, 0, 0, None))
+        context.update(_question_context(lesson_id, lesson_kind, 0, 0, None))
     return render(request, "lessons/page.html", context)
 
 
 @require_POST
 @require_browser_user
 def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
-    if task(lesson_id) is None:
+    lesson_task = task(lesson_id)
+    if lesson_task is None:
         raise Http404
+    lesson_kind = lesson_task["kind"]
     try:
         index = int(request.POST.get("index", "0"))
         score = int(request.POST.get("score", "0"))
@@ -36,30 +39,36 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         return HttpResponseBadRequest("Некорректное состояние урока")
     action = request.POST.get("action", "")
 
-    if lesson_id in {"words", "review"}:
-        cards = flashcards()
+    if lesson_kind in {"words", "review"}:
+        cards = _lesson_flashcards(lesson_id, lesson_kind)
         if not 0 <= index < len(cards) or not 0 <= score <= index:
             return HttpResponseBadRequest("Некорректное состояние урока")
         if action == "reveal":
-            context = _flashcard_context(lesson_id, index, score, True)
+            context = _flashcard_context(lesson_id, lesson_kind, index, score, True)
         elif action in {"again", "know"}:
             next_score = score + (action == "know")
             if action == "again":
-                context = _flashcard_context(lesson_id, index, score, False)
+                context = _flashcard_context(lesson_id, lesson_kind, index, score, False)
             elif index + 1 >= len(cards):
                 return _complete(request, lesson_id, next_score, len(cards))
             else:
-                context = _flashcard_context(lesson_id, index + 1, next_score, False)
+                context = _flashcard_context(
+                    lesson_id, lesson_kind, index + 1, next_score, False
+                )
         else:
             return HttpResponseBadRequest("Неизвестное действие")
         return render(request, "lessons/_flashcard.html", context)
 
-    grammar_content = grammar()
-    questions = grammar_content["questions"] if lesson_id == "grammar" and grammar_content else quiz()
+    grammar_content = grammar(lesson_id)
+    questions = (
+        grammar_content["questions"]
+        if lesson_kind == "grammar" and grammar_content
+        else quiz(lesson_id)
+    )
     if not 0 <= index < len(questions) or not 0 <= score <= index:
         return HttpResponseBadRequest("Некорректное состояние урока")
-    if action == "start" and lesson_id == "grammar":
-        context = _question_context(lesson_id, 0, 0, None)
+    if action == "start" and lesson_kind == "grammar":
+        context = _question_context(lesson_id, lesson_kind, 0, 0, None)
     elif action == "answer":
         try:
             selected = int(request.POST["choice"])
@@ -67,7 +76,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
             return HttpResponseBadRequest("Выберите ответ")
         if not 0 <= selected < len(questions[index]["options"]):
             return HttpResponseBadRequest("Некорректный ответ")
-        context = _question_context(lesson_id, index, score, selected)
+        context = _question_context(lesson_id, lesson_kind, index, score, selected)
     elif action == "next":
         try:
             selected = int(request.POST["selected"])
@@ -78,21 +87,63 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         next_score = score + (selected == questions[index]["correct"])
         if index + 1 >= len(questions):
             return _complete(request, lesson_id, next_score, len(questions))
-        context = _question_context(lesson_id, index + 1, next_score, None)
+        context = _question_context(
+            lesson_id, lesson_kind, index + 1, next_score, None
+        )
     else:
         return HttpResponseBadRequest("Неизвестное действие")
     return render(request, "lessons/_question.html", context)
 
 
-def _flashcard_context(lesson_id: str, index: int, score: int, revealed: bool) -> dict:
-    cards = flashcards()
-    return {"lesson_id": lesson_id, "card": cards[index], "index": index, "score": score, "revealed": revealed, "total": len(cards)}
+def _lesson_flashcards(lesson_id: str, lesson_kind: str) -> list[dict]:
+    return flashcards(lesson_id if lesson_kind == "words" else None)
 
 
-def _question_context(lesson_id: str, index: int, score: int, selected: int | None) -> dict:
-    grammar_content = grammar()
-    questions = grammar_content["questions"] if lesson_id == "grammar" and grammar_content else quiz()
-    return {"lesson_id": lesson_id, "question": questions[index], "index": index, "score": score, "selected": selected, "total": len(questions)}
+def _flashcard_context(
+    lesson_id: str,
+    lesson_kind: str,
+    index: int,
+    score: int,
+    revealed: bool,
+) -> dict:
+    cards = _lesson_flashcards(lesson_id, lesson_kind)
+    if not cards:
+        raise Http404
+    return {
+        "lesson_id": lesson_id,
+        "lesson_kind": lesson_kind,
+        "card": cards[index],
+        "index": index,
+        "score": score,
+        "revealed": revealed,
+        "total": len(cards),
+    }
+
+
+def _question_context(
+    lesson_id: str,
+    lesson_kind: str,
+    index: int,
+    score: int,
+    selected: int | None,
+) -> dict:
+    grammar_content = grammar(lesson_id)
+    questions = (
+        grammar_content["questions"]
+        if lesson_kind == "grammar" and grammar_content
+        else quiz(lesson_id)
+    )
+    if not questions:
+        raise Http404
+    return {
+        "lesson_id": lesson_id,
+        "lesson_kind": lesson_kind,
+        "question": questions[index],
+        "index": index,
+        "score": score,
+        "selected": selected,
+        "total": len(questions),
+    }
 
 
 def _complete(request: HttpRequest, lesson_id: str, score: int, total: int) -> HttpResponse:
