@@ -3,13 +3,6 @@ import uuid
 from django.db import models
 
 
-class LessonId(models.TextChoices):
-    WORDS = "words", "Новые слова"
-    GRAMMAR = "grammar", "Грамматика"
-    REVIEW = "review", "Повторение"
-    QUIZ = "quiz", "Мини-тест"
-
-
 class Level(models.TextChoices):
     A1 = "A1", "A1"
     A2 = "A2", "A2"
@@ -19,9 +12,64 @@ class Level(models.TextChoices):
     C2 = "C2", "C2"
 
 
+class LessonKind(models.TextChoices):
+    WORDS = "words", "Новые слова"
+    GRAMMAR = "grammar", "Грамматика"
+    REVIEW = "review", "Повторение"
+    QUIZ = "quiz", "Мини-тест"
+
+
+class Course(models.Model):
+    id = models.SlugField(primary_key=True, max_length=64)
+    title = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    level = models.CharField(max_length=2, choices=Level.choices, default=Level.A1)
+    position = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "courses"
+        ordering = ("position", "id")
+
+    def __str__(self):
+        return f"{self.level} · {self.title}"
+
+
+class Topic(models.Model):
+    id = models.SlugField(primary_key=True, max_length=80)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="topics")
+    title = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    emoji = models.CharField(max_length=8, blank=True)
+    position = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "topics"
+        ordering = ("position", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("course", "position"), name="unique_topic_position"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.course.level} · {self.title}"
+
+
 class Lesson(models.Model):
     id = models.SlugField(primary_key=True, max_length=32)
     title = models.CharField(max_length=120)
+    topic = models.ForeignKey(
+        Topic,
+        on_delete=models.SET_NULL,
+        related_name="lessons",
+        blank=True,
+        null=True,
+    )
+    kind = models.CharField(
+        max_length=16, choices=LessonKind.choices, default=LessonKind.WORDS
+    )
     plan_title = models.CharField(max_length=120)
     subtitle = models.CharField(max_length=160)
     description = models.TextField()
@@ -54,6 +102,29 @@ class Flashcard(models.Model):
 
     def __str__(self):
         return f"{self.polish} — {self.translation}"
+
+
+class LessonFlashcard(models.Model):
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="flashcard_links"
+    )
+    flashcard = models.ForeignKey(
+        Flashcard, on_delete=models.CASCADE, related_name="lesson_links"
+    )
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "lesson_flashcards"
+        ordering = ("position", "flashcard_id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("lesson", "flashcard"), name="unique_lesson_flashcard"
+            ),
+            models.UniqueConstraint(
+                fields=("lesson", "position"),
+                name="unique_lesson_flashcard_position",
+            ),
+        ]
 
 
 class Question(models.Model):
@@ -94,7 +165,7 @@ class Profile(models.Model):
 class LessonCompletion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField(db_index=True)
-    lesson_id = models.CharField(max_length=16, choices=LessonId.choices)
+    lesson_id = models.CharField(max_length=80)
     plan_date = models.DateField()
     cards_total = models.PositiveIntegerField(default=0)
     cards_known = models.PositiveIntegerField(default=0)

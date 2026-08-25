@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Flashcard, Lesson, Question
+from .models import Course, Flashcard, Lesson, LessonFlashcard, Question, Topic
 
 
 class QuestionInline(admin.StackedInline):
@@ -9,12 +9,36 @@ class QuestionInline(admin.StackedInline):
     fields = ("prompt", "options", "correct", "explanation", "position", "is_active")
 
 
-@admin.register(Lesson)
-class LessonAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "position", "is_active")
+class LessonFlashcardInline(admin.TabularInline):
+    model = LessonFlashcard
+    extra = 0
+    autocomplete_fields = ("flashcard",)
+    fields = ("flashcard", "position")
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ("title", "level", "position", "is_active")
+    list_filter = ("level", "is_active")
     list_editable = ("position", "is_active")
     search_fields = ("id", "title", "description")
-    inlines = (QuestionInline,)
+
+
+@admin.register(Topic)
+class TopicAdmin(admin.ModelAdmin):
+    list_display = ("title", "course", "position", "is_active")
+    list_filter = ("course", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("id", "title", "description")
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "kind", "topic", "position", "is_active")
+    list_filter = ("kind", "topic__course", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("id", "title", "description")
+    inlines = (QuestionInline, LessonFlashcardInline)
 
 
 @admin.register(Flashcard)

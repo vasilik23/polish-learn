@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
-from polskiflow.learning.models import Flashcard, Lesson, Question
+from polskiflow.learning.models import Flashcard, Lesson, LessonFlashcard, Question
 from polskiflow.progress_store import DashboardProgress
 
 
@@ -21,6 +21,7 @@ class LessonViewsTests(TestCase):
         for position, (lesson_id, title, plan_title) in enumerate(lesson_data):
             Lesson.objects.create(
                 id=lesson_id,
+                kind=lesson_id,
                 title=title,
                 plan_title=plan_title,
                 subtitle="5 заданий",
@@ -37,7 +38,10 @@ class LessonViewsTests(TestCase):
             ("nie", "nie", "нет"),
         ]
         for position, (card_id, polish, translation) in enumerate(cards):
-            Flashcard.objects.create(id=card_id, polish=polish, translation=translation, position=position)
+            card = Flashcard.objects.create(id=card_id, polish=polish, translation=translation, position=position)
+            LessonFlashcard.objects.create(
+                lesson_id="words", flashcard=card, position=position
+            )
         grammar_prompts = ["Слово «kawa»", "Слово «dom»", "Слово «miasto»"]
         for position, prompt in enumerate(grammar_prompts):
             Question.objects.create(lesson_id="grammar", prompt=prompt, options=["мужской", "женский", "средний"], correct=position % 3, explanation="Пояснение", position=position)

@@ -4,7 +4,16 @@ from datetime import date, datetime, timezone
 from django.db import connection
 from django.test import TransactionTestCase
 
-from .models import FlashcardReview, LessonCompletion, Profile
+from .models import (
+    Course,
+    Flashcard,
+    FlashcardReview,
+    Lesson,
+    LessonCompletion,
+    LessonFlashcard,
+    Profile,
+    Topic,
+)
 
 
 class LearningModelsTests(TransactionTestCase):
@@ -60,3 +69,23 @@ class LearningModelsTests(TransactionTestCase):
                 card_id="czesc",
             ).exists()
         )
+
+    def test_course_topic_and_lesson_vocabulary_are_related(self):
+        course = Course.objects.create(id="a1-test", title="A1 test")
+        topic = Topic.objects.create(id="greetings-test", course=course, title="Greetings")
+        lesson = Lesson.objects.create(
+            id="hello-test",
+            topic=topic,
+            kind="words",
+            title="Hello",
+            plan_title="Hello",
+            subtitle="Test",
+            description="Test lesson",
+        )
+        card = Flashcard.objects.create(
+            id="witaj-test", polish="witaj", translation="привет"
+        )
+        LessonFlashcard.objects.create(lesson=lesson, flashcard=card)
+
+        self.assertEqual(topic.lessons.get(), lesson)
+        self.assertEqual(lesson.flashcard_links.get().flashcard, card)
