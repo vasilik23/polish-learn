@@ -1,12 +1,76 @@
 """RLS-aware persistence through the Supabase Data API."""
 
 import json
-from datetime import date
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+
+from polskiflow.domain.progress import current_streak
+
+
+@dataclass(frozen=True)
+class DashboardProgress:
+    display_name: str
+    level: str
+    streak_days: int
+    completed_lesson_ids: frozenset[str]
+    available: bool
+
+    @property
+    def completed_count(self) -> int:
+        return len(self.completed_lesson_ids)
+
+
+def load_dashboard_progress(
+    access_token: str | None,
+    user_id: str,
+    fallback_name: str,
+) -> DashboardProgress:
+    """Read the signed-in learner's profile and completion history via RLS."""
+
+    if not _configured(access_token):
+        return _empty_dashboard(fallback_name)
+
+    profile = _get_rows(
+        "profiles",
+        {"select": "display_name,level", "id": f"eq.{user_id}", "limit": "1"},
+        access_token,
+    )
+    completions = _get_rows(
+        "lesson_completions",
+        {
+            "select": "lesson_id,plan_date",
+            "user_id": f"eq.{user_id}",
+            "order": "plan_date.desc",
+            "limit": "1500",
+        },
+        access_token,
+    )
+    profile_row = profile[0] if profile else {}
+    completion_rows = completions or []
+    today = _utc_today()
+    active_dates = []
+    completed_today = set()
+    for completion in completion_rows:
+        try:
+            plan_date = datetime.strptime(completion["plan_date"], "%Y-%m-%d").date()
+        except (KeyError, TypeError, ValueError):
+            continue
+        active_dates.append(plan_date)
+        if plan_date == today and completion.get("lesson_id"):
+            completed_today.add(completion["lesson_id"])
+
+    return DashboardProgress(
+        display_name=profile_row.get("display_name") or fallback_name,
+        level=profile_row.get("level") or "A1",
+        streak_days=current_streak(active_dates, today),
+        completed_lesson_ids=frozenset(completed_today),
+        available=profile is not None and completions is not None,
+    )
 
 
 def save_lesson_completion(
@@ -22,13 +86,13 @@ def save_lesson_completion(
     environment, a rejected or unavailable write is reported to the UI.
     """
 
-    if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY or not access_token:
+    if not _configured(access_token):
         return False
     query = urlencode({"on_conflict": "user_id,lesson_id,plan_date"})
     payload = {
         "user_id": user_id,
         "lesson_id": lesson_id,
-        "plan_date": date.today().isoformat(),
+        "plan_date": _utc_today().isoformat(),
         "cards_total": cards_total,
         "cards_known": cards_known,
     }
@@ -48,3 +112,32 @@ def save_lesson_completion(
             return response.status in (200, 201, 204)
     except (HTTPError, URLError, TimeoutError):
         return False
+
+
+def _get_rows(table: str, query: dict[str, str], access_token: str) -> list[dict] | None:
+    request = Request(
+        f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{urlencode(query)}",
+        headers={
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+            rows = json.load(response)
+            return rows if isinstance(rows, list) else None
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+
+def _configured(access_token: str | None) -> bool:
+    return bool(settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY and access_token)
+
+
+def _empty_dashboard(fallback_name: str) -> DashboardProgress:
+    return DashboardProgress(fallback_name, "A1", 0, frozenset(), False)
+
+
+def _utc_today():
+    return datetime.now(timezone.utc).date()

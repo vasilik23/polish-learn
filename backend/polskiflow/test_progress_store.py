@@ -1,9 +1,10 @@
 import json
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, override_settings
 
-from polskiflow.progress_store import save_lesson_completion
+from polskiflow.progress_store import load_dashboard_progress, save_lesson_completion
 
 
 class ProgressStoreTests(SimpleTestCase):
@@ -27,3 +28,54 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(request.headers["Authorization"], "Bearer access")
         self.assertEqual(json.loads(request.data)["cards_known"], 4)
         self.assertIn("on_conflict=user_id%2Clesson_id%2Cplan_date", request.full_url)
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+        SUPABASE_AUTH_TIMEOUT=2,
+    )
+    @patch("polskiflow.progress_store._utc_today", return_value=date(2026, 8, 17))
+    @patch("polskiflow.progress_store.urlopen")
+    def test_dashboard_uses_profile_and_completion_history(
+        self, mocked_urlopen, _mocked_today
+    ):
+        profile_response = MagicMock()
+        profile_response.read.return_value = json.dumps(
+            [{"display_name": "Василий", "level": "A2"}]
+        ).encode()
+        completions_response = MagicMock()
+        completions_response.read.return_value = json.dumps(
+            [
+                {"lesson_id": "words", "plan_date": "2026-08-17"},
+                {"lesson_id": "quiz", "plan_date": "2026-08-17"},
+                {"lesson_id": "grammar", "plan_date": "2026-08-16"},
+            ]
+        ).encode()
+        mocked_urlopen.return_value.__enter__.side_effect = [
+            profile_response,
+            completions_response,
+        ]
+
+        dashboard = load_dashboard_progress("access", "user-123", "learner")
+
+        self.assertEqual(dashboard.display_name, "Василий")
+        self.assertEqual(dashboard.level, "A2")
+        self.assertEqual(dashboard.streak_days, 2)
+        self.assertEqual(dashboard.completed_lesson_ids, {"words", "quiz"})
+        self.assertTrue(dashboard.available)
+        for call in mocked_urlopen.call_args_list:
+            request = call.args[0]
+            self.assertEqual(request.headers["Authorization"], "Bearer access")
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+    )
+    @patch("polskiflow.progress_store.urlopen", side_effect=TimeoutError)
+    def test_dashboard_falls_back_when_data_api_is_unavailable(self, _mocked_urlopen):
+        dashboard = load_dashboard_progress("access", "user-123", "learner")
+
+        self.assertEqual(dashboard.display_name, "learner")
+        self.assertEqual(dashboard.level, "A1")
+        self.assertEqual(dashboard.completed_count, 0)
+        self.assertFalse(dashboard.available)

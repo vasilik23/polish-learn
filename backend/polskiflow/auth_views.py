@@ -18,6 +18,7 @@ from polskiflow.auth import (
     sign_up,
 )
 from polskiflow.content import tasks
+from polskiflow.progress_store import load_dashboard_progress
 
 
 def require_browser_user(view):
@@ -100,11 +101,25 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 
 @require_browser_user
 def home(request: HttpRequest) -> HttpResponse:
-    display_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        fallback_name,
+    )
+    lesson_tasks = tasks()
+    for lesson_task in lesson_tasks:
+        lesson_task["completed"] = lesson_task["id"] in dashboard.completed_lesson_ids
+    completed_count = sum(task["completed"] for task in lesson_tasks)
     return render(
         request,
         "home.html",
-        {"user": request.supabase_user, "display_name": display_name, "tasks": tasks()},
+        {
+            "user": request.supabase_user,
+            "dashboard": dashboard,
+            "tasks": lesson_tasks,
+            "completed_count": completed_count,
+        },
     )
 
 

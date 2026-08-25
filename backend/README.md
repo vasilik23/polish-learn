@@ -41,6 +41,12 @@ cookies; истёкший access token автоматически обновля
 В production cookies помечаются `Secure`; локально это управляется переменной
 `AUTH_COOKIE_SECURE`.
 
+Главная страница читает профиль и историю `lesson_completions` через Supabase
+Data API с access token пользователя. Она показывает настоящее имя, уровень,
+текущую серию и выполненные сегодня уроки. Серия вычисляется по уникальным
+UTC-датам завершений; при временной недоступности Data API интерфейс остаётся
+рабочим и сообщает, что прогресс не загружен.
+
 Минимальные production-переменные Django:
 
 ```bash
@@ -103,5 +109,7 @@ Directory `backend`; платформа автоматически опреде�
 
 Обязательные переменные для Preview и Production перечислены в `.env.example`.
 Секреты (`DJANGO_SECRET_KEY`, `DATABASE_URL`) задаются только в Vercel Dashboard.
-Перед первым входом в `/admin/` выполните Django migrations и создайте отдельного
-superuser через доверенное локальное окружение с тем же `DATABASE_URL`.
+Production migrations уже применены, а служебные Django-таблицы защищены от
+браузерных ролей миграцией `007_protect_django_internal_tables.sql`. Для нового
+окружения перед первым входом в `/admin/` выполните Django migrations и создайте
+отдельного superuser через доверенное окружение с тем же `DATABASE_URL`.
