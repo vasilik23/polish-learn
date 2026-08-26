@@ -3,7 +3,7 @@ from django.urls import path
 from django.contrib import admin
 
 from polskiflow.auth import require_supabase_user
-from polskiflow.auth_views import home, login_view, logout_view, register_view
+from polskiflow.auth_views import course, home, login_view, logout_view, register_view
 from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.reading_views import (
     add_dictionary_word,
@@ -30,6 +30,7 @@ def current_user(request):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", home, name="home"),
+    path("course/", course, name="course"),
     path("login/", login_view, name="login"),
     path("register/", register_view, name="register"),
     path("logout/", logout_view, name="logout"),

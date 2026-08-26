@@ -74,7 +74,7 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Powtórka")
         self.assertContains(response, "Quiz")
 
-    def test_home_keeps_daily_plan_short_and_lists_course_topics(self):
+    def test_home_keeps_daily_plan_short_and_course_page_lists_topics(self):
         course = Course.objects.create(id="catalog-test", title="A1", level="A1")
         topic = Topic.objects.create(id="catalog-topic", course=course, title="Новая тема")
         extra = Lesson.objects.create(id="extra-lesson", topic=topic, title="Extra", plan_title="Extra", subtitle="A1", description="Каталог", position=5)
@@ -82,8 +82,18 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/")
 
         self.assertContains(response, "0 из 4")
-        self.assertContains(response, "Новая тема")
-        self.assertContains(response, extra.title)
+        self.assertNotContains(response, "Новая тема")
+        self.assertContains(response, "Задания на сегодня")
+
+        course_page = self.client.get("/course/")
+        self.assertContains(course_page, "Новая тема")
+        self.assertContains(course_page, extra.title)
+
+    def test_user_menu_contains_logout(self):
+        response = self.client.get("/")
+
+        self.assertContains(response, "Открыть меню пользователя")
+        self.assertContains(response, 'action="/logout/"')
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_home_marks_today_progress(self, mocked_progress):

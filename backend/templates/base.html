@@ -23,6 +23,9 @@
           <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">⌂</span><span>Сегодня</span>
           </a>
+          <a href="{% url 'course' %}" class="nav-link {% if request.resolver_match.url_name == 'course' or request.resolver_match.url_name == 'lesson' %}active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">◫</span><span>Курс</span>
+          </a>
           <a href="{% url 'reading-library' %}" class="nav-link {% if request.resolver_match.url_name == 'reading-library' or request.resolver_match.url_name == 'reader' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">▤</span><span>Читать</span>
           </a>
@@ -30,9 +33,15 @@
             <span class="nav-icon" aria-hidden="true">◇</span><span>Словарь</span>
           </a>
         </div>
-        <form class="nav-logout" method="post" action="{% url 'logout' %}">
-          {% csrf_token %}<button class="icon-button" type="submit" title="Выйти" aria-label="Выйти">↪</button>
-        </form>
+        <details class="user-menu">
+          <summary aria-label="Открыть меню пользователя"><span class="avatar">{{ request.supabase_user.email|first|upper|default:"U" }}</span></summary>
+          <div class="user-menu-popover">
+            <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}<button class="user-menu-action" type="submit">Выйти</button>
+            </form>
+          </div>
+        </details>
       </nav>
     {% endif %}
     <main class="page-shell {% if request.supabase_user %}with-nav{% endif %}">
