@@ -91,9 +91,13 @@ class LessonViewsTests(TestCase):
 
     def test_user_menu_contains_logout(self):
         response = self.client.get("/")
+        content = response.content.decode()
 
         self.assertContains(response, "Открыть меню пользователя")
+        self.assertContains(response, 'class="user-menu app-user-menu"')
         self.assertContains(response, 'action="/logout/"')
+        self.assertGreater(content.index("</nav>"), content.index('class="nav-links"'))
+        self.assertLess(content.index("</nav>"), content.index('class="user-menu app-user-menu"'))
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_home_marks_today_progress(self, mocked_progress):
