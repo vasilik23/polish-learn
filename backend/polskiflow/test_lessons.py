@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
-from polskiflow.learning.models import Flashcard, Lesson, LessonFlashcard, Question
+from polskiflow.learning.models import Course, Flashcard, Lesson, LessonFlashcard, Question, Topic
 from polskiflow.progress_store import DashboardProgress
 
 
@@ -12,6 +12,8 @@ class LessonViewsTests(TestCase):
     def setUpTestData(cls):
         Lesson.objects.all().delete()
         Flashcard.objects.all().delete()
+        course = Course.objects.create(id="lesson-test-course", title="A1", level="A1")
+        topic = Topic.objects.create(id="lesson-test-topic", course=course, title="Основы")
         lesson_data = [
             ("words", "Słówka dnia", "Новые слова"),
             ("grammar", "Gramatyka", "Грамматика"),
@@ -21,6 +23,7 @@ class LessonViewsTests(TestCase):
         for position, (lesson_id, title, plan_title) in enumerate(lesson_data):
             Lesson.objects.create(
                 id=lesson_id,
+                topic=topic,
                 kind=lesson_id,
                 title=title,
                 plan_title=plan_title,
@@ -70,6 +73,17 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Gramatyka")
         self.assertContains(response, "Powtórka")
         self.assertContains(response, "Quiz")
+
+    def test_home_keeps_daily_plan_short_and_lists_course_topics(self):
+        course = Course.objects.create(id="catalog-test", title="A1", level="A1")
+        topic = Topic.objects.create(id="catalog-topic", course=course, title="Новая тема")
+        extra = Lesson.objects.create(id="extra-lesson", topic=topic, title="Extra", plan_title="Extra", subtitle="A1", description="Каталог", position=5)
+
+        response = self.client.get("/")
+
+        self.assertContains(response, "0 из 4")
+        self.assertContains(response, "Новая тема")
+        self.assertContains(response, extra.title)
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_home_marks_today_progress(self, mocked_progress):
