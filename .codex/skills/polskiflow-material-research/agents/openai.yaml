@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolskiFlow Material Research"
+  short_description: "Поиск легальных учебных материалов"
+  default_prompt: "Use $polskiflow-material-research to research material for the next course topic."
