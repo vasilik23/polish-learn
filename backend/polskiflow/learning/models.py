@@ -77,6 +77,7 @@ class Lesson(models.Model):
     emoji = models.CharField(max_length=8, blank=True)
     theory_title = models.CharField(max_length=160, blank=True)
     theory_sections = models.JSONField(default=list, blank=True)
+    source_metadata = models.JSONField(default=dict, blank=True)
     position = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
@@ -93,6 +94,7 @@ class Flashcard(models.Model):
     polish = models.CharField(max_length=160)
     translation = models.CharField(max_length=240)
     example = models.TextField(blank=True)
+    source_metadata = models.JSONField(default=dict, blank=True)
     position = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
@@ -143,6 +145,7 @@ class ReadingText(models.Model):
     emoji = models.CharField(max_length=8, blank=True)
     paragraphs = models.JSONField(default=list)
     glossary = models.JSONField(default=dict)
+    source_metadata = models.JSONField(default=dict, blank=True)
     position = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 

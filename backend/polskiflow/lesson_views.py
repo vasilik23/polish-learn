@@ -96,7 +96,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
 
 
 def _lesson_flashcards(lesson_id: str, lesson_kind: str) -> list[dict]:
-    return flashcards(lesson_id if lesson_kind == "words" else None)
+    return flashcards(lesson_id)
 
 
 def _flashcard_context(

@@ -66,6 +66,7 @@ class ReadingTextAdmin(admin.ModelAdmin):
         (None, {"fields": ("id", "title", "description", "topic")}),
         ("Публикация", {"fields": ("level", "minutes", "emoji", "position", "is_active")}),
         ("Текст и словарь", {"fields": ("paragraphs", "glossary")}),
+        ("Источник", {"fields": ("source_metadata",), "classes": ("collapse",)}),
     )
 
 
