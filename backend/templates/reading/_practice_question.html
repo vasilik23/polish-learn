@@ -1,0 +1,21 @@
+<div class="progress-label">Слово {{ index|add:1 }} из {{ total }}</div>
+<div class="lesson-progress"><span style="--value: {% widthratio index|add:1 total 100 %}%"></span></div>
+<section class="card question-card practice-card">
+  <p class="eyebrow">Выбери перевод</p>
+  <h1>{{ question.word }}</h1>
+  {% if question.context %}<p class="practice-context">“{{ question.context|truncatechars:180 }}”</p>{% endif %}
+</section>
+{% if selected == None %}
+  <form class="options" method="post" action="{% url 'dictionary-practice-step' %}" hx-post="{% url 'dictionary-practice-step' %}" hx-target="#practice-flow" hx-swap="innerHTML">
+    {% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}">
+    {% for option in question.options %}<button type="submit" name="choice" value="{{ forloop.counter0 }}">{{ option }}</button>{% endfor %}
+  </form>
+{% else %}
+  <div class="options practice-answered">
+    {% for option in question.options %}<button type="button" disabled class="{% if forloop.counter0 == question.correct %}correct{% elif forloop.counter0 == selected %}wrong{% endif %}">{{ option }}</button>{% endfor %}
+  </div>
+  <div class="card feedback"><strong>{% if selected == question.correct %}Верно! 🎉{% else %}Правильный ответ: {{ question.correct_answer }}{% endif %}</strong></div>
+  <form method="post" action="{% url 'dictionary-practice-step' %}" hx-post="{% url 'dictionary-practice-step' %}" hx-target="#practice-flow" hx-swap="innerHTML">
+    {% csrf_token %}<input type="hidden" name="action" value="next"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><input type="hidden" name="selected" value="{{ selected }}"><button type="submit">{% if index|add:1 == total %}Завершить{% else %}Следующее слово →{% endif %}</button>
+  </form>
+{% endif %}

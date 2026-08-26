@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Тренировка слов · PolskiFlow{% endblock %}
+{% block content %}
+  <div class="lesson-shell">
+    <header class="lesson-header"><a class="back-button" href="{% url 'dictionary' %}" aria-label="Назад">←</a><strong>Тренировка слов</strong><span></span></header>
+    <div id="practice-flow">
+      {% if question %}
+        {% include "reading/_practice_question.html" %}
+      {% else %}
+        <div class="card empty-state practice-empty"><span>🧠</span><h1>Нужно минимум 4 слова</h1><p class="muted">Сейчас в словаре: {{ word_count }}. Добавляй слова из текстов, и тренировка откроется автоматически.</p><a class="button" href="{% url 'reading-library' %}">Найти новые слова</a>{% if not available %}<p class="save-error">Словарь временно недоступен.</p>{% endif %}</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

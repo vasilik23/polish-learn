@@ -89,3 +89,64 @@ class ReadingViewsTests(TestCase):
 
     def test_unknown_text_returns_404(self):
         self.assertEqual(self.client.get("/reading/no-story/").status_code, 404)
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_builds_quiz_from_personal_words(self, load_words):
+        load_words.return_value = self._practice_words()
+
+        response = self.client.get("/dictionary/practice/")
+
+        self.assertContains(response, "Выбери перевод")
+        self.assertContains(response, "dom")
+        self.assertContains(response, "дом")
+        self.assertContains(response, "молоко")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_requires_four_distinct_translations(self, load_words):
+        load_words.return_value = self._practice_words()[:3]
+
+        response = self.client.get("/dictionary/practice/")
+
+        self.assertContains(response, "Нужно минимум 4 слова")
+        self.assertContains(response, "Сейчас в словаре: 3")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_answer_shows_feedback(self, load_words):
+        load_words.return_value = self._practice_words()
+
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {"action": "answer", "index": 0, "score": 0, "choice": 0},
+        )
+
+        self.assertContains(response, "Верно!")
+        self.assertContains(response, "Следующее слово")
+
+    @patch("polskiflow.reading_views.save_lesson_completion", return_value=True)
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_completion_is_saved(self, load_words, save_completion):
+        load_words.return_value = self._practice_words()
+
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {"action": "next", "index": 3, "score": 3, "selected": 3},
+        )
+
+        self.assertContains(response, "4 / 4")
+        self.assertContains(response, "Результат добавлен")
+        save_completion.assert_called_once_with(
+            "access",
+            "00000000-0000-0000-0000-000000000123",
+            "dictionary-practice",
+            4,
+            4,
+        )
+
+    @staticmethod
+    def _practice_words():
+        return [
+            {"word": "dom", "translation": "дом", "context": "To jest dom."},
+            {"word": "mleko", "translation": "молоко", "context": "Lubię mleko."},
+            {"word": "chleb", "translation": "хлеб", "context": "Jem chleb."},
+            {"word": "okno", "translation": "окно", "context": "Otwieram okno."},
+        ]

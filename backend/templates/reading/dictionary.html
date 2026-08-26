@@ -3,7 +3,10 @@
 {% block content %}
   <header class="content-header">
     <div><p class="eyebrow">Moje słowa</p><h1>Личный словарь</h1><p class="muted">Слова, которые встретились тебе во время чтения.</p></div>
-    <a class="compact-button" href="{% url 'reading-library' %}">＋ Читать тексты</a>
+    <div class="header-actions">
+      {% if can_practice %}<a class="compact-button green-button" href="{% url 'dictionary-practice' %}">▶ Тренировать</a>{% endif %}
+      <a class="compact-button" href="{% url 'reading-library' %}">＋ Читать тексты</a>
+    </div>
   </header>
   {% if not available %}<p class="data-notice">Словарь временно недоступен. Попробуйте обновить страницу.</p>{% endif %}
   <section class="dictionary-list">
@@ -16,4 +19,5 @@
       <div class="card empty-state"><span>✨</span><h2>Словарь пока пуст</h2><p class="muted">Открой текст, нажми на незнакомое слово и сохрани перевод.</p><a class="button" href="{% url 'reading-library' %}">Выбрать текст</a></div>
     {% endfor %}
   </section>
+  {% if words and not can_practice %}<p class="practice-hint">Сохрани ещё {{ needed_words }} слова, чтобы открыть тренировку.</p>{% endif %}
 {% endblock %}
