@@ -55,3 +55,29 @@ class IntroductionsContentTests(TestCase):
         self.assertEqual(reading.level, "A1")
         self.assertEqual(len(reading.paragraphs), 3)
         self.assertIn("przedstawia", reading.glossary)
+
+
+class CountriesLanguagesContentTests(TestCase):
+    def test_topic_follows_introductions(self):
+        topic = Topic.objects.get(id="countries-languages")
+
+        self.assertEqual(topic.position, 1)
+        self.assertEqual(topic.course_id, "a1-foundations")
+
+    def test_topic_has_complete_vertical_block(self):
+        lessons = Lesson.objects.filter(topic_id="countries-languages")
+
+        self.assertEqual(lessons.count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="countries-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="countries-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="countries-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="countries-review").count(), 7)
+
+    def test_new_content_is_original_and_reading_has_glossary(self):
+        reading = ReadingText.objects.get(id="rozmowa-w-miedzynarodowej-grupie")
+
+        self.assertEqual(Lesson.objects.get(id="countries-words").source_metadata["origin"], "original")
+        self.assertEqual(Flashcard.objects.get(id="pochodzic").source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertIn("międzynarodowa", reading.glossary)
