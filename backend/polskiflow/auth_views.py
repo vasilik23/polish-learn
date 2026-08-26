@@ -17,7 +17,7 @@ from polskiflow.auth import (
     sign_out,
     sign_up,
 )
-from polskiflow.content import tasks
+from polskiflow.content import course_topics, tasks
 from polskiflow.progress_store import load_dashboard_progress
 
 
@@ -107,13 +107,18 @@ def home(request: HttpRequest) -> HttpResponse:
         request.supabase_user.id,
         fallback_name,
     )
-    lesson_tasks = tasks()
-    for lesson_task in lesson_tasks:
+    all_tasks = tasks()
+    for lesson_task in all_tasks:
         lesson_task["completed"] = lesson_task["id"] in dashboard.completed_lesson_ids
+    lesson_tasks = all_tasks[:4]
     completed_count = sum(task["completed"] for task in lesson_tasks)
     progress_percent = (
         round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
     )
+    topics = course_topics()
+    for topic in topics:
+        for lesson in topic["lessons"]:
+            lesson["completed"] = lesson["id"] in dashboard.completed_lesson_ids
     return render(
         request,
         "home.html",
@@ -123,6 +128,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "tasks": lesson_tasks,
             "completed_count": completed_count,
             "progress_percent": progress_percent,
+            "course_topics": topics,
         },
     )
 

@@ -8,6 +8,7 @@ from polskiflow.learning.models import (
     ReadingText,
     Topic,
 )
+from polskiflow.content import course_topics
 
 
 class IntroductionsContentTests(TestCase):
@@ -81,3 +82,10 @@ class CountriesLanguagesContentTests(TestCase):
         self.assertEqual(reading.source_metadata["origin"], "original")
         self.assertEqual(len(reading.paragraphs), 3)
         self.assertIn("międzynarodowa", reading.glossary)
+
+    def test_course_catalog_groups_lessons_by_topic(self):
+        topics = course_topics()
+
+        self.assertEqual([topic["id"] for topic in topics[:2]], ["introductions", "countries-languages"])
+        self.assertEqual(len(topics[0]["lessons"]), 4)
+        self.assertEqual(len(topics[1]["lessons"]), 4)

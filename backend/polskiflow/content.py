@@ -1,6 +1,8 @@
 """Database-backed lesson content queries."""
 
-from polskiflow.learning.models import Flashcard, Lesson, ReadingText
+from django.db.models import Prefetch
+
+from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
 
 
 def tasks() -> list[dict]:
@@ -25,6 +27,36 @@ def task(lesson_id: str) -> dict | None:
         "minutes": lesson.minutes,
         "emoji": lesson.emoji,
     }
+
+
+def course_topics() -> list[dict]:
+    active_lessons = Lesson.objects.filter(is_active=True).order_by("position", "id")
+    topics = Topic.objects.filter(
+        is_active=True, course__is_active=True
+    ).select_related("course").prefetch_related(
+        Prefetch("lessons", queryset=active_lessons, to_attr="active_lessons")
+    )
+    return [
+        {
+            "id": topic.id,
+            "title": topic.title,
+            "description": topic.description,
+            "emoji": topic.emoji,
+            "level": topic.course.level,
+            "lessons": [
+                {
+                    "id": lesson.id,
+                    "title": lesson.title,
+                    "description": lesson.description,
+                    "minutes": lesson.minutes,
+                    "emoji": lesson.emoji,
+                }
+                for lesson in topic.active_lessons
+            ],
+        }
+        for topic in topics
+        if topic.active_lessons
+    ]
 
 
 def flashcards(lesson_id: str | None = None) -> list[dict]:
