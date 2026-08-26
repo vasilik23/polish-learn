@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Course, Flashcard, Lesson, LessonFlashcard, Question, Topic
+from .models import (
+    Course,
+    Flashcard,
+    Lesson,
+    LessonFlashcard,
+    Question,
+    ReadingText,
+    Topic,
+)
 
 
 class QuestionInline(admin.StackedInline):
@@ -46,6 +54,19 @@ class FlashcardAdmin(admin.ModelAdmin):
     list_display = ("polish", "translation", "position", "is_active")
     list_editable = ("position", "is_active")
     search_fields = ("polish", "translation", "example")
+
+
+@admin.register(ReadingText)
+class ReadingTextAdmin(admin.ModelAdmin):
+    list_display = ("title", "level", "topic", "minutes", "position", "is_active")
+    list_filter = ("level", "topic__course", "is_active")
+    list_editable = ("position", "is_active")
+    search_fields = ("id", "title", "description")
+    fieldsets = (
+        (None, {"fields": ("id", "title", "description", "topic")}),
+        ("Публикация", {"fields": ("level", "minutes", "emoji", "position", "is_active")}),
+        ("Текст и словарь", {"fields": ("paragraphs", "glossary")}),
+    )
 
 
 @admin.register(Question)

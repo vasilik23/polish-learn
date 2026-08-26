@@ -10,6 +10,7 @@ class SupabaseSchemaRouter:
         "lesson",
         "flashcard",
         "lessonflashcard",
+        "readingtext",
         "question",
     }
 
