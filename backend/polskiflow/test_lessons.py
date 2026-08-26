@@ -42,6 +42,12 @@ class LessonViewsTests(TestCase):
             LessonFlashcard.objects.create(
                 lesson_id="words", flashcard=card, position=position
             )
+        review_card = Flashcard.objects.create(
+            id="jestem", polish="jestem", translation="я есть", position=5
+        )
+        LessonFlashcard.objects.create(
+            lesson_id="review", flashcard=review_card, position=0
+        )
         grammar_prompts = ["Слово «kawa»", "Слово «dom»", "Слово «miasto»"]
         for position, prompt in enumerate(grammar_prompts):
             Question.objects.create(lesson_id="grammar", prompt=prompt, options=["мужской", "женский", "средний"], correct=position % 3, explanation="Пояснение", position=position)
@@ -120,6 +126,13 @@ class LessonViewsTests(TestCase):
             "/lesson/grammar/step/", {"action": "start", "index": 0, "score": 0}
         )
         self.assertContains(exercise, "Слово «kawa»")
+
+    def test_review_uses_only_its_linked_flashcards(self):
+        page = self.client.get("/lesson/review/")
+
+        self.assertContains(page, "jestem")
+        self.assertContains(page, "Карточка 1 из 1")
+        self.assertNotContains(page, "cześć")
 
     def test_invalid_lesson_state_is_rejected(self):
         response = self.client.post(
