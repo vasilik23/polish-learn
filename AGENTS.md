@@ -1,5 +1,6 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# PolskiFlow development rules
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+- The production application is Python/Django in `backend/`.
+- Keep secrets out of Git; use local environment files and Vercel environment variables.
+- Run Django tests, system checks, and the migration drift check before publishing changes.
+- Treat `supabase/migrations/` as ordered production database changes; review RLS and grants for every new user-facing table.

@@ -1,168 +1,108 @@
 # PolskiFlow
 
-Mobile-first приложение для ежедневного изучения польского языка. Проект
-работает на Next.js и поэтапно переносится на Python/Django без остановки
-production-версии.
+Mobile-first приложение для ежедневного изучения польского языка. Основная и
+единственная production-версия работает на Python/Django, использует Supabase
+для PostgreSQL и авторизации и разворачивается в Vercel.
 
-## Возможности MVP
+Production: [polish-learn.vercel.app](https://polish-learn.vercel.app)
 
-- регистрация, вход и сессии через Supabase Auth;
-- ежедневный план и серия дней;
+## Что уже работает
+
+- регистрация, вход, безопасные пользовательские сессии через Supabase Auth;
+- ежедневный план, серия дней и сохранение завершённых уроков;
 - уроки слов, грамматики, повторения и мини-тест;
-- сохранение завершённых уроков в Supabase;
-- расчёт интервальных повторений SM-2;
-- адаптивный интерфейс для телефона;
-- библиотека адаптированных текстов с переводом слов;
-- личный словарь пользователя;
-- мини-тренировка на словах из личного словаря.
+- библиотека адаптированных текстов с интерактивным glossary;
+- личный словарь и тренировка сохранённых слов;
+- структура контента `Course → Topic → Lesson` и управление через Django Admin;
+- адаптивный интерфейс для телефона и desktop;
+- базовая реализация алгоритма интервальных повторений SM-2.
 
-## Технологии
+## Стек
 
-| Часть | Технологии | Статус |
-| --- | --- | --- |
-| Web | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | production |
-| Backend | Python 3.12, Django 5.2, Templates + HTMX | production-кандидат |
-| Данные и Auth | Supabase Postgres, Auth, RLS | production |
-| Деплой | GitHub + Vercel | настроен |
+| Часть | Технологии |
+| --- | --- |
+| Web | Python 3.12, Django 5.2, Templates, HTMX |
+| Данные и Auth | Supabase Postgres, Auth, RLS |
+| Доставка | GitHub Actions, Vercel |
 
-## Быстрый запуск Next.js
+Отдельный Next.js-клиент удалён после успешного переноса production. Для сборки
+и локальной разработки Node.js не требуется.
 
-Требования: Node.js 20+ и npm.
-
-```bash
-npm install
-cp .env.local.example .env.local
-npm run dev
-```
-
-Заполните в `.env.local` публичные параметры из Supabase:
-
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_PUBLIC_KEY
-```
-
-Приложение откроется на [http://localhost:3000](http://localhost:3000) и
-перенаправит гостя на `/login`. Для проверки с телефона в той же Wi-Fi сети:
-
-```bash
-npm run dev -- -H 0.0.0.0
-```
-
-После этого откройте `http://<IP-адрес-компьютера>:3000`.
-
-## Запуск Django
-
-Требования: Python 3.11+.
+## Быстрый запуск
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.lock
+cp .env.example .env.local
+python manage.py migrate
 python manage.py check
 python manage.py test
 python manage.py runserver
 ```
 
-Для проверки Supabase access token добавьте публичные параметры:
+По умолчанию используется локальная SQLite. Для Supabase Auth заполните в
+локальном окружении публичные `SUPABASE_URL` и `SUPABASE_ANON_KEY`. Для работы
+Django Admin с production-подобным PostgreSQL дополнительно задайте
+`DATABASE_URL`; секреты нельзя коммитить в Git.
 
-```bash
-export SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-export SUPABASE_ANON_KEY=YOUR_PUBLIC_KEY
-```
+Подробная настройка окружения, базы и Vercel описана в
+[`backend/README.md`](backend/README.md).
 
-Диагностический endpoint `GET /api/auth/me/` принимает заголовок
-`Authorization: Bearer <access-token>`. Модели пользовательского прогресса
-отображают существующие таблицы Supabase как `managed = False`; служебные
-таблицы Django создаются обычной командой `manage.py migrate`.
-
-## Supabase
-
-Для новой пустой базы сначала выполните `supabase/schema.sql`, затем применяйте
-последовательные миграции из `supabase/migrations/` по номеру. Production
-приведён к состоянию миграций `002`–`007`: пользовательские данные защищены
-RLS, учебный контент доступен в Django Admin, а служебные таблицы Django закрыты
-от браузерных ролей Supabase.
-
-## Полезные команды
-
-```bash
-# Next.js
-npm run lint
-npm run build
-
-# Django и доменное ядро
-cd backend
-.venv/bin/python manage.py check
-.venv/bin/python manage.py test
-```
-
-## Маршруты
+## Основные маршруты
 
 | Путь | Назначение |
 | --- | --- |
-| `/login` | вход |
-| `/register` | регистрация |
+| `/login/`, `/register/` | авторизация |
 | `/` | ежедневный план |
-| `/lesson/words` | новые слова |
-| `/lesson/grammar` | грамматика |
-| `/lesson/review` | повторение карточек |
-| `/lesson/quiz` | мини-тест |
-| `/reading/` | библиотека адаптированных текстов |
+| `/lesson/words/` | новые слова |
+| `/lesson/grammar/` | грамматика |
+| `/lesson/review/` | повторение карточек |
+| `/lesson/quiz/` | мини-тест |
+| `/reading/` | библиотека текстов |
 | `/dictionary/` | личный словарь |
-| `/dictionary/practice/` | тренировка сохранённых слов |
+| `/dictionary/practice/` | тренировка слов |
+| `/admin/` | управление учебным контентом |
+| `/health/` | проверка состояния приложения |
 
-## Структура
+## Структура репозитория
 
 ```text
-src/                    текущий Next.js-интерфейс и API
-backend/                Django и независимое Python-доменное ядро
+backend/                Django-приложение, шаблоны, стили и тесты
 supabase/               эталонная схема и последовательные SQL-миграции
-docs/python-migration.md подробный контракт и план переноса
+docs/python-migration.md история переноса и актуальный план развития
+.github/workflows/      Python CI
 ```
 
-## План переноса на Python
+## Проверки
 
-- [x] Зафиксировать поведение MVP и инфраструктуру.
-- [x] Перенести SM-2 и расчёт серии дней в Python с тестами.
-- [x] Создать Django-проект и модели Supabase.
-- [x] Перенести авторизацию и защищённые маршруты.
-- [x] Перенести страницы на Django Templates + HTMX.
-- [x] Перенести учебный контент в PostgreSQL и Django Admin.
-- [x] Настроить полный CI, preview и production для Python-приложения.
-- [ ] Провести E2E-проверку Django и переключить основной production-домен.
-- [x] Добавить курсы, темы и привязку слов к урокам.
-- [x] Добавить адаптированные тексты и личный словарь.
-- [x] Добавить первую тренировку для слов из личного словаря.
-- [ ] Отключить старый Vercel-проект Next.js и удалить legacy-код из репозитория.
-- [ ] Провести аудит репозитория: зависимости, конфигурация, CI и неиспользуемые файлы.
-- [ ] Исследовать открытые учебные материалы и составить каталог источников с лицензиями.
-- [ ] Наполнить курсы текстами, словарями, грамматикой и заданиями по уровням CEFR.
-- [ ] Добавить страницу профиля пользователя и его настройки.
-- [ ] Добавить тёмную тему с сохранением выбора пользователя.
-- [ ] Расширить набор тренировок и подключить SM-2 к повторению.
+```bash
+cd backend
+.venv/bin/python manage.py test
+.venv/bin/python manage.py check
+.venv/bin/python manage.py makemigrations --check --dry-run
+```
 
-### Ближайший порядок работ
+Эти проверки выполняются GitHub Actions для pull request и `main`. Vercel
+автоматически разворачивает Django-проект `polskiflow-python` с корневой
+директорией `backend`.
 
-1. Проверить Django production сквозным сценарием и назначить его основной версией.
-2. Отключить прежний Next.js deployment, затем удалить `src/`, Node.js-зависимости
-   и конфигурацию только после подтверждения, что rollback больше не нужен.
-3. Повторно проверить CI, Vercel, документацию, секреты и состав репозитория.
-4. Найти подходящие материалы в открытых источниках. Для каждого материала
-   зафиксировать URL, автора, лицензию и допустимый способ адаптации; не копировать
-   защищённые учебники и статьи без разрешения.
-5. Составить контент-план A1 → A2 и начать системное наполнение через Django Admin.
+## Supabase
 
-Подробности и критерии совместимости находятся в
+Для новой пустой базы сначала применяется `supabase/schema.sql`, затем миграции
+из `supabase/migrations/` в порядке их имён. Пользовательские данные защищены
+RLS; приложение обращается к ним с access token пользователя и не использует
+`service_role`.
+
+## Следующие этапы
+
+1. Исследовать открытые учебные материалы и завести реестр URL, авторов,
+   лицензий и способов адаптации.
+2. Составить связный контент-план и наполнить уровни A1 → A2.
+3. Добавить страницу профиля и пользовательские настройки.
+4. Добавить тёмную тему с сохранением выбора.
+5. Подключить SM-2 к экрану повторения и расширить типы упражнений.
+
+История завершённых этапов и правила работы с контентом находятся в
 [`docs/python-migration.md`](docs/python-migration.md).
-
-## Деплой
-
-- GitHub: ветка `main` запускает production-сборку.
-- Vercel: preview создаётся для каждого pull request; Django развёрнут отдельным
-  проектом `polskiflow-python` с Root Directory `backend`.
-- Для Django в Vercel задаются `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-  `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` и `AUTH_COOKIE_SECURE`.
-- В Supabase Auth → URL Configuration должны быть добавлены production- и
-  preview-адреса приложения.
