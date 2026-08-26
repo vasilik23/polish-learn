@@ -13,6 +13,7 @@ from polskiflow.dictionary_store import (
     load_personal_words,
     save_personal_word,
 )
+from polskiflow.progress_store import save_lesson_completion
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
 
@@ -42,8 +43,85 @@ def dictionary(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "reading/dictionary.html",
-        {"words": words or [], "available": words is not None},
+        {
+            "words": words or [],
+            "available": words is not None,
+            "can_practice": len(words or []) >= 4,
+            "needed_words": max(0, 4 - len(words or [])),
+        },
     )
+
+
+@require_browser_user
+def dictionary_practice(request: HttpRequest) -> HttpResponse:
+    words = load_personal_words(
+        request.supabase_access_token, request.supabase_user.id
+    )
+    questions = _practice_questions(words or [])
+    return render(
+        request,
+        "reading/practice.html",
+        {
+            "available": words is not None,
+            "word_count": len(words or []),
+            "question": questions[0] if questions else None,
+            "total": len(questions),
+            "index": 0,
+            "score": 0,
+            "selected": None,
+        },
+    )
+
+
+@require_POST
+@require_browser_user
+def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
+    words = load_personal_words(
+        request.supabase_access_token, request.supabase_user.id
+    )
+    questions = _practice_questions(words or [])
+    try:
+        index = int(request.POST.get("index", "0"))
+        score = int(request.POST.get("score", "0"))
+    except ValueError:
+        return HttpResponseBadRequest("Некорректное состояние тренировки")
+    if not questions or not 0 <= index < len(questions) or not 0 <= score <= index:
+        return HttpResponseBadRequest("Некорректное состояние тренировки")
+    action = request.POST.get("action", "")
+    question = questions[index]
+    if action == "answer":
+        try:
+            selected = int(request.POST["choice"])
+        except (KeyError, ValueError):
+            return HttpResponseBadRequest("Выберите ответ")
+        if not 0 <= selected < len(question["options"]):
+            return HttpResponseBadRequest("Некорректный ответ")
+        context = _practice_context(questions, index, score, selected)
+    elif action == "next":
+        try:
+            selected = int(request.POST["selected"])
+        except (KeyError, ValueError):
+            return HttpResponseBadRequest("Сначала ответьте")
+        if not 0 <= selected < len(question["options"]):
+            return HttpResponseBadRequest("Некорректный ответ")
+        next_score = score + (selected == question["correct"])
+        if index + 1 >= len(questions):
+            saved = save_lesson_completion(
+                request.supabase_access_token,
+                request.supabase_user.id,
+                "dictionary-practice",
+                len(questions),
+                next_score,
+            )
+            return render(
+                request,
+                "reading/_practice_complete.html",
+                {"score": next_score, "total": len(questions), "saved": saved},
+            )
+        context = _practice_context(questions, index + 1, next_score, None)
+    else:
+        return HttpResponseBadRequest("Неизвестное действие")
+    return render(request, "reading/_practice_question.html", context)
 
 
 @require_POST
@@ -104,3 +182,48 @@ def _tokenize(paragraphs: list, glossary: dict) -> list[list[dict]]:
                 )
         result.append(tokens)
     return result
+
+
+def _practice_questions(words: list[dict], limit: int = 10) -> list[dict]:
+    usable = [
+        word
+        for word in words
+        if isinstance(word.get("word"), str)
+        and isinstance(word.get("translation"), str)
+        and word["word"].strip()
+        and word["translation"].strip()
+    ]
+    translations = list(dict.fromkeys(word["translation"] for word in usable))
+    if len(translations) < 4:
+        return []
+    questions = []
+    for index, word in enumerate(usable[:limit]):
+        correct_translation = word["translation"]
+        distractors = [item for item in translations if item != correct_translation][:3]
+        if len(distractors) < 3:
+            continue
+        options = distractors + [correct_translation]
+        correct = index % 4
+        options[correct], options[-1] = options[-1], options[correct]
+        questions.append(
+            {
+                "word": word["word"],
+                "context": word.get("context") or "",
+                "options": options,
+                "correct": correct,
+                "correct_answer": correct_translation,
+            }
+        )
+    return questions
+
+
+def _practice_context(
+    questions: list[dict], index: int, score: int, selected: int | None
+) -> dict:
+    return {
+        "question": questions[index],
+        "index": index,
+        "score": score,
+        "selected": selected,
+        "total": len(questions),
+    }

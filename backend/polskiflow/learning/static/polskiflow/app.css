@@ -94,6 +94,9 @@ p { line-height: 1.65; }
 .content-header h1 { margin-bottom: .55rem; }
 .content-header p:last-child { max-width: 42rem; margin: 0; }
 .compact-button { display: inline-flex; align-items: center; min-height: 2.7rem; padding: .7rem 1rem; border-radius: .85rem; background: var(--primary); color: white; font-size: .82rem; font-weight: 800; text-decoration: none; }
+.header-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.green-button { background: var(--green); }
+.green-button:hover { background: #208c5b; }
 .reading-grid { display: grid; gap: 1rem; }
 .reading-card { display: grid; grid-template-columns: 5.3rem 1fr; overflow: hidden; border: 1px solid var(--line); border-radius: 1.3rem; background: white; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: transform .18s, box-shadow .18s; }
 .reading-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
@@ -134,6 +137,13 @@ p { line-height: 1.65; }
 .dictionary-word small { margin-top: .4rem; color: var(--muted); font-family: Georgia, serif; line-height: 1.45; }
 .word-delete { width: 2.4rem; min-height: 2.4rem; margin: 0; padding: 0; border-radius: 50%; background: var(--red-soft); color: var(--red); font-size: 1.2rem; }
 .word-delete:hover { background: #ffdfe5; }
+.practice-hint { margin: 1rem 0 0; padding: .8rem 1rem; border-radius: .85rem; background: #fff8e8; color: #8a641b; font-size: .82rem; text-align: center; }
+.practice-card { min-height: 13rem; text-align: center; }
+.practice-card h1 { margin: .3rem 0; font-size: clamp(2.3rem, 10vw, 3.5rem); color: var(--primary-dark); }
+.practice-context { margin: .7rem auto 0; color: var(--muted); font-family: Georgia, serif; font-size: .92rem; }
+.practice-answered button:disabled { opacity: 1; cursor: default; }
+.practice-empty { min-height: 25rem; align-content: center; }
+.practice-empty h1 { margin-top: .7rem; }
 
 .lesson-shell { width: min(100%, 38rem); margin: 0 auto; }
 .lesson-header { display: grid; grid-template-columns: 2.5rem 1fr 2.5rem; align-items: center; margin-bottom: 1.2rem; text-align: center; }

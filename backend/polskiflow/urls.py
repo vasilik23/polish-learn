@@ -8,6 +8,8 @@ from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.reading_views import (
     add_dictionary_word,
     dictionary,
+    dictionary_practice,
+    dictionary_practice_step,
     reader,
     reading_library,
     remove_dictionary_word,
@@ -37,6 +39,8 @@ urlpatterns = [
     path("reading/<slug:text_id>/", reader, name="reader"),
     path("reading/<slug:text_id>/save/", add_dictionary_word, name="add-dictionary-word"),
     path("dictionary/", dictionary, name="dictionary"),
+    path("dictionary/practice/", dictionary_practice, name="dictionary-practice"),
+    path("dictionary/practice/step/", dictionary_practice_step, name="dictionary-practice-step"),
     path("dictionary/<uuid:word_id>/delete/", remove_dictionary_word, name="remove-dictionary-word"),
     path("health/", health, name="health"),
     path("api/auth/me/", current_user, name="current-user"),
