@@ -1,10 +1,10 @@
 # PolskiFlow Python backend
 
-Здесь находятся доменное ядро и Django-приложение, подготовленное к роли основной
-production-версии. После сквозной проверки Django старый Next.js deployment будет
-отключён, а legacy-код и Node.js-инфраструктура — удалены отдельным безопасным
-этапом. Следом начнётся системное наполнение контентом с реестром источников и
-лицензий; подробный порядок описан в `docs/python-migration.md`.
+Здесь находятся доменное ядро и основное production-приложение PolskiFlow.
+Сквозная проверка Django завершена, основной домен переключён, старый Next.js
+deployment и legacy-код удалены. Следующий этап — системное наполнение контентом
+с реестром источников и лицензий; подробный порядок описан в
+`docs/python-migration.md`.
 
 Запуск тестов из корня репозитория:
 
@@ -138,8 +138,9 @@ statements. Для локальных migrations удобнее Direct или Se
 ## CI и Vercel
 
 GitHub Actions запускает тесты, system check и проверку миграций при каждом PR,
-затрагивающем `backend/`. Для Vercel используется отдельный проект с Root
-Directory `backend`; платформа автоматически определяет Django по `manage.py`.
+затрагивающем `backend/`. Vercel-проект `polskiflow-python` использует Root
+Directory `backend`; платформа автоматически определяет Django по `manage.py`,
+а основной production-адрес — `https://polish-learn.vercel.app`.
 
 Обязательные переменные для Preview и Production перечислены в `.env.example`.
 Секреты (`DJANGO_SECRET_KEY`, `DATABASE_URL`) задаются только в Vercel Dashboard.
