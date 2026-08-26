@@ -115,10 +115,6 @@ def home(request: HttpRequest) -> HttpResponse:
     progress_percent = (
         round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
     )
-    topics = course_topics()
-    for topic in topics:
-        for lesson in topic["lessons"]:
-            lesson["completed"] = lesson["id"] in dashboard.completed_lesson_ids
     return render(
         request,
         "home.html",
@@ -128,8 +124,26 @@ def home(request: HttpRequest) -> HttpResponse:
             "tasks": lesson_tasks,
             "completed_count": completed_count,
             "progress_percent": progress_percent,
-            "course_topics": topics,
         },
+    )
+
+
+@require_browser_user
+def course(request: HttpRequest) -> HttpResponse:
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        fallback_name,
+    )
+    topics = course_topics()
+    for topic in topics:
+        for lesson in topic["lessons"]:
+            lesson["completed"] = lesson["id"] in dashboard.completed_lesson_ids
+    return render(
+        request,
+        "course.html",
+        {"dashboard": dashboard, "course_topics": topics},
     )
 
 

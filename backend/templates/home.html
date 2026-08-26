@@ -2,7 +2,6 @@
 {% block content %}
   <header class="dashboard-header">
     <div class="mobile-brand"><span class="brand-mark">P</span> PolskiFlow</div>
-    <div class="avatar" aria-label="Профиль {{ dashboard.display_name }}">{{ dashboard.display_name|first|upper }}</div>
   </header>
 
   <section class="hero">
@@ -31,31 +30,14 @@
     </section>
 
     <section id="tasks">
-      <a class="reading-promo" href="{% url 'reading-library' %}">
-        <span class="reading-promo-icon">📖</span>
-        <span><small>Новый формат</small><strong>Читай по-польски</strong><span>Нажимай на незнакомые слова и собирай свой словарь</span></span>
-        <b aria-hidden="true">→</b>
-      </a>
-      <div class="section-heading"><h2>Курс по темам</h2><span>A1 → C1</span></div>
-      <div class="topic-list">
-        {% for topic in course_topics %}
-          <section class="topic-card" id="topic-{{ topic.id }}">
-            <header class="topic-header">
-              <span class="topic-emoji">{{ topic.emoji }}</span>
-              <span><small>{{ topic.level }} · Тема {{ forloop.counter }}</small><strong>{{ topic.title }}</strong><span>{{ topic.description }}</span></span>
-            </header>
-            <div class="task-list">
-              {% for task in topic.lessons %}
-                <a class="task-card" href="{% url 'lesson' task.id %}">
-                  <span class="task-icon">{{ task.emoji }}</span>
-                  <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
-                  <span class="task-arrow" aria-hidden="true">→</span>
-                </a>
-              {% endfor %}
-            </div>
-          </section>
-        {% empty %}
-          <div class="card empty-state"><span>🧭</span><h2>Темы скоро появятся</h2></div>
+      <div class="section-heading"><h2>Задания на сегодня</h2><span>≈ 25 минут</span></div>
+      <div class="task-list">
+        {% for task in tasks %}
+          <a class="task-card" href="{% url 'lesson' task.id %}">
+            <span class="task-icon">{{ task.emoji }}</span>
+            <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
+            <span class="task-arrow" aria-hidden="true">→</span>
+          </a>
         {% endfor %}
       </div>
     </section>
