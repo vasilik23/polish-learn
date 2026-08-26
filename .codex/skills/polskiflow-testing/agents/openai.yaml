@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolskiFlow Testing"
+  short_description: "Полная проверка Django и production"
+  default_prompt: "Use $polskiflow-testing to verify the current PolskiFlow change."

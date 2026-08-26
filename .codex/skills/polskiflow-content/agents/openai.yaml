@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolskiFlow Content"
+  short_description: "Наполнение курса от A1 до C1"
+  default_prompt: "Use $polskiflow-content to build a complete vertical course topic."

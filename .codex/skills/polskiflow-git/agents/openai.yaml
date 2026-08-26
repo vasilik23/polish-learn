@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolskiFlow Git Workflow"
+  short_description: "Безопасный GitHub и релизный процесс"
+  default_prompt: "Use $polskiflow-git to publish and deliver the current change."

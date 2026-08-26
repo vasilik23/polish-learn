@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolskiFlow Development"
+  short_description: "Разработка фронтенда и Django-бэкенда"
+  default_prompt: "Use $polskiflow-development to implement the next PolskiFlow feature."
