@@ -33,16 +33,16 @@
             <span class="nav-icon" aria-hidden="true">◇</span><span>Словарь</span>
           </a>
         </div>
-        <details class="user-menu">
-          <summary aria-label="Открыть меню пользователя"><span class="avatar">{{ request.supabase_user.email|first|upper|default:"U" }}</span></summary>
-          <div class="user-menu-popover">
-            <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}<button class="user-menu-action" type="submit">Выйти</button>
-            </form>
-          </div>
-        </details>
       </nav>
+      <details class="user-menu app-user-menu">
+        <summary aria-label="Открыть меню пользователя"><span class="avatar">{{ request.supabase_user.email|first|upper|default:"U" }}</span></summary>
+        <div class="user-menu-popover">
+          <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}<button class="user-menu-action" type="submit">Выйти</button>
+          </form>
+        </div>
+      </details>
     {% endif %}
     <main class="page-shell {% if request.supabase_user %}with-nav{% endif %}">
       {% block content %}{% endblock %}

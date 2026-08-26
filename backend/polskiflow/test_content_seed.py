@@ -89,3 +89,33 @@ class CountriesLanguagesContentTests(TestCase):
         self.assertEqual([topic["id"] for topic in topics[:2]], ["introductions", "countries-languages"])
         self.assertEqual(len(topics[0]["lessons"]), 4)
         self.assertEqual(len(topics[1]["lessons"]), 4)
+
+
+class FamilyContentTests(TestCase):
+    def test_family_topic_is_third(self):
+        topic = Topic.objects.get(id="family")
+
+        self.assertEqual(topic.position, 2)
+        self.assertEqual(topic.course_id, "a1-foundations")
+
+    def test_family_has_complete_vertical_block(self):
+        self.assertEqual(Lesson.objects.filter(topic_id="family").count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="family-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="family-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="family-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="family-review").count(), 7)
+
+    def test_family_content_is_original_and_reading_has_glossary(self):
+        reading = ReadingText.objects.get(id="niedziela-u-babci")
+
+        self.assertEqual(Lesson.objects.get(id="family-words").source_metadata["origin"], "original")
+        self.assertEqual(Flashcard.objects.get(id="rodzina").source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertIn("odwiedza", reading.glossary)
+
+    def test_course_catalog_lists_family_after_first_topics(self):
+        topics = course_topics()
+
+        self.assertEqual([topic["id"] for topic in topics[:3]], ["introductions", "countries-languages", "family"])
+        self.assertEqual(len(topics[2]["lessons"]), 4)
