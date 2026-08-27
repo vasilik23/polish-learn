@@ -220,3 +220,28 @@ class CityDirectionsContentTests(TestCase):
             [topic["id"] for topic in course_topics()[:7]],
             ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions"],
         )
+
+
+class TimeMeetingsContentTests(TestCase):
+    def test_time_meetings_is_eighth_complete_topic(self):
+        topic = Topic.objects.get(id="time-meetings")
+        self.assertEqual(topic.position, 7)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="time-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="time-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="time-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="time-review").count(), 7)
+
+    def test_time_reading_uses_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="spotkanie-w-piatek")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["tygodniu"]["lemma"], "tydzień")
+        self.assertEqual(reading.glossary["jedzie"]["lemma"], "jechać")
+        self.assertEqual(reading.glossary["cieszą"]["lemma"], "cieszyć się")
+
+    def test_catalog_lists_first_eight_curriculum_topics(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:8]],
+            ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions", "time-meetings"],
+        )
