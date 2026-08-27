@@ -3,17 +3,23 @@
 from __future__ import annotations
 
 import json
+import logging
+import ssl
 from dataclasses import dataclass
 from functools import wraps
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+import certifi
 from django.conf import settings
 from django.http import JsonResponse
 
 ACCESS_COOKIE = "polskiflow_access_token"
 REFRESH_COOKIE = "polskiflow_refresh_token"
 REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
+AUTH_NETWORK_ATTEMPTS = 2
+HTTPS_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -92,7 +98,11 @@ def authenticate_access_token(token: str) -> SupabaseUser | None:
         },
     )
     try:
-        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+        with urlopen(
+            request,
+            timeout=settings.SUPABASE_AUTH_TIMEOUT,
+            context=HTTPS_CONTEXT,
+        ) as response:
             payload = json.load(response)
     except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
         return None
@@ -176,15 +186,33 @@ def _auth_request(
         headers=headers,
         method="POST",
     )
-    try:
-        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
-            if response.status == 204:
-                return {}
-            result = json.load(response)
-    except HTTPError as error:
-        raise SupabaseAuthError(_http_error_message(error)) from error
-    except (URLError, TimeoutError, json.JSONDecodeError) as error:
-        raise SupabaseAuthError("Сервис авторизации временно недоступен") from error
+    for attempt in range(AUTH_NETWORK_ATTEMPTS):
+        try:
+            with urlopen(
+                request,
+                timeout=settings.SUPABASE_AUTH_TIMEOUT,
+                context=HTTPS_CONTEXT,
+            ) as response:
+                if response.status == 204:
+                    return {}
+                result = json.load(response)
+        except HTTPError as error:
+            raise SupabaseAuthError(_http_error_message(error)) from error
+        except json.JSONDecodeError as error:
+            raise SupabaseAuthError("Сервис авторизации вернул некорректный ответ") from error
+        except (URLError, TimeoutError) as error:
+            logger.warning(
+                "Supabase Auth network request failed (attempt %s/%s): %s",
+                attempt + 1,
+                AUTH_NETWORK_ATTEMPTS,
+                type(error).__name__,
+            )
+            if attempt + 1 == AUTH_NETWORK_ATTEMPTS:
+                raise SupabaseAuthError(
+                    "Сервис авторизации временно недоступен"
+                ) from error
+            continue
+        break
     if not isinstance(result, dict):
         raise SupabaseAuthError("Некорректный ответ сервиса авторизации")
     return result
