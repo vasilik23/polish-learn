@@ -147,3 +147,27 @@ class DailyRoutineContentTests(TestCase):
             [topic["id"] for topic in topics[:4]],
             ["introductions", "countries-languages", "family", "daily-routine"],
         )
+
+
+class HomeContentTests(TestCase):
+    def test_home_is_fifth_complete_topic(self):
+        topic = Topic.objects.get(id="home")
+        self.assertEqual(topic.position, 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="home-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="home-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="home-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="home-review").count(), 7)
+
+    def test_home_reading_has_lemma_glossary(self):
+        reading = ReadingText.objects.get(id="nowe-mieszkanie-marty")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["piętrze"]["lemma"], "piętro")
+        self.assertEqual(reading.glossary["stoją"]["lemma"], "stać")
+
+    def test_catalog_lists_home_after_daily_routine(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:5]],
+            ["introductions", "countries-languages", "family", "daily-routine", "home"],
+        )
