@@ -106,6 +106,17 @@ class LessonViewsTests(TestCase):
         self.assertGreater(content.index("</nav>"), content.index('class="nav-links"'))
         self.assertLess(content.index("</nav>"), content.index('class="user-menu app-user-menu"'))
 
+    def test_base_template_offers_persisted_accessible_theme_selection(self):
+        response = self.client.get("/")
+
+        self.assertContains(response, 'data-theme-select')
+        self.assertContains(response, 'aria-label="Цветовая тема"')
+        self.assertContains(response, 'value="system"')
+        self.assertContains(response, 'value="light"')
+        self.assertContains(response, 'value="dark"')
+        self.assertContains(response, 'localStorage.setItem(theme.storageKey')
+        self.assertContains(response, 'prefers-color-scheme: dark')
+
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_profile_shows_identity_progress_and_settings(
@@ -141,6 +152,28 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/profile/")
 
         self.assertRedirects(response, "/login/?next=%2Fprofile%2F", fetch_redirect_response=False)
+
+    def test_sources_explains_original_content_feeds_and_references(self):
+        response = self.client.get("/sources/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "создаются специально для PolskiFlow")
+        self.assertContains(response, "Внешние новостные ленты")
+        self.assertContains(response, "Główny Urząd Statystyczny")
+        self.assertContains(response, "RMF24")
+        self.assertContains(response, "Polsat Sport")
+        self.assertContains(response, "Лингвистические и методические ориентиры")
+        self.assertContains(response, "Wielki słownik języka polskiego PAN")
+        self.assertContains(response, "не копируем статьи")
+
+    def test_sources_is_publicly_available(self):
+        self.auth_patch.stop()
+        self.client.cookies.clear()
+
+        response = self.client.get("/sources/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Источники и лицензии")
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_home_marks_today_progress(self, mocked_progress):

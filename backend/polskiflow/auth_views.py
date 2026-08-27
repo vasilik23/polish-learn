@@ -164,6 +164,11 @@ def profile(request: HttpRequest) -> HttpResponse:
     )
 
 
+def sources(request: HttpRequest) -> HttpResponse:
+    """Show the public attribution and content-source policy summary."""
+    return render(request, "sources.html")
+
+
 def _daily_plan(request: HttpRequest):
     fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
     dashboard = load_dashboard_progress(

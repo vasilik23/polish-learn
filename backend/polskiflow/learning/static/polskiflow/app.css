@@ -20,6 +20,26 @@
   font-synthesis: none;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12121b;
+  --surface: #1c1b28;
+  --surface-soft: #28243d;
+  --text: #f4f2fb;
+  --muted: #aaa7bb;
+  --line: #343244;
+  --primary: #a994ff;
+  --primary-dark: #c4b7ff;
+  --primary-soft: #31294f;
+  --green: #55cd91;
+  --green-soft: #163a2b;
+  --red: #ff7890;
+  --red-soft: #42202a;
+  --amber: #ffb75e;
+  --shadow: 0 12px 36px rgba(0, 0, 0, .22);
+  --shadow-hover: 0 18px 44px rgba(0, 0, 0, .32);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--text); }
@@ -34,6 +54,7 @@ p { line-height: 1.65; }
 .page-shell.with-nav { padding-top: 5rem; }
 .page-shell:not(.with-nav) { min-height: 100vh; display: grid; place-items: center; padding-block: 2rem; }
 .muted { color: var(--muted); }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .eyebrow { margin-bottom: .55rem; color: var(--primary); font-size: .77rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 
 .app-nav { position: fixed; z-index: 20; inset: auto 0 0; display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 4.7rem; padding: .55rem max(1rem, env(safe-area-inset-right)) max(.55rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); background: rgba(255,255,255,.94); border-top: 1px solid var(--line); backdrop-filter: blur(18px); }
@@ -59,6 +80,42 @@ p { line-height: 1.65; }
 .user-menu-link:hover { background: var(--primary-soft); color: var(--primary-dark); }
 .user-menu-action { min-height: 2.65rem; margin: 0; background: var(--red-soft); color: var(--red); }
 .user-menu-action:hover { background: #ffdfe5; }
+.theme-control { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .7rem; min-height: 2.65rem; margin: 0; padding: .55rem .45rem .65rem; border-top: 1px solid var(--line); color: var(--text); font-size: .84rem; font-weight: 700; }
+.theme-control select { width: auto; min-width: 7.8rem; padding: .5rem 1.8rem .5rem .65rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--surface); color: var(--text); font: inherit; font-size: .72rem; }
+.theme-control select:focus-visible { outline: 3px solid var(--primary-soft); border-color: var(--primary); }
+.theme-control-guest { position: fixed; z-index: 40; top: max(1rem, env(safe-area-inset-top)); right: max(1rem, env(safe-area-inset-right)); display: block; padding: 0; border: 0; }
+.theme-control-guest select { min-width: 8.8rem; box-shadow: var(--shadow); }
+
+:root[data-theme="dark"] .app-nav { background: rgba(28, 27, 40, .94); }
+:root[data-theme="dark"] .avatar { border-color: #343244; background: #1b4432; color: #82e2b0; }
+:root[data-theme="dark"] .user-menu-popover,
+:root[data-theme="dark"] .progress-ring::before,
+:root[data-theme="dark"] .reading-card,
+:root[data-theme="dark"] .news-filters a,
+:root[data-theme="dark"] .news-card,
+:root[data-theme="dark"] .reading-paper,
+:root[data-theme="dark"] .word-panel,
+:root[data-theme="dark"] .dictionary-word,
+:root[data-theme="dark"] .back-button,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] button.secondary,
+:root[data-theme="dark"] .icon-button,
+:root[data-theme="dark"] .options button,
+:root[data-theme="dark"] .auth-layout { background: var(--surface); }
+:root[data-theme="dark"] .topic-card { background: rgba(28, 27, 40, .72); }
+:root[data-theme="dark"] .profile-level { background: var(--surface); }
+:root[data-theme="dark"] .profile-progress,
+:root[data-theme="dark"] .lesson-progress { background: #343244; }
+:root[data-theme="dark"] .data-notice,
+:root[data-theme="dark"] .practice-hint { background: #3b301e; color: #f5ca82; }
+:root[data-theme="dark"] .user-menu-action:hover,
+:root[data-theme="dark"] .word-delete:hover { background: #522632; }
+:root[data-theme="dark"] .save-success,
+:root[data-theme="dark"] .options button.correct,
+:root[data-theme="dark"] .message { color: #8de2b7; }
+:root[data-theme="dark"] .save-error,
+:root[data-theme="dark"] .options button.wrong,
+:root[data-theme="dark"] .error { color: #ff9aac; }
 
 .hero { position: relative; overflow: hidden; padding: 1.6rem; margin-bottom: 1.2rem; border-radius: 1.55rem; background: linear-gradient(135deg, #6d4aff 0%, #8a68ff 62%, #aa8dff 100%); box-shadow: 0 18px 50px rgba(92,61,225,.22); color: white; }
 .hero::after { content: ""; position: absolute; width: 13rem; aspect-ratio: 1; right: -5rem; top: -6rem; border: 2.2rem solid rgba(255,255,255,.1); border-radius: 50%; }
