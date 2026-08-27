@@ -14,13 +14,18 @@ from polskiflow.dictionary_store import (
     save_personal_word,
 )
 from polskiflow.progress_store import save_lesson_completion
+from polskiflow.news_feed import latest_official_news
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
 
 
 @require_browser_user
 def reading_library(request: HttpRequest) -> HttpResponse:
-    return render(request, "reading/library.html", {"texts": reading_texts()})
+    return render(
+        request,
+        "reading/library.html",
+        {"texts": reading_texts(), "news": latest_official_news()},
+    )
 
 
 @require_browser_user
@@ -130,14 +135,17 @@ def add_dictionary_word(request: HttpRequest, text_id: str) -> HttpResponse:
     text = reading_text(text_id)
     if text is None:
         raise Http404
-    word = request.POST.get("word", "").strip().casefold()
+    surface_word = request.POST.get("word", "").strip().casefold()
     translation = request.POST.get("translation", "").strip()
     context = request.POST.get("context", "").strip()
-    expected_translation = {
-        key.casefold(): value for key, value in text.glossary.items()
-    }.get(word)
-    if not word or translation != expected_translation or len(context) > 500:
+    entry = _glossary_entries(text.glossary).get(surface_word)
+    if (
+        not entry
+        or translation != entry["translation"]
+        or len(context) > 500
+    ):
         return HttpResponseBadRequest("Некорректное слово")
+    word = entry["lemma"]
     saved = save_personal_word(
         request.supabase_access_token,
         request.supabase_user.id,
@@ -165,7 +173,7 @@ def remove_dictionary_word(request: HttpRequest, word_id: str) -> HttpResponse:
 
 
 def _tokenize(paragraphs: list, glossary: dict) -> list[list[dict]]:
-    translations = {key.casefold(): value for key, value in glossary.items()}
+    entries = _glossary_entries(glossary)
     result = []
     for paragraph in paragraphs if isinstance(paragraphs, list) else []:
         if not isinstance(paragraph, str):
@@ -173,15 +181,42 @@ def _tokenize(paragraphs: list, glossary: dict) -> list[list[dict]]:
         tokens = []
         for token in TOKEN_PATTERN.split(paragraph):
             if token:
-                tokens.append(
-                    {
-                        "text": token,
-                        "word": token.casefold(),
-                        "translation": translations.get(token.casefold()),
-                    }
-                )
+                entry = entries.get(token.casefold())
+                tokens.append({"text": token, "word": token.casefold(), **(entry or {})})
         result.append(tokens)
     return result
+
+
+def _glossary_entries(glossary: dict) -> dict[str, dict[str, str]]:
+    """Normalize legacy translations and lemma-aware glossary entries."""
+    if not isinstance(glossary, dict):
+        return {}
+    entries = {}
+    for surface, value in glossary.items():
+        if not isinstance(surface, str) or not surface.strip():
+            continue
+        if isinstance(value, str):
+            translation = value.strip()
+            lemma = surface.strip().casefold()
+            part_of_speech = ""
+        elif isinstance(value, dict):
+            translation = value.get("translation", "")
+            lemma = value.get("lemma", surface)
+            part_of_speech = value.get("part_of_speech", "")
+            if not all(isinstance(item, str) for item in (translation, lemma, part_of_speech)):
+                continue
+            translation = translation.strip()
+            lemma = lemma.strip().casefold()
+            part_of_speech = part_of_speech.strip()
+        else:
+            continue
+        if translation and lemma:
+            entries[surface.strip().casefold()] = {
+                "translation": translation,
+                "lemma": lemma,
+                "part_of_speech": part_of_speech,
+            }
+    return entries
 
 
 def _practice_questions(words: list[dict], limit: int = 10) -> list[dict]:

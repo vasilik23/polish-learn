@@ -7,7 +7,7 @@
       <div class="reader-meta"><span>{{ text.emoji }} {{ text.description }}</span><span>◷ {{ text.minutes }} мин</span></div>
       <div class="reading-paper">
         {% for paragraph in paragraphs %}
-          <p>{% for token in paragraph %}{% if token.translation %}<button type="button" class="reader-word" data-word="{{ token.word }}" data-translation="{{ token.translation }}">{{ token.text }}</button>{% else %}{{ token.text }}{% endif %}{% endfor %}</p>
+          <p>{% for token in paragraph %}{% if token.translation %}<button type="button" class="reader-word" data-word="{{ token.word }}" data-lemma="{{ token.lemma }}" data-translation="{{ token.translation }}" data-part-of-speech="{{ token.part_of_speech }}">{{ token.text }}</button>{% else %}{{ token.text }}{% endif %}{% endfor %}</p>
         {% endfor %}
       </div>
     </article>
@@ -31,7 +31,10 @@
       button.classList.add('selected');
       document.querySelector('.word-panel-placeholder').hidden = true;
       document.querySelector('.word-panel-result').hidden = false;
-      document.querySelector('#selected-word').textContent = button.dataset.word;
+      const label = button.dataset.lemma === button.dataset.word
+        ? button.dataset.lemma
+        : `${button.dataset.word} → ${button.dataset.lemma}`;
+      document.querySelector('#selected-word').textContent = label;
       document.querySelector('#selected-translation').textContent = button.dataset.translation;
       document.querySelector('#word-input').value = button.dataset.word;
       document.querySelector('#translation-input').value = button.dataset.translation;

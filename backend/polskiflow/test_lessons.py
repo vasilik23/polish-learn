@@ -66,13 +66,19 @@ class LessonViewsTests(TestCase):
         self.auth_patch.start()
         self.addCleanup(self.auth_patch.stop)
 
-    def test_home_lists_all_lessons(self):
+    def test_daily_tasks_lists_all_lessons_and_home_only_shows_goal(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Słówka dnia")
-        self.assertContains(response, "Gramatyka")
-        self.assertContains(response, "Powtórka")
-        self.assertContains(response, "Quiz")
+        self.assertContains(response, "Цель на сегодня")
+        self.assertNotContains(response, "Słówka dnia")
+        self.assertNotContains(response, "Задания на сегодня")
+
+        tasks_page = self.client.get("/tasks/")
+        self.assertEqual(tasks_page.status_code, 200)
+        self.assertContains(tasks_page, "Słówka dnia")
+        self.assertContains(tasks_page, "Gramatyka")
+        self.assertContains(tasks_page, "Powtórka")
+        self.assertContains(tasks_page, "Quiz")
 
     def test_home_keeps_daily_plan_short_and_course_page_lists_topics(self):
         course = Course.objects.create(id="catalog-test", title="A1", level="A1")
@@ -83,7 +89,7 @@ class LessonViewsTests(TestCase):
 
         self.assertContains(response, "0 из 4")
         self.assertNotContains(response, "Новая тема")
-        self.assertContains(response, "Задания на сегодня")
+        self.assertNotContains(response, "Задания на сегодня")
 
         course_page = self.client.get("/course/")
         self.assertContains(course_page, "Новая тема")
@@ -115,7 +121,9 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Уровень A2")
         self.assertContains(response, "4 дн. подряд")
         self.assertContains(response, "2 из 4")
-        self.assertContains(response, 'class="task-complete"', count=2)
+
+        tasks_page = self.client.get("/tasks/")
+        self.assertContains(tasks_page, 'class="task-complete"', count=2)
 
     def test_unknown_lesson_returns_404(self):
         self.assertEqual(self.client.get("/lesson/unknown/").status_code, 404)
