@@ -18,6 +18,7 @@ from polskiflow.auth import (
     sign_up,
 )
 from polskiflow.content import course_topics, tasks
+from polskiflow.dictionary_store import load_personal_words
 from polskiflow.progress_store import load_dashboard_progress
 
 
@@ -126,6 +127,39 @@ def daily_tasks(request: HttpRequest) -> HttpResponse:
             "tasks": lesson_tasks,
             "completed_count": completed_count,
             "progress_percent": progress_percent,
+        },
+    )
+
+
+@require_browser_user
+def profile(request: HttpRequest) -> HttpResponse:
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        fallback_name,
+    )
+    lesson_ids = {lesson_task["id"] for lesson_task in tasks()}
+    completed_lessons = len(dashboard.all_completed_lesson_ids & lesson_ids)
+    total_lessons = len(lesson_ids)
+    progress_percent = (
+        round(completed_lessons / total_lessons * 100) if total_lessons else 0
+    )
+    personal_words = load_personal_words(
+        request.supabase_access_token,
+        request.supabase_user.id,
+    )
+    return render(
+        request,
+        "profile.html",
+        {
+            "dashboard": dashboard,
+            "email": request.supabase_user.email or "Email не указан",
+            "completed_lessons": completed_lessons,
+            "total_lessons": total_lessons,
+            "progress_percent": progress_percent,
+            "dictionary_count": len(personal_words or []),
+            "dictionary_available": personal_words is not None,
         },
     )
 

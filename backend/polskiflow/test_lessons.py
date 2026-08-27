@@ -102,8 +102,45 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Открыть меню пользователя")
         self.assertContains(response, 'class="user-menu app-user-menu"')
         self.assertContains(response, 'action="/logout/"')
+        self.assertContains(response, 'href="/profile/"')
         self.assertGreater(content.index("</nav>"), content.index('class="nav-links"'))
         self.assertLess(content.index("</nav>"), content.index('class="user-menu app-user-menu"'))
+
+    @patch("polskiflow.auth_views.load_personal_words")
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_shows_identity_progress_and_settings(
+        self, mocked_progress, mocked_words
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A2",
+            streak_days=4,
+            completed_lesson_ids=frozenset({"words"}),
+            available=True,
+            all_completed_lesson_ids=frozenset({"words", "grammar"}),
+            active_days=7,
+        )
+        mocked_words.return_value = [{"word": "dom"}, {"word": "dzień"}]
+
+        response = self.client.get("/profile/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Василий")
+        self.assertContains(response, "learner@example.com")
+        self.assertContains(response, "2 / 4")
+        self.assertContains(response, "50%")
+        self.assertContains(response, "7")
+        self.assertContains(response, "слов в словаре")
+        self.assertContains(response, "Настройки")
+        self.assertContains(response, 'role="progressbar"')
+
+    def test_profile_requires_authentication(self):
+        self.auth_patch.stop()
+        self.client.cookies.clear()
+
+        response = self.client.get("/profile/")
+
+        self.assertRedirects(response, "/login/?next=%2Fprofile%2F", fetch_redirect_response=False)
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_home_marks_today_progress(self, mocked_progress):
