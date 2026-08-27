@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from django.db import models
 
@@ -223,7 +224,7 @@ class FlashcardReview(models.Model):
     ease_factor = models.FloatField(default=2.5)
     interval_days = models.PositiveIntegerField(default=0)
     repetitions = models.PositiveIntegerField(default=0)
-    next_review_date = models.DateField()
+    next_review_date = models.DateField(default=date.today)
     last_reviewed_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -245,6 +246,11 @@ class PersonalWord(models.Model):
     context = models.TextField(blank=True)
     source_text_id = models.CharField(max_length=80, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    ease_factor = models.FloatField(default=2.5)
+    interval_days = models.PositiveIntegerField(default=0)
+    repetitions = models.PositiveIntegerField(default=0)
+    next_review_date = models.DateField(default=date.today)
+    last_reviewed_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "personal_words"
@@ -253,5 +259,9 @@ class PersonalWord(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("user_id", "word"), name="unique_personal_word"
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(ease_factor__gte=1.3),
+                name="personal_word_minimum_ease",
+            ),
         ]

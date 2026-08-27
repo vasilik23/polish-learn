@@ -5,8 +5,16 @@ from datetime import date, timedelta
 from math import floor
 from typing import Literal
 
-ReviewQuality = Literal["again", "know"]
+ReviewQuality = Literal["again", "hard", "good", "easy", "know"]
 MIN_EASE_FACTOR = 1.3
+QUALITY_SCORES: dict[ReviewQuality, int] = {
+    "again": 1,
+    "hard": 3,
+    "good": 4,
+    "easy": 5,
+    # Compatibility with the first two-button flashcard MVP.
+    "know": 5,
+}
 
 
 @dataclass(frozen=True)
@@ -29,12 +37,12 @@ DEFAULT_SM2_STATE = Sm2State(
 
 
 def sm2_next(state: Sm2State, quality: ReviewQuality, today: date) -> Sm2Result:
-    """Return the next immutable review state, matching the current TS MVP."""
+    """Return the next immutable review state using the SM-2 quality scale."""
 
-    if quality not in ("again", "know"):
-        raise ValueError("quality must be 'again' or 'know'")
+    if quality not in QUALITY_SCORES:
+        raise ValueError("unknown review quality")
 
-    score = 5 if quality == "know" else 1
+    score = QUALITY_SCORES[quality]
     repetitions = state.repetitions
     interval_days = state.interval_days
 

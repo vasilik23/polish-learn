@@ -270,3 +270,28 @@ class WorkStudyContentTests(TestCase):
             [topic["id"] for topic in course_topics()[:9]],
             ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions", "time-meetings", "work-study"],
         )
+
+
+class FreeTimeContentTests(TestCase):
+    def test_free_time_is_tenth_complete_topic(self):
+        topic = Topic.objects.get(id="free-time")
+        self.assertEqual(topic.position, 9)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="free-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="free-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="free-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="free-review").count(), 7)
+
+    def test_free_time_reading_uses_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="wolna-sobota-marka")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["przyjaciółmi"]["lemma"], "przyjaciel")
+        self.assertEqual(reading.glossary["jeżdżą"]["lemma"], "jeździć")
+        self.assertEqual(reading.glossary["woli"]["lemma"], "woleć")
+
+    def test_catalog_lists_first_ten_curriculum_topics(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:10]],
+            ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions", "time-meetings", "work-study", "free-time"],
+        )

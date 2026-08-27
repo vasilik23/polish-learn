@@ -7,7 +7,7 @@
       {% if question %}
         {% include "reading/_practice_question.html" %}
       {% else %}
-        <div class="card empty-state practice-empty"><span>🧠</span><h1>Нужно минимум 4 слова</h1><p class="muted">Сейчас в словаре: {{ word_count }}. Добавляй слова из текстов, и тренировка откроется автоматически.</p><a class="button" href="{% url 'reading-library' %}">Найти новые слова</a>{% if not available %}<p class="save-error">Словарь временно недоступен.</p>{% endif %}</div>
+        <div class="card empty-state practice-empty"><span>🧠</span><h1>{% if word_count >= 4 %}На сегодня всё{% else %}Нужно минимум 4 слова{% endif %}</h1><p class="muted">{% if word_count >= 4 %}Следующая тренировка появится, когда слова снова будут готовы к повторению.{% else %}Сейчас в словаре: {{ word_count }}. Добавляй слова из текстов, и тренировка откроется автоматически.{% endif %}</p><a class="button" href="{% url 'reading-library' %}">Найти новые слова</a>{% if not available %}<p class="save-error">Словарь временно недоступен.</p>{% endif %}</div>
       {% endif %}
     </div>
   </div>

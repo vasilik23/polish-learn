@@ -1,9 +1,11 @@
 """Reading library and personal dictionary browser flows."""
 
 import re
+from datetime import date
 
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from polskiflow.auth_views import require_browser_user
@@ -12,11 +14,15 @@ from polskiflow.dictionary_store import (
     delete_personal_word,
     load_personal_words,
     save_personal_word,
+    save_personal_word_review,
 )
+from polskiflow.domain.sm2 import DEFAULT_SM2_STATE, Sm2State, sm2_next
 from polskiflow.progress_store import save_lesson_completion
 from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
+REVIEW_QUALITIES = {"again", "hard", "good", "easy"}
+PRACTICE_WORD_IDS_SESSION_KEY = "dictionary_practice_word_ids"
 
 
 @require_browser_user
@@ -71,6 +77,9 @@ def dictionary_practice(request: HttpRequest) -> HttpResponse:
         request.supabase_access_token, request.supabase_user.id
     )
     questions = _practice_questions(words or [])
+    request.session[PRACTICE_WORD_IDS_SESSION_KEY] = [
+        question["id"] for question in questions
+    ]
     return render(
         request,
         "reading/practice.html",
@@ -92,7 +101,11 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
     words = load_personal_words(
         request.supabase_access_token, request.supabase_user.id
     )
-    questions = _practice_questions(words or [])
+    session_word_ids = request.session.get(PRACTICE_WORD_IDS_SESSION_KEY)
+    questions = _practice_questions(
+        words or [],
+        word_ids=session_word_ids if isinstance(session_word_ids, list) else None,
+    )
     try:
         index = int(request.POST.get("index", "0"))
         score = int(request.POST.get("score", "0"))
@@ -117,8 +130,28 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
             return HttpResponseBadRequest("Сначала ответьте")
         if not 0 <= selected < len(question["options"]):
             return HttpResponseBadRequest("Некорректный ответ")
+        quality = request.POST.get("quality", "")
+        if quality not in REVIEW_QUALITIES:
+            return HttpResponseBadRequest("Оцените, насколько легко вспомнилось слово")
+        if selected != question["correct"]:
+            quality = "again"
+        now = timezone.now()
+        state = Sm2State(
+            ease_factor=float(question.get("ease_factor", 2.5)),
+            interval_days=int(question.get("interval_days", 0)),
+            repetitions=int(question.get("repetitions", 0)),
+        )
+        review = sm2_next(state, quality, now.date())
+        review_saved = save_personal_word_review(
+            request.supabase_access_token,
+            request.supabase_user.id,
+            question["id"],
+            review,
+            now.isoformat(),
+        )
         next_score = score + (selected == question["correct"])
         if index + 1 >= len(questions):
+            request.session.pop(PRACTICE_WORD_IDS_SESSION_KEY, None)
             saved = save_lesson_completion(
                 request.supabase_access_token,
                 request.supabase_user.id,
@@ -129,9 +162,15 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
             return render(
                 request,
                 "reading/_practice_complete.html",
-                {"score": next_score, "total": len(questions), "saved": saved},
+                {
+                    "score": next_score,
+                    "total": len(questions),
+                    "saved": saved,
+                    "review_saved": review_saved,
+                },
             )
         context = _practice_context(questions, index + 1, next_score, None)
+        context["review_saved"] = review_saved
     else:
         return HttpResponseBadRequest("Неизвестное действие")
     return render(request, "reading/_practice_question.html", context)
@@ -227,7 +266,9 @@ def _glossary_entries(glossary: dict) -> dict[str, dict[str, str]]:
     return entries
 
 
-def _practice_questions(words: list[dict], limit: int = 10) -> list[dict]:
+def _practice_questions(
+    words: list[dict], limit: int = 10, word_ids: list[str] | None = None
+) -> list[dict]:
     usable = [
         word
         for word in words
@@ -239,8 +280,14 @@ def _practice_questions(words: list[dict], limit: int = 10) -> list[dict]:
     translations = list(dict.fromkeys(word["translation"] for word in usable))
     if len(translations) < 4:
         return []
+    if word_ids is None:
+        chosen_words = [word for word in usable if _is_due(word.get("next_review_date"))]
+        chosen_words.sort(key=lambda word: word.get("next_review_date") or "")
+    else:
+        words_by_id = {str(word.get("id", "")): word for word in usable}
+        chosen_words = [words_by_id[word_id] for word_id in word_ids if word_id in words_by_id]
     questions = []
-    for index, word in enumerate(usable[:limit]):
+    for index, word in enumerate(chosen_words[:limit]):
         correct_translation = word["translation"]
         distractors = [item for item in translations if item != correct_translation][:3]
         if len(distractors) < 3:
@@ -250,14 +297,29 @@ def _practice_questions(words: list[dict], limit: int = 10) -> list[dict]:
         options[correct], options[-1] = options[-1], options[correct]
         questions.append(
             {
+                "id": str(word.get("id", "")),
                 "word": word["word"],
                 "context": word.get("context") or "",
                 "options": options,
                 "correct": correct,
                 "correct_answer": correct_translation,
+                "ease_factor": word.get("ease_factor", DEFAULT_SM2_STATE.ease_factor),
+                "interval_days": word.get("interval_days", DEFAULT_SM2_STATE.interval_days),
+                "repetitions": word.get("repetitions", DEFAULT_SM2_STATE.repetitions),
             }
         )
     return questions
+
+
+def _is_due(value: object, today: date | None = None) -> bool:
+    if value in (None, ""):
+        return True
+    if not isinstance(value, str):
+        return True
+    try:
+        return date.fromisoformat(value) <= (today or timezone.now().date())
+    except ValueError:
+        return True
 
 
 def _practice_context(

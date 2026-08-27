@@ -170,16 +170,26 @@ class ReadingViewsTests(TestCase):
         )
 
         self.assertContains(response, "Верно!")
-        self.assertContains(response, "Следующее слово")
+        self.assertContains(response, "Насколько легко вспомнилось слово?")
+        self.assertContains(response, "Трудно")
 
+    @patch("polskiflow.reading_views.save_personal_word_review", return_value=True)
     @patch("polskiflow.reading_views.save_lesson_completion", return_value=True)
     @patch("polskiflow.reading_views.load_personal_words")
-    def test_practice_completion_is_saved(self, load_words, save_completion):
+    def test_practice_completion_is_saved(
+        self, load_words, save_completion, save_review
+    ):
         load_words.return_value = self._practice_words()
 
         response = self.client.post(
             "/dictionary/practice/step/",
-            {"action": "next", "index": 3, "score": 3, "selected": 3},
+            {
+                "action": "next",
+                "index": 3,
+                "score": 3,
+                "selected": 3,
+                "quality": "easy",
+            },
         )
 
         self.assertContains(response, "4 / 4")
@@ -191,12 +201,59 @@ class ReadingViewsTests(TestCase):
             4,
             4,
         )
+        self.assertEqual(save_review.call_args.args[2], "word-4")
+        self.assertEqual(save_review.call_args.args[3].repetitions, 1)
+        self.assertEqual(save_review.call_args.args[3].ease_factor, 2.6)
+
+    @patch("polskiflow.reading_views.save_personal_word_review", return_value=True)
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_wrong_answer_forces_again_schedule(self, load_words, save_review):
+        load_words.return_value = self._practice_words()
+
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {
+                "action": "next",
+                "index": 0,
+                "score": 0,
+                "selected": 1,
+                "quality": "easy",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = save_review.call_args.args[3]
+        self.assertEqual(result.repetitions, 0)
+        self.assertEqual(result.interval_days, 1)
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_selects_only_due_words(self, load_words):
+        words = self._practice_words()
+        words[0]["next_review_date"] = "2999-01-01"
+        load_words.return_value = words
+
+        response = self.client.get("/dictionary/practice/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, ">dom<")
+        self.assertContains(response, "Слово 1 из 3")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_practice_reports_when_no_words_are_due(self, load_words):
+        words = self._practice_words()
+        for word in words:
+            word["next_review_date"] = "2999-01-01"
+        load_words.return_value = words
+
+        response = self.client.get("/dictionary/practice/")
+
+        self.assertContains(response, "На сегодня всё")
 
     @staticmethod
     def _practice_words():
         return [
-            {"word": "dom", "translation": "дом", "context": "To jest dom."},
-            {"word": "mleko", "translation": "молоко", "context": "Lubię mleko."},
-            {"word": "chleb", "translation": "хлеб", "context": "Jem chleb."},
-            {"word": "okno", "translation": "окно", "context": "Otwieram okno."},
+            {"id": "word-1", "word": "dom", "translation": "дом", "context": "To jest dom."},
+            {"id": "word-2", "word": "mleko", "translation": "молоко", "context": "Lubię mleko."},
+            {"id": "word-3", "word": "chleb", "translation": "хлеб", "context": "Jem chleb."},
+            {"id": "word-4", "word": "okno", "translation": "окно", "context": "Otwieram okno."},
         ]
