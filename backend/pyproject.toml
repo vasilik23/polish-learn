@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Python/Django implementation of PolskiFlow"
 requires-python = ">=3.11"
 dependencies = [
+  "certifi>=2026.7,<2027",
   "Django>=5.2,<5.3",
   "psycopg[binary]>=3.3,<3.4",
 ]
