@@ -195,3 +195,28 @@ class FoodShoppingContentTests(TestCase):
             [topic["id"] for topic in course_topics()[:6]],
             ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping"],
         )
+
+
+class CityDirectionsContentTests(TestCase):
+    def test_city_directions_is_seventh_complete_topic(self):
+        topic = Topic.objects.get(id="city-directions")
+        self.assertEqual(topic.position, 6)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="city-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="city-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="city-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="city-review").count(), 7)
+
+    def test_city_reading_uses_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="droga-do-muzeum")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["drogę"]["lemma"], "droga")
+        self.assertEqual(reading.glossary["skrzyżowaniu"]["lemma"], "skrzyżowanie")
+        self.assertEqual(reading.glossary["wychodzi"]["part_of_speech"], "глагол")
+
+    def test_catalog_lists_first_seven_curriculum_topics(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:7]],
+            ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions"],
+        )
