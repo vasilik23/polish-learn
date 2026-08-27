@@ -44,7 +44,7 @@ class ReadingViewsTests(TestCase):
         self.news_patch = patch(
             "polskiflow.reading_views.latest_official_news", return_value=[]
         )
-        self.news_patch.start()
+        self.news_mock = self.news_patch.start()
         self.addCleanup(self.news_patch.stop)
 
     def test_library_lists_active_texts(self):
@@ -52,6 +52,19 @@ class ReadingViewsTests(TestCase):
 
         self.assertContains(response, "Krótka historia")
         self.assertContains(response, "Тестовый рассказ")
+        self.assertContains(response, "Политика")
+        self.assertContains(response, "Спорт")
+        self.assertContains(response, "Культура и медиа")
+
+    def test_library_filters_news_by_allowlisted_category(self):
+        response = self.client.get("/reading/?category=sport")
+
+        self.assertEqual(response.status_code, 200)
+        self.news_mock.assert_called_with(category="sport")
+        self.assertContains(response, 'href="?category=sport#news-title" aria-current="page"')
+
+        self.client.get("/reading/?category=not-a-category")
+        self.news_mock.assert_called_with(category=None)
 
     def test_reader_marks_only_glossary_words_as_interactive(self):
         response = self.client.get("/reading/test-story/")

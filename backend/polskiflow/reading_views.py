@@ -14,17 +14,25 @@ from polskiflow.dictionary_store import (
     save_personal_word,
 )
 from polskiflow.progress_store import save_lesson_completion
-from polskiflow.news_feed import latest_official_news
+from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
 
 
 @require_browser_user
 def reading_library(request: HttpRequest) -> HttpResponse:
+    selected_category = request.GET.get("category", "")
+    if selected_category not in CATEGORY_IDS:
+        selected_category = ""
     return render(
         request,
         "reading/library.html",
-        {"texts": reading_texts(), "news": latest_official_news()},
+        {
+            "texts": reading_texts(),
+            "news": latest_official_news(category=selected_category or None),
+            "news_categories": CATEGORIES,
+            "selected_news_category": selected_category,
+        },
     )
 
 

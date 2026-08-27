@@ -17,16 +17,22 @@
   </section>
 
   <section class="news-section" aria-labelledby="news-title">
-    <div class="section-heading"><div><p class="eyebrow">Живой польский</p><h2 id="news-title">Свежие новости</h2></div><span>Официальный RSS</span></div>
+    <div class="section-heading"><div><p class="eyebrow">Живой польский</p><h2 id="news-title">Свежие новости</h2></div><span>Польские RSS</span></div>
+    <nav class="news-filters" aria-label="Темы новостей">
+      <a href="{% url 'reading-library' %}#news-title"{% if not selected_news_category %} aria-current="page"{% endif %}>Все темы</a>
+      {% for category in news_categories %}
+        <a href="?category={{ category.id }}#news-title"{% if selected_news_category == category.id %} aria-current="page"{% endif %}>{{ category.label }}</a>
+      {% endfor %}
+    </nav>
     {% if news %}
       <div class="news-list">
         {% for item in news %}
           <a class="news-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
-            <span><small>{{ item.source }}{% if item.published %} · {{ item.published }}{% endif %}</small><strong lang="pl">{{ item.title }}</strong></span><span aria-hidden="true">↗</span>
+            <span><small><span class="news-category">{{ item.category_label }}</span> {{ item.source }}{% if item.published %} · {{ item.published }}{% endif %}</small><strong lang="pl">{{ item.title }}</strong></span><span aria-hidden="true">↗</span>
           </a>
         {% endfor %}
       </div>
-      <p class="source-note">Показываем только заголовки из официального RSS. Полный материал открывается на сайте источника.</p>
+      <p class="source-note">Показываем только заголовок, дату и источник из опубликованных RSS. Полный материал открывается на сайте редакции.</p>
     {% else %}
       <div class="card empty-state compact-empty"><span>📰</span><h3>Лента временно недоступна</h3><p class="muted">Учебные тексты остаются доступными, попробуй обновить страницу позже.</p></div>
     {% endif %}
