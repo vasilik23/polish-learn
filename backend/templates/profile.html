@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Профиль · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="profile-header">
+    <div class="profile-avatar" aria-hidden="true">{{ dashboard.display_name|first|upper|default:"U" }}</div>
+    <div>
+      <p class="eyebrow">Twój profil</p>
+      <h1>{{ dashboard.display_name }}</h1>
+      <p class="muted">{{ email }}</p>
+    </div>
+    <span class="profile-level" aria-label="Текущий уровень {{ dashboard.level }}">{{ dashboard.level }}</span>
+  </header>
+
+  {% if not dashboard.available or not dictionary_available %}
+    <p class="data-notice" role="status">Часть статистики временно недоступна. Можно продолжать занятия — новый прогресс сохранится после восстановления соединения.</p>
+  {% endif %}
+
+  <section aria-labelledby="progress-title">
+    <div class="section-heading">
+      <div><p class="eyebrow">Общий результат</p><h2 id="progress-title">Твой прогресс</h2></div>
+      <strong>{{ progress_percent }}%</strong>
+    </div>
+    <div class="profile-progress" role="progressbar" aria-label="Пройдено уроков курса" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}">
+      <span style="--value: {{ progress_percent }}%"></span>
+    </div>
+    <div class="profile-stats">
+      <article class="card profile-stat"><span aria-hidden="true">✓</span><strong>{{ completed_lessons }} / {{ total_lessons }}</strong><small>уроков пройдено</small></article>
+      <article class="card profile-stat"><span aria-hidden="true">🔥</span><strong>{{ dashboard.streak_days }}</strong><small>дней подряд</small></article>
+      <article class="card profile-stat"><span aria-hidden="true">◷</span><strong>{{ dashboard.active_days }}</strong><small>активных дней</small></article>
+      <article class="card profile-stat"><span aria-hidden="true">◇</span><strong>{{ dictionary_count }}</strong><small>слов в словаре</small></article>
+    </div>
+  </section>
+
+  <section class="profile-settings" aria-labelledby="settings-title">
+    <div class="section-heading"><div><p class="eyebrow">Персонализация</p><h2 id="settings-title">Настройки</h2></div></div>
+    <div class="card settings-list">
+      <div class="setting-row">
+        <span class="setting-icon" aria-hidden="true">◐</span>
+        <span><strong>Оформление</strong><small>Сейчас используется светлая тема</small></span>
+        <span class="setting-value">Светлая</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon" aria-hidden="true">◎</span>
+        <span><strong>Уровень курса</strong><small>Материалы подобраны для текущего уровня</small></span>
+        <span class="setting-value">{{ dashboard.level }}</span>
+      </div>
+    </div>
+    <p class="profile-note">Изменение имени, уровня и темы появится после добавления безопасного сохранения настроек.</p>
+  </section>
+{% endblock %}

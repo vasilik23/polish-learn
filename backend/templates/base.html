@@ -41,6 +41,7 @@
         <summary aria-label="Открыть меню пользователя"><span class="avatar">{{ request.supabase_user.email|first|upper|default:"U" }}</span></summary>
         <div class="user-menu-popover">
           <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
+          <a class="user-menu-link" href="{% url 'profile' %}">Профиль</a>
           <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}<button class="user-menu-action" type="submit">Выйти</button>
           </form>

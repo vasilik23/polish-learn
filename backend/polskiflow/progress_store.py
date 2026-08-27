@@ -19,6 +19,8 @@ class DashboardProgress:
     streak_days: int
     completed_lesson_ids: frozenset[str]
     available: bool
+    all_completed_lesson_ids: frozenset[str] = frozenset()
+    active_days: int = 0
 
     @property
     def completed_count(self) -> int:
@@ -55,14 +57,18 @@ def load_dashboard_progress(
     today = _utc_today()
     active_dates = []
     completed_today = set()
+    completed_all_time = set()
     for completion in completion_rows:
         try:
             plan_date = datetime.strptime(completion["plan_date"], "%Y-%m-%d").date()
         except (KeyError, TypeError, ValueError):
             continue
         active_dates.append(plan_date)
-        if plan_date == today and completion.get("lesson_id"):
-            completed_today.add(completion["lesson_id"])
+        lesson_id = completion.get("lesson_id")
+        if lesson_id:
+            completed_all_time.add(lesson_id)
+            if plan_date == today:
+                completed_today.add(lesson_id)
 
     return DashboardProgress(
         display_name=profile_row.get("display_name") or fallback_name,
@@ -70,6 +76,8 @@ def load_dashboard_progress(
         streak_days=current_streak(active_dates, today),
         completed_lesson_ids=frozenset(completed_today),
         available=profile is not None and completions is not None,
+        all_completed_lesson_ids=frozenset(completed_all_time),
+        active_days=len(set(active_dates)),
     )
 
 

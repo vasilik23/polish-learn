@@ -62,6 +62,10 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(dashboard.level, "A2")
         self.assertEqual(dashboard.streak_days, 2)
         self.assertEqual(dashboard.completed_lesson_ids, {"words", "quiz"})
+        self.assertEqual(
+            dashboard.all_completed_lesson_ids, {"words", "quiz", "grammar"}
+        )
+        self.assertEqual(dashboard.active_days, 2)
         self.assertTrue(dashboard.available)
         for call in mocked_urlopen.call_args_list:
             request = call.args[0]

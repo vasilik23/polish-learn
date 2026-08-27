@@ -171,3 +171,27 @@ class HomeContentTests(TestCase):
             [topic["id"] for topic in course_topics()[:5]],
             ["introductions", "countries-languages", "family", "daily-routine", "home"],
         )
+
+
+class FoodShoppingContentTests(TestCase):
+    def test_food_shopping_is_sixth_complete_topic(self):
+        topic = Topic.objects.get(id="food-shopping")
+        self.assertEqual(topic.position, 5)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="food-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="food-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="food-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="food-review").count(), 7)
+
+    def test_food_reading_has_lemma_aware_glossary(self):
+        reading = ReadingText.objects.get(id="zakupy-oli")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["idzie"]["lemma"], "iść")
+        self.assertEqual(reading.glossary["torby"]["lemma"], "torba")
+
+    def test_catalog_lists_first_six_curriculum_topics(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:6]],
+            ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping"],
+        )
