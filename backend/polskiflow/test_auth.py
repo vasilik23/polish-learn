@@ -1,6 +1,7 @@
 import io
 import json
 from unittest.mock import patch
+from urllib.error import URLError
 
 from django.test import SimpleTestCase, override_settings
 
@@ -46,6 +47,7 @@ class SupabaseAuthTests(SimpleTestCase):
         request = urlopen.call_args.args[0]
         self.assertEqual(request.get_header("Authorization"), "Bearer access-token")
         self.assertEqual(request.get_header("Apikey"), "public-anon-key")
+        self.assertIn("context", urlopen.call_args.kwargs)
 
     def test_missing_token_is_rejected(self):
         response = self.client.get("/api/auth/me/")
@@ -85,6 +87,37 @@ class SupabaseAuthTests(SimpleTestCase):
             "email": "learner@example.com",
             "password": "password",
         })
+        self.assertIn("context", urlopen.call_args.kwargs)
+
+    @patch("polskiflow.auth.urlopen")
+    def test_password_sign_in_retries_one_network_failure(self, urlopen):
+        urlopen.side_effect = [
+            URLError("temporary failure"),
+            _Response(
+                json.dumps(
+                    {
+                        "access_token": "access",
+                        "refresh_token": "refresh",
+                        "expires_in": 3600,
+                        "user": {"id": "user-123", "email": "learner@example.com"},
+                    }
+                ).encode()
+            ),
+        ]
+
+        session = sign_in("learner@example.com", "password")
+
+        self.assertEqual(session.user.id, "user-123")
+        self.assertEqual(urlopen.call_count, 2)
+
+    @patch("polskiflow.auth.urlopen", side_effect=URLError("service unavailable"))
+    def test_password_sign_in_reports_network_failure_after_retry(self, urlopen):
+        with self.assertRaisesMessage(
+            SupabaseAuthError, "Сервис авторизации временно недоступен"
+        ):
+            sign_in("learner@example.com", "password")
+
+        self.assertEqual(urlopen.call_count, 2)
 
     @patch("polskiflow.auth.refresh_session")
     @patch("polskiflow.auth.authenticate_access_token")
