@@ -38,7 +38,7 @@ p { line-height: 1.65; }
 
 .app-nav { position: fixed; z-index: 20; inset: auto 0 0; display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 4.7rem; padding: .55rem max(1rem, env(safe-area-inset-right)) max(.55rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); background: rgba(255,255,255,.94); border-top: 1px solid var(--line); backdrop-filter: blur(18px); }
 .brand { display: none; }
-.nav-links { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
+.nav-links { display: grid; grid-template-columns: repeat(5, 1fr); width: 100%; }
 .nav-link { display: grid; justify-items: center; gap: .2rem; padding: .45rem .7rem; border-radius: .9rem; color: var(--muted); font-size: .72rem; font-weight: 700; text-decoration: none; }
 .nav-link.active { color: var(--primary); background: var(--primary-soft); }
 .nav-icon { font-size: 1.35rem; line-height: 1; }
@@ -73,6 +73,13 @@ p { line-height: 1.65; }
 .progress-ring strong { z-index: 1; grid-area: 1 / 1; font-size: 1rem; }
 .daily-copy h2 { margin-bottom: .35rem; }
 .daily-copy p { margin-bottom: 0; font-size: .86rem; }
+.home-goal-grid { max-width: 42rem; margin: 0 auto; }
+.home-goal-grid .daily-card { position: static; }
+.daily-action { grid-column: 1 / -1; margin-top: .15rem; }
+.daily-tasks-header { align-items: center; }
+.compact-progress { width: 4.6rem; }
+.compact-progress::before { width: 3.45rem; }
+.daily-task-list { max-width: 52rem; }
 .plan { grid-column: 1 / -1; list-style: none; padding: 0; margin: .25rem 0 0; }
 .plan li { display: flex; align-items: center; gap: .7rem; padding: .65rem 0; border-top: 1px solid var(--line); font-size: .9rem; }
 .plan-status { display: grid; place-items: center; width: 1.4rem; aspect-ratio: 1; border-radius: 50%; border: 2px solid #d9d8e5; color: transparent; font-size: .7rem; }
@@ -124,6 +131,15 @@ p { line-height: 1.65; }
 .reading-card-copy strong { margin: .45rem 0 .25rem; font-size: 1.05rem; }
 .reading-card-copy small { color: var(--muted); line-height: 1.45; }
 .reading-card-copy > span:last-child { margin-top: auto; padding-top: .7rem; color: var(--primary-dark); font-size: .76rem; font-weight: 800; }
+.news-section { margin-top: 2.5rem; }
+.news-list { display: grid; gap: .7rem; }
+.news-card { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 1rem; background: white; box-shadow: var(--shadow); color: inherit; text-decoration: none; }
+.news-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.news-card small, .news-card strong { display: block; }
+.news-card small { margin-bottom: .3rem; color: var(--muted); font-size: .7rem; }
+.news-card strong { line-height: 1.45; }
+.source-note { margin-top: .8rem; color: var(--muted); font-size: .75rem; }
+.compact-empty { padding: 1.2rem; }
 .level-badge { display: inline-grid; place-items: center; min-width: 2.2rem; padding: .28rem .48rem; border-radius: .55rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .7rem; font-weight: 800; }
 .empty-state { grid-column: 1 / -1; justify-items: center; padding: 3rem 1.5rem; text-align: center; }
 .empty-state > span { font-size: 2.5rem; }

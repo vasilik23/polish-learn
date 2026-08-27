@@ -13,7 +13,7 @@
     </div>
   </section>
 
-  <div class="dashboard-grid">
+  <div class="dashboard-grid home-goal-grid">
     <section class="card daily-card" id="daily-plan">
       <div class="progress-ring" style="--value: {{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
       <div class="daily-copy">
@@ -21,25 +21,8 @@
         <h2>{{ completed_count }} из {{ tasks|length }}</h2>
         <p class="muted">Небольшой шаг каждый день — большой результат.</p>
       </div>
-      <ul class="plan">
-        {% for task in tasks %}
-          <li><span class="plan-status {% if task.completed %}done{% endif %}">✓</span><span><strong>{{ task.plan_title }}</strong><br><span class="muted">{{ task.subtitle }}</span></span></li>
-        {% endfor %}
-      </ul>
       {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
-    </section>
-
-    <section id="tasks">
-      <div class="section-heading"><h2>Задания на сегодня</h2><span>≈ 25 минут</span></div>
-      <div class="task-list">
-        {% for task in tasks %}
-          <a class="task-card" href="{% url 'lesson' task.id %}">
-            <span class="task-icon">{{ task.emoji }}</span>
-            <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
-            <span class="task-arrow" aria-hidden="true">→</span>
-          </a>
-        {% endfor %}
-      </div>
+      <a class="compact-button daily-action" href="{% url 'daily-tasks' %}">{% if completed_count == tasks|length %}Повторить задания{% else %}Продолжить занятия{% endif %}</a>
     </section>
   </div>
 {% endblock %}

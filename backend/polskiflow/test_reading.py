@@ -16,7 +16,19 @@ class ReadingViewsTests(TestCase):
             level="A1",
             emoji="📖",
             paragraphs=["Ala ma kota. Kot lubi mleko."],
-            glossary={"kota": "кота", "lubi": "любит", "mleko": "молоко"},
+            glossary={
+                "kota": {
+                    "lemma": "kot",
+                    "translation": "кот",
+                    "part_of_speech": "существительное",
+                },
+                "lubi": {
+                    "lemma": "lubić",
+                    "translation": "любить",
+                    "part_of_speech": "глагол",
+                },
+                "mleko": "молоко",
+            },
         )
 
     def setUp(self):
@@ -29,6 +41,11 @@ class ReadingViewsTests(TestCase):
         )
         self.auth_patch.start()
         self.addCleanup(self.auth_patch.stop)
+        self.news_patch = patch(
+            "polskiflow.reading_views.latest_official_news", return_value=[]
+        )
+        self.news_patch.start()
+        self.addCleanup(self.news_patch.stop)
 
     def test_library_lists_active_texts(self):
         response = self.client.get("/reading/")
@@ -40,14 +57,16 @@ class ReadingViewsTests(TestCase):
         response = self.client.get("/reading/test-story/")
 
         self.assertContains(response, 'data-word="kota"')
-        self.assertContains(response, 'data-translation="кота"')
+        self.assertContains(response, 'data-lemma="kot"')
+        self.assertContains(response, 'data-translation="кот"')
+        self.assertContains(response, 'data-part-of-speech="существительное"')
         self.assertContains(response, 'class="reader-word"', count=3)
 
     @patch("polskiflow.reading_views.save_personal_word", return_value=True)
     def test_glossary_word_can_be_saved(self, save_word):
         response = self.client.post(
             "/reading/test-story/save/",
-            {"word": "KOTA", "translation": "кота", "context": "Ala ma kota."},
+            {"word": "KOTA", "translation": "кот", "context": "Ala ma kota."},
             headers={"HX-Request": "true"},
         )
 
@@ -55,9 +74,27 @@ class ReadingViewsTests(TestCase):
         save_word.assert_called_once_with(
             "access",
             "00000000-0000-0000-0000-000000000123",
-            "kota",
-            "кота",
+            "kot",
+            "кот",
             "Ala ma kota.",
+            "test-story",
+        )
+
+    @patch("polskiflow.reading_views.save_personal_word", return_value=True)
+    def test_legacy_glossary_value_still_saves_surface_form(self, save_word):
+        response = self.client.post(
+            "/reading/test-story/save/",
+            {"word": "mleko", "translation": "молоко", "context": "Kot lubi mleko."},
+            headers={"HX-Request": "true"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        save_word.assert_called_once_with(
+            "access",
+            "00000000-0000-0000-0000-000000000123",
+            "mleko",
+            "молоко",
+            "Kot lubi mleko.",
             "test-story",
         )
 

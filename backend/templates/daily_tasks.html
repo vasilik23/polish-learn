@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Задания на сегодня — PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header daily-tasks-header">
+    <div>
+      <p class="eyebrow">План на день</p>
+      <h1>Задания на сегодня</h1>
+      <p class="muted">Короткая ежедневная практика: {{ completed_count }} из {{ tasks|length }} выполнено.</p>
+    </div>
+    <div class="progress-ring compact-progress" style="--value: {{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
+  </header>
+
+  {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
+  <div class="task-list daily-task-list">
+    {% for task in tasks %}
+      <a class="task-card" href="{% url 'lesson' task.id %}">
+        <span class="task-icon">{{ task.emoji }}</span>
+        <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
+        <span class="task-arrow" aria-hidden="true">→</span>
+      </a>
+    {% empty %}
+      <section class="card empty-state"><span>✓</span><h2>На сегодня всё</h2><p class="muted">Новые задания появятся в вашем плане.</p></section>
+    {% endfor %}
+  </div>
+{% endblock %}

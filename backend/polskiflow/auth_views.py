@@ -101,6 +101,36 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 
 @require_browser_user
 def home(request: HttpRequest) -> HttpResponse:
+    dashboard, lesson_tasks, completed_count, progress_percent = _daily_plan(request)
+    return render(
+        request,
+        "home.html",
+        {
+            "user": request.supabase_user,
+            "dashboard": dashboard,
+            "tasks": lesson_tasks,
+            "completed_count": completed_count,
+            "progress_percent": progress_percent,
+        },
+    )
+
+
+@require_browser_user
+def daily_tasks(request: HttpRequest) -> HttpResponse:
+    dashboard, lesson_tasks, completed_count, progress_percent = _daily_plan(request)
+    return render(
+        request,
+        "daily_tasks.html",
+        {
+            "dashboard": dashboard,
+            "tasks": lesson_tasks,
+            "completed_count": completed_count,
+            "progress_percent": progress_percent,
+        },
+    )
+
+
+def _daily_plan(request: HttpRequest):
     fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
     dashboard = load_dashboard_progress(
         request.supabase_access_token,
@@ -115,17 +145,7 @@ def home(request: HttpRequest) -> HttpResponse:
     progress_percent = (
         round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
     )
-    return render(
-        request,
-        "home.html",
-        {
-            "user": request.supabase_user,
-            "dashboard": dashboard,
-            "tasks": lesson_tasks,
-            "completed_count": completed_count,
-            "progress_percent": progress_percent,
-        },
-    )
+    return dashboard, lesson_tasks, completed_count, progress_percent
 
 
 @require_browser_user

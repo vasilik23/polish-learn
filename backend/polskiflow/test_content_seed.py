@@ -119,3 +119,31 @@ class FamilyContentTests(TestCase):
 
         self.assertEqual([topic["id"] for topic in topics[:3]], ["introductions", "countries-languages", "family"])
         self.assertEqual(len(topics[2]["lessons"]), 4)
+
+
+class DailyRoutineContentTests(TestCase):
+    def test_daily_routine_is_fourth_complete_topic(self):
+        topic = Topic.objects.get(id="daily-routine")
+
+        self.assertEqual(topic.position, 3)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="daily-routine-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="daily-routine-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="daily-routine-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="daily-routine-review").count(), 7)
+
+    def test_daily_reading_uses_lemma_aware_glossary(self):
+        reading = ReadingText.objects.get(id="zwykly-dzien-oli")
+
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["budzi"]["lemma"], "budzić się")
+        self.assertEqual(reading.glossary["kanapkę"]["lemma"], "kanapka")
+
+    def test_catalog_lists_first_four_curriculum_topics(self):
+        topics = course_topics()
+
+        self.assertEqual(
+            [topic["id"] for topic in topics[:4]],
+            ["introductions", "countries-languages", "family", "daily-routine"],
+        )

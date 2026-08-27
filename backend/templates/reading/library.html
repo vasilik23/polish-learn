@@ -15,4 +15,20 @@
       <div class="card empty-state"><span>📚</span><h2>Тексты скоро появятся</h2><p class="muted">Добавьте первый материал через Django Admin.</p></div>
     {% endfor %}
   </section>
+
+  <section class="news-section" aria-labelledby="news-title">
+    <div class="section-heading"><div><p class="eyebrow">Живой польский</p><h2 id="news-title">Свежие новости</h2></div><span>Официальный RSS</span></div>
+    {% if news %}
+      <div class="news-list">
+        {% for item in news %}
+          <a class="news-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+            <span><small>{{ item.source }}{% if item.published %} · {{ item.published }}{% endif %}</small><strong lang="pl">{{ item.title }}</strong></span><span aria-hidden="true">↗</span>
+          </a>
+        {% endfor %}
+      </div>
+      <p class="source-note">Показываем только заголовки из официального RSS. Полный материал открывается на сайте источника.</p>
+    {% else %}
+      <div class="card empty-state compact-empty"><span>📰</span><h3>Лента временно недоступна</h3><p class="muted">Учебные тексты остаются доступными, попробуй обновить страницу позже.</p></div>
+    {% endif %}
+  </section>
 {% endblock %}
