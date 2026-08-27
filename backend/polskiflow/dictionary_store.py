@@ -7,13 +7,19 @@ from urllib.request import Request, urlopen
 
 from django.conf import settings
 
+from polskiflow.domain.sm2 import Sm2Result
+
 
 def load_personal_words(access_token: str | None, user_id: str) -> list[dict] | None:
     if not _configured(access_token):
         return []
     query = urlencode(
         {
-            "select": "id,word,translation,context,source_text_id,created_at",
+            "select": (
+                "id,word,translation,context,source_text_id,created_at,"
+                "ease_factor,interval_days,repetitions,next_review_date,"
+                "last_reviewed_at"
+            ),
             "user_id": f"eq.{user_id}",
             "order": "created_at.desc",
             "limit": "500",
@@ -64,6 +70,35 @@ def delete_personal_word(
     query = urlencode({"id": f"eq.{word_id}", "user_id": f"eq.{user_id}"})
     request = _request(
         f"personal_words?{query}", access_token, method="DELETE", prefer="return=minimal"
+    )
+    return _send(request)
+
+
+def save_personal_word_review(
+    access_token: str | None,
+    user_id: str,
+    word_id: str,
+    result: Sm2Result,
+    reviewed_at: str,
+) -> bool:
+    """Persist an SM-2 result without allowing ownership to be changed."""
+
+    if not _configured(access_token):
+        return False
+    query = urlencode({"id": f"eq.{word_id}", "user_id": f"eq.{user_id}"})
+    payload = {
+        "ease_factor": result.ease_factor,
+        "interval_days": result.interval_days,
+        "repetitions": result.repetitions,
+        "next_review_date": result.next_review_date.isoformat(),
+        "last_reviewed_at": reviewed_at,
+    }
+    request = _request(
+        f"personal_words?{query}",
+        access_token,
+        method="PATCH",
+        payload=payload,
+        prefer="return=minimal",
     )
     return _send(request)
 

@@ -52,6 +52,24 @@ class Sm2NextTests(TestCase):
 
         self.assertEqual(result.ease_factor, 1.3)
 
+    def test_hard_answer_uses_passing_score_and_reduces_ease(self):
+        result = sm2_next(DEFAULT_SM2_STATE, "hard", self.TODAY)
+
+        self.assertEqual(result.repetitions, 1)
+        self.assertEqual(result.interval_days, 1)
+        self.assertAlmostEqual(result.ease_factor, 2.36)
+
+    def test_good_answer_keeps_ease_factor(self):
+        result = sm2_next(DEFAULT_SM2_STATE, "good", self.TODAY)
+
+        self.assertEqual(result.repetitions, 1)
+        self.assertEqual(result.ease_factor, 2.5)
+
+    def test_easy_answer_increases_ease_factor(self):
+        result = sm2_next(DEFAULT_SM2_STATE, "easy", self.TODAY)
+
+        self.assertEqual(result.ease_factor, 2.6)
+
     def test_unknown_quality_is_rejected(self):
         with self.assertRaises(ValueError):
-            sm2_next(DEFAULT_SM2_STATE, "easy", self.TODAY)  # type: ignore[arg-type]
+            sm2_next(DEFAULT_SM2_STATE, "perfect", self.TODAY)  # type: ignore[arg-type]
