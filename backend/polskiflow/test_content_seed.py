@@ -1,6 +1,7 @@
 from django.test import TestCase
 
 from polskiflow.learning.models import (
+    Course,
     Flashcard,
     Lesson,
     LessonFlashcard,
@@ -348,3 +349,30 @@ class A1FinalReviewContentTests(TestCase):
         topics = course_topics()
         self.assertEqual(len([topic for topic in topics if topic["level"] == "A1"]), 12)
         self.assertEqual(topics[11]["id"], "a1-final-review")
+
+
+class A2PastWeekendContentTests(TestCase):
+    def test_past_weekend_is_first_complete_a2_topic(self):
+        course = Course.objects.get(id="a2-independence")
+        topic = Topic.objects.get(id="past-weekend")
+        self.assertEqual(course.level, "A2")
+        self.assertEqual(topic.course, course)
+        self.assertEqual(topic.position, 0)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="past-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="past-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="past-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="past-review").count(), 7)
+
+    def test_a2_reading_has_original_metadata_and_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="weekend-kasi-i-pawla")
+        self.assertEqual(reading.level, "A2")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["pojechała"]["lemma"], "pojechać")
+        self.assertEqual(reading.glossary["poszły"]["lemma"], "pójść")
+        self.assertEqual(reading.glossary["odpoczął"]["lemma"], "odpocząć")
+
+    def test_catalog_starts_a2_with_past_weekend(self):
+        a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual([topic["id"] for topic in a2_topics], ["past-weekend"])
