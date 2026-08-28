@@ -439,7 +439,31 @@ class A2HousingServicesContentTests(TestCase):
     def test_catalog_lists_three_a2_topics_in_order(self):
         a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
         self.assertEqual(
-            [topic["id"] for topic in a2_topics],
+            [topic["id"] for topic in a2_topics[:3]],
             ["past-weekend", "travel-plans", "housing-services"],
         )
-        self.assertEqual([len(topic["lessons"]) for topic in a2_topics], [5, 5, 5])
+        self.assertEqual([len(topic["lessons"]) for topic in a2_topics[:3]], [5, 5, 5])
+
+
+class A2WorkContentTests(TestCase):
+    def test_work_is_fourth_complete_a2_topic(self):
+        topic = Topic.objects.get(id="a2-work")
+        self.assertEqual(topic.position, 3)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="a2work-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="a2work-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="a2work-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="a2work-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="a2work-review").count(), 7)
+
+    def test_work_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="pierwszy-tydzien-mai")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "a2work-reading-check")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["obsłudze"]["lemma"], "obsługa")
+        self.assertEqual(reading.glossary["wykonała"]["lemma"], "wykonać")
+
+    def test_catalog_lists_four_a2_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work"])
