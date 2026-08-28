@@ -19,9 +19,10 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
         <label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" value="{{ email|default:'' }}" required>
         <label for="password">Пароль</label>
-        <input id="password" name="password" type="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}" minlength="6" placeholder="Не менее 6 символов" required>
+        <input id="password" name="password" type="password" autocomplete="{% if mode == 'login' %}current-password{% else %}new-password{% endif %}"{% if mode == 'register' %} minlength="10" aria-describedby="password-hint"{% endif %} placeholder="{% if mode == 'login' %}Ваш пароль{% else %}Не менее 10 символов{% endif %}" required>
+        {% if mode == 'register' %}<p class="field-hint" id="password-hint">Используйте строчные и заглавные буквы и хотя бы одну цифру.</p>{% endif %}
         <button type="submit">{% if mode == "login" %}Войти в PolskiFlow{% else %}Создать аккаунт{% endif %}</button>
       </form>
       {% if mode == "login" %}
