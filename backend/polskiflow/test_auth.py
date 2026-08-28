@@ -30,6 +30,8 @@ class _Response(io.BytesIO):
     SUPABASE_URL="https://project.supabase.co",
     SUPABASE_ANON_KEY="public-anon-key",
     SUPABASE_AUTH_TIMEOUT=2,
+    SUPABASE_AUTH_NETWORK_ATTEMPTS=3,
+    SUPABASE_AUTH_RETRY_BACKOFF=0.01,
 )
 class SupabaseAuthTests(SimpleTestCase):
     @patch("polskiflow.auth.urlopen")
@@ -89,8 +91,9 @@ class SupabaseAuthTests(SimpleTestCase):
         })
         self.assertIn("context", urlopen.call_args.kwargs)
 
+    @patch("polskiflow.auth.time.sleep")
     @patch("polskiflow.auth.urlopen")
-    def test_password_sign_in_retries_one_network_failure(self, urlopen):
+    def test_password_sign_in_retries_one_network_failure(self, urlopen, sleep):
         urlopen.side_effect = [
             URLError("temporary failure"),
             _Response(
@@ -109,15 +112,19 @@ class SupabaseAuthTests(SimpleTestCase):
 
         self.assertEqual(session.user.id, "user-123")
         self.assertEqual(urlopen.call_count, 2)
+        sleep.assert_called_once_with(0.01)
+        self.assertIsNot(urlopen.call_args_list[0].args[0], urlopen.call_args_list[1].args[0])
 
+    @patch("polskiflow.auth.time.sleep")
     @patch("polskiflow.auth.urlopen", side_effect=URLError("service unavailable"))
-    def test_password_sign_in_reports_network_failure_after_retry(self, urlopen):
+    def test_password_sign_in_reports_network_failure_after_retry(self, urlopen, sleep):
         with self.assertRaisesMessage(
             SupabaseAuthError, "Сервис авторизации временно недоступен"
         ):
             sign_in("learner@example.com", "password")
 
-        self.assertEqual(urlopen.call_count, 2)
+        self.assertEqual(urlopen.call_count, 3)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [0.01, 0.02])
 
     @patch("polskiflow.auth.refresh_session")
     @patch("polskiflow.auth.authenticate_access_token")
