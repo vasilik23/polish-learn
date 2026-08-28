@@ -195,14 +195,28 @@ def course(request: HttpRequest) -> HttpResponse:
         request.supabase_user.id,
         fallback_name,
     )
-    topics = course_topics()
+    levels = ("A1", "A2", "B1", "B2", "C1")
+    requested_level = request.GET.get("level", "A1").upper()
+    selected_level = requested_level if requested_level in levels else "A1"
+    all_topics = course_topics()
+    level_counts = {
+        level: sum(topic["level"] == level for topic in all_topics) for level in levels
+    }
+    topics = [topic for topic in all_topics if topic["level"] == selected_level]
     for topic in topics:
         for lesson in topic["lessons"]:
             lesson["completed"] = lesson["id"] in dashboard.completed_lesson_ids
     return render(
         request,
         "course.html",
-        {"dashboard": dashboard, "course_topics": topics},
+        {
+            "dashboard": dashboard,
+            "course_topics": topics,
+            "course_levels": [
+                {"name": level, "topic_count": level_counts[level]} for level in levels
+            ],
+            "selected_level": selected_level,
+        },
     )
 
 

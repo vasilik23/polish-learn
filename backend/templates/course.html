@@ -5,12 +5,24 @@
     <div><p class="eyebrow">Траектория A1 → C1</p><h1>Курс польского</h1><p class="muted">Проходи темы по порядку: слова, грамматика, повторение, чтение и проверка знаний.</p></div>
     <a class="compact-button" href="{% url 'reading-library' %}">Все тексты →</a>
   </header>
+  <nav class="course-levels" aria-label="Уровни курса">
+    {% for level in course_levels %}
+      <a href="?level={{ level.name }}"{% if level.name == selected_level %} aria-current="page"{% endif %}>
+        <strong>{{ level.name }}</strong>
+        <small>{% if level.topic_count %}{{ level.topic_count }} тем{% else %}Скоро{% endif %}</small>
+      </a>
+    {% endfor %}
+  </nav>
+  <div class="section-heading course-level-heading">
+    <div><p class="eyebrow">Уровень {{ selected_level }}</p><h2>Темы и уроки</h2></div>
+    {% if course_topics %}<span>{{ course_topics|length }} тем</span>{% endif %}
+  </div>
   <div class="topic-list" aria-label="Темы курса">
     {% for topic in course_topics %}
       <section class="topic-card" id="topic-{{ topic.id }}">
         <header class="topic-header">
           <span class="topic-emoji">{{ topic.emoji }}</span>
-          <span><small>{{ topic.level }} · Тема {{ forloop.counter }}</small><strong>{{ topic.title }}</strong><span>{{ topic.description }}</span></span>
+          <span><small>{{ selected_level }} · Тема {{ forloop.counter }}</small><strong>{{ topic.title }}</strong><span>{{ topic.description }}</span></span>
         </header>
         <div class="task-list">
           {% for task in topic.lessons %}
@@ -23,7 +35,7 @@
         </div>
       </section>
     {% empty %}
-      <div class="card empty-state"><span>🧭</span><h2>Темы скоро появятся</h2></div>
+      <div class="card empty-state"><span>🧭</span><h2>{{ selected_level }} уже в плане</h2><p>Сначала завершим предыдущий уровень, затем здесь появятся новые темы и уроки.</p></div>
     {% endfor %}
   </div>
 {% endblock %}

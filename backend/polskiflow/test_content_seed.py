@@ -295,3 +295,32 @@ class FreeTimeContentTests(TestCase):
             [topic["id"] for topic in course_topics()[:10]],
             ["introductions", "countries-languages", "family", "daily-routine", "home", "food-shopping", "city-directions", "time-meetings", "work-study", "free-time"],
         )
+
+
+class HealthContentTests(TestCase):
+    def test_health_is_eleventh_complete_topic(self):
+        topic = Topic.objects.get(id="health")
+        self.assertEqual(topic.position, 10)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="health-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="health-quiz").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="health-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="health-review").count(), 7)
+
+    def test_health_reading_has_original_metadata_and_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="ola-u-lekarza")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["czuje"]["lemma"], "czuć się")
+        self.assertEqual(reading.glossary["receptę"]["lemma"], "recepta")
+        self.assertEqual(reading.glossary["odpoczywa"]["lemma"], "odpoczywać")
+
+    def test_catalog_lists_first_eleven_curriculum_topics(self):
+        self.assertEqual(
+            [topic["id"] for topic in course_topics()[:11]],
+            [
+                "introductions", "countries-languages", "family", "daily-routine",
+                "home", "food-shopping", "city-directions", "time-meetings",
+                "work-study", "free-time", "health",
+            ],
+        )

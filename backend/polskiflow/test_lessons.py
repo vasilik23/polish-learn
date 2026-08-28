@@ -95,6 +95,38 @@ class LessonViewsTests(TestCase):
         self.assertContains(course_page, "Новая тема")
         self.assertContains(course_page, extra.title)
 
+    def test_course_catalog_separates_topics_by_cefr_level(self):
+        a2_course = Course.objects.create(
+            id="a2-catalog-test", title="A2", level="A2", position=2
+        )
+        a2_topic = Topic.objects.create(
+            id="a2-catalog-topic", course=a2_course, title="Прошедшие выходные"
+        )
+        Lesson.objects.create(
+            id="a2-extra-lesson",
+            topic=a2_topic,
+            title="Miniony weekend",
+            plan_title="Weekend",
+            subtitle="A2",
+            description="Прошедшее время",
+            position=50,
+        )
+
+        a1_page = self.client.get("/course/")
+        self.assertContains(a1_page, 'aria-label="Уровни курса"')
+        self.assertContains(a1_page, 'href="?level=A1" aria-current="page"')
+        self.assertNotContains(a1_page, "Miniony weekend")
+
+        a2_page = self.client.get("/course/?level=A2")
+        self.assertContains(a2_page, 'href="?level=A2" aria-current="page"')
+        self.assertContains(a2_page, "Прошедшие выходные")
+        self.assertContains(a2_page, "Miniony weekend")
+        self.assertNotContains(a2_page, "Новая тема")
+
+    def test_course_catalog_falls_back_to_a1_for_unknown_level(self):
+        response = self.client.get("/course/?level=Z9")
+        self.assertContains(response, 'href="?level=A1" aria-current="page"')
+
     def test_user_menu_contains_logout(self):
         response = self.client.get("/")
         content = response.content.decode()
