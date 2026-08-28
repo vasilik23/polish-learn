@@ -382,5 +382,33 @@ class A2PastWeekendContentTests(TestCase):
 
     def test_catalog_starts_a2_with_past_weekend(self):
         a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
-        self.assertEqual([topic["id"] for topic in a2_topics], ["past-weekend"])
+        self.assertEqual(a2_topics[0]["id"], "past-weekend")
         self.assertEqual(len(a2_topics[0]["lessons"]), 5)
+
+
+class A2TravelPlansContentTests(TestCase):
+    def test_travel_plans_is_second_complete_a2_topic(self):
+        topic = Topic.objects.get(id="travel-plans")
+        self.assertEqual(topic.course_id, "a2-independence")
+        self.assertEqual(topic.position, 1)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="travel-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="travel-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="travel-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="travel-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="travel-review").count(), 7)
+
+    def test_travel_reading_is_lemma_aware_and_links_comprehension(self):
+        reading = ReadingText.objects.get(id="plan-wyjazdu-do-gdanska")
+        self.assertEqual(reading.level, "A2")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "travel-reading-check")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["pojadą"]["lemma"], "pojechać")
+        self.assertEqual(reading.glossary["przesiądą"]["lemma"], "przesiąść się")
+        self.assertEqual(reading.glossary["starówki"]["lemma"], "starówka")
+
+    def test_catalog_lists_both_a2_topics_in_order(self):
+        a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual([topic["id"] for topic in a2_topics], ["past-weekend", "travel-plans"])
+        self.assertEqual([len(topic["lessons"]) for topic in a2_topics], [5, 5])

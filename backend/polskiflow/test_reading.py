@@ -30,6 +30,15 @@ class ReadingViewsTests(TestCase):
                 "mleko": "молоко",
             },
         )
+        ReadingText.objects.create(
+            id="test-story-a2", title="Historia A2", description="Уровень A2",
+            level="A2", paragraphs=["To jest A2."], glossary={}, position=1,
+        )
+        ReadingText.objects.create(
+            id="test-story-fallback", title="Historia bez poziomu",
+            description="Резервный уровень", level="", paragraphs=["Tekst."],
+            glossary={}, position=2,
+        )
 
     def setUp(self):
         self.client.cookies[ACCESS_COOKIE] = "access"
@@ -51,17 +60,36 @@ class ReadingViewsTests(TestCase):
         response = self.client.get("/reading/")
 
         self.assertContains(response, "Krótka historia")
+        self.assertContains(response, "Historia bez poziomu")
+        self.assertNotContains(response, "Historia A2")
         self.assertContains(response, "Тестовый рассказ")
         self.assertContains(response, "Политика")
         self.assertContains(response, "Спорт")
         self.assertContains(response, "Культура и медиа")
+        self.assertContains(response, 'aria-label="Уровень учебных текстов"')
+        self.assertContains(response, 'href="?level=A1#texts-title" aria-current="page"')
+
+    def test_library_filters_texts_by_level_and_falls_back_to_a1(self):
+        response = self.client.get("/reading/?level=A2")
+
+        self.assertContains(response, "Historia A2")
+        self.assertNotContains(response, "Krótka historia")
+        self.assertContains(response, 'href="?level=A2#texts-title" aria-current="page"')
+
+        response = self.client.get("/reading/?level=unknown")
+        self.assertContains(response, "Krótka historia")
+        self.assertContains(response, 'href="?level=A1#texts-title" aria-current="page"')
 
     def test_library_filters_news_by_allowlisted_category(self):
         response = self.client.get("/reading/?category=sport")
 
         self.assertEqual(response.status_code, 200)
         self.news_mock.assert_called_with(category="sport")
-        self.assertContains(response, 'href="?category=sport#news-title" aria-current="page"')
+        self.assertContains(response, 'href="?level=A1&amp;category=sport#news-title" aria-current="page"')
+
+        response = self.client.get("/reading/?level=A2&category=sport")
+        self.assertContains(response, 'href="?level=A1&amp;category=sport#texts-title"')
+        self.assertContains(response, 'href="?level=A2&amp;category=sport#news-title" aria-current="page"')
 
         self.client.get("/reading/?category=not-a-category")
         self.news_mock.assert_called_with(category=None)
@@ -151,6 +179,15 @@ class ReadingViewsTests(TestCase):
         activity = self.client.get("/lesson/weekend-reading-check/")
         self.assertContains(activity, "Dokąd Kasia pojechała po pracy?")
         self.assertContains(activity, "Do Wrocławia")
+
+    def test_travel_reader_links_to_its_comprehension_activity(self):
+        response = self.client.get("/reading/plan-wyjazdu-do-gdanska/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/lesson/travel-reading-check/"')
+        activity = self.client.get("/lesson/travel-reading-check/")
+        self.assertContains(activity, "Kiedy Marta i Kuba wyjadą z Krakowa?")
+        self.assertContains(activity, "W piątek wieczorem")
 
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
