@@ -204,9 +204,26 @@ class BrowserAuthTests(SimpleTestCase):
     def test_registration_waits_for_email_confirmation(self, signup):
         signup.return_value = None
         response = self.client.post(
-            "/register/", {"email": "new@example.com", "password": "password"}
+            "/register/", {"email": "new@example.com", "password": "Bezpieczne2026"}
         )
         self.assertContains(response, "Подтвердите email")
+
+    @patch("polskiflow.auth_views.sign_up")
+    def test_registration_rejects_weak_password_before_supabase(self, signup):
+        response = self.client.post(
+            "/register/", {"email": "new@example.com", "password": "Password123"}
+        )
+
+        self.assertContains(response, "пароль слишком распространён")
+        self.assertContains(response, 'value="new@example.com"')
+        signup.assert_not_called()
+
+    def test_registration_explains_free_plan_password_policy(self):
+        response = self.client.get("/register/")
+
+        self.assertContains(response, 'minlength="10"')
+        self.assertContains(response, 'aria-describedby="password-hint"')
+        self.assertContains(response, "строчные и заглавные буквы")
 
     @patch("polskiflow.auth_views.sign_out")
     @patch("polskiflow.auth.authenticate_access_token")

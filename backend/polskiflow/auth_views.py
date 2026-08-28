@@ -21,6 +21,7 @@ from polskiflow.auth import (
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.daily_plan import build_daily_plan
+from polskiflow.domain.password_policy import password_error
 from polskiflow.progress_store import load_dashboard_progress
 
 
@@ -69,10 +70,11 @@ def register_view(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         email = request.POST.get("email", "").strip()
         password = request.POST.get("password", "")
+        context["email"] = email
         if not email or not password:
             context["error"] = "Укажите email и пароль"
-        elif len(password) < 6:
-            context["error"] = "Пароль должен быть не короче 6 символов"
+        elif error := password_error(password):
+            context["error"] = error
         else:
             try:
                 session = sign_up(email, password)
