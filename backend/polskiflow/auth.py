@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import ssl
+import time
 from dataclasses import dataclass
 from functools import wraps
 from urllib.error import HTTPError, URLError
@@ -17,7 +18,6 @@ from django.http import JsonResponse
 ACCESS_COOKIE = "polskiflow_access_token"
 REFRESH_COOKIE = "polskiflow_refresh_token"
 REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
-AUTH_NETWORK_ATTEMPTS = 2
 HTTPS_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 logger = logging.getLogger(__name__)
 
@@ -180,13 +180,14 @@ def _auth_request(
     }
     if access_token:
         headers["Authorization"] = f"Bearer {access_token}"
-    request = Request(
-        f"{settings.SUPABASE_URL.rstrip('/')}{path}",
-        data=body,
-        headers=headers,
-        method="POST",
-    )
-    for attempt in range(AUTH_NETWORK_ATTEMPTS):
+    attempts = max(1, settings.SUPABASE_AUTH_NETWORK_ATTEMPTS)
+    for attempt in range(attempts):
+        request = Request(
+            f"{settings.SUPABASE_URL.rstrip('/')}{path}",
+            data=body,
+            headers=headers,
+            method="POST",
+        )
         try:
             with urlopen(
                 request,
@@ -202,15 +203,16 @@ def _auth_request(
             raise SupabaseAuthError("Сервис авторизации вернул некорректный ответ") from error
         except (URLError, TimeoutError) as error:
             logger.warning(
-                "Supabase Auth network request failed (attempt %s/%s): %s",
+                "Supabase Auth network request failed (attempt %s/%s, reason=%s)",
                 attempt + 1,
-                AUTH_NETWORK_ATTEMPTS,
-                type(error).__name__,
+                attempts,
+                type(getattr(error, "reason", error)).__name__,
             )
-            if attempt + 1 == AUTH_NETWORK_ATTEMPTS:
+            if attempt + 1 == attempts:
                 raise SupabaseAuthError(
                     "Сервис авторизации временно недоступен"
                 ) from error
+            time.sleep(settings.SUPABASE_AUTH_RETRY_BACKOFF * (2**attempt))
             continue
         break
     if not isinstance(result, dict):

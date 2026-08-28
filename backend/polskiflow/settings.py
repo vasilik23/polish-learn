@@ -79,6 +79,12 @@ DATABASE_ROUTERS = ["polskiflow.learning.router.SupabaseSchemaRouter"]
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 SUPABASE_AUTH_TIMEOUT = float(os.environ.get("SUPABASE_AUTH_TIMEOUT", "5"))
+SUPABASE_AUTH_NETWORK_ATTEMPTS = int(
+    os.environ.get("SUPABASE_AUTH_NETWORK_ATTEMPTS", "3")
+)
+SUPABASE_AUTH_RETRY_BACKOFF = float(
+    os.environ.get("SUPABASE_AUTH_RETRY_BACKOFF", "0.2")
+)
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
 SESSION_COOKIE_SECURE = AUTH_COOKIE_SECURE
