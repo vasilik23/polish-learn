@@ -2,6 +2,7 @@
 
 import re
 from datetime import date
+from urllib.parse import urlencode
 
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
@@ -23,6 +24,7 @@ from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
 REVIEW_QUALITIES = {"again", "hard", "good", "easy"}
 PRACTICE_WORD_IDS_SESSION_KEY = "dictionary_practice_word_ids"
+READING_LEVELS = ("A1", "A2", "B1", "B2", "C1")
 
 
 @require_browser_user
@@ -30,13 +32,36 @@ def reading_library(request: HttpRequest) -> HttpResponse:
     selected_category = request.GET.get("category", "")
     if selected_category not in CATEGORY_IDS:
         selected_category = ""
+    selected_level = request.GET.get("level", "A1").upper()
+    if selected_level not in READING_LEVELS:
+        selected_level = "A1"
+    texts = reading_texts()
+    for text in texts:
+        if text.get("level") not in READING_LEVELS:
+            text["level"] = "A1"
+    level_tabs = [
+        {
+            "id": level,
+            "href": f"?{urlencode({'level': level, **({'category': selected_category} if selected_category else {})})}#texts-title",
+        }
+        for level in READING_LEVELS
+    ]
+    news_categories = [
+        {
+            **category,
+            "href": f"?{urlencode({'level': selected_level, 'category': category['id']})}#news-title",
+        }
+        for category in CATEGORIES
+    ]
     return render(
         request,
         "reading/library.html",
         {
-            "texts": reading_texts(),
+            "texts": [text for text in texts if text["level"] == selected_level],
+            "reading_levels": level_tabs,
+            "selected_reading_level": selected_level,
             "news": latest_official_news(category=selected_category or None),
-            "news_categories": CATEGORIES,
+            "news_categories": news_categories,
             "selected_news_category": selected_category,
         },
     )

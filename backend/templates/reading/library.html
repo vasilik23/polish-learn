@@ -3,25 +3,33 @@
 {% block content %}
   <header class="content-header">
     <div><p class="eyebrow">Czytelnia</p><h1>Читай по-польски</h1><p class="muted">Короткие адаптированные истории с переводом слов по нажатию.</p></div>
-    <a class="compact-button" href="{% url 'dictionary' %}">Мой словарь →</a>
+    <div class="header-actions"><a class="compact-button secondary-link" href="#news-title">Свежие новости ↓</a><a class="compact-button" href="{% url 'dictionary' %}">Мой словарь →</a></div>
   </header>
-  <section class="reading-grid" aria-label="Доступные тексты">
+  <section aria-labelledby="texts-title">
+    <div class="section-heading"><div><p class="eyebrow">По уровню</p><h2 id="texts-title">Учебные тексты</h2></div></div>
+    <nav class="reading-level-tabs" aria-label="Уровень учебных текстов">
+      {% for level in reading_levels %}
+        <a href="{{ level.href }}"{% if selected_reading_level == level.id %} aria-current="page"{% endif %}>{{ level.id }}</a>
+      {% endfor %}
+    </nav>
+    <div class="reading-grid" aria-live="polite">
     {% for text in texts %}
       <a class="reading-card" href="{% url 'reader' text.id %}">
         <span class="reading-cover">{{ text.emoji|default:"📖" }}</span>
         <span class="reading-card-copy"><span class="level-badge">{{ text.level }}</span><strong>{{ text.title }}</strong><small>{{ text.description }}</small><span>◷ {{ text.minutes }} мин · Читать →</span></span>
       </a>
     {% empty %}
-      <div class="card empty-state"><span>📚</span><h2>Тексты скоро появятся</h2><p class="muted">Добавьте первый материал через Django Admin.</p></div>
+      <div class="card empty-state"><span>📚</span><h3>Для уровня {{ selected_reading_level }} тексты скоро появятся</h3><p class="muted">Выбери другой уровень или загляни позже.</p></div>
     {% endfor %}
+    </div>
   </section>
 
   <section class="news-section" aria-labelledby="news-title">
     <div class="section-heading"><div><p class="eyebrow">Живой польский</p><h2 id="news-title">Свежие новости</h2></div><span>Польские RSS</span></div>
     <nav class="news-filters" aria-label="Темы новостей">
-      <a href="{% url 'reading-library' %}#news-title"{% if not selected_news_category %} aria-current="page"{% endif %}>Все темы</a>
+      <a href="?level={{ selected_reading_level }}#news-title"{% if not selected_news_category %} aria-current="page"{% endif %}>Все темы</a>
       {% for category in news_categories %}
-        <a href="?category={{ category.id }}#news-title"{% if selected_news_category == category.id %} aria-current="page"{% endif %}>{{ category.label }}</a>
+        <a href="{{ category.href }}"{% if selected_news_category == category.id %} aria-current="page"{% endif %}>{{ category.label }}</a>
       {% endfor %}
     </nav>
     {% if news %}
