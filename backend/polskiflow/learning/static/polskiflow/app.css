@@ -186,6 +186,9 @@ p { line-height: 1.65; }
 .reading-promo { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .9rem; padding: 1.1rem; border-radius: 1.25rem; background: linear-gradient(135deg, #1c9a67, #39bd80); box-shadow: 0 14px 34px rgba(24,139,91,.2); color: white; text-decoration: none; }
 .reading-promo-icon { display: grid; place-items: center; width: 3.2rem; aspect-ratio: 1; border-radius: 1rem; background: rgba(255,255,255,.17); font-size: 1.5rem; }
 .reading-promo small, .reading-promo strong, .reading-promo span span { display: block; }
+.reading-check-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; margin-top: 1rem; }
+.reading-check-card h2, .reading-check-card p { margin-bottom: .2rem; }
+.reading-check-icon { display: grid; place-items: center; width: 3rem; aspect-ratio: 1; border-radius: 1rem; background: var(--green-soft); color: var(--green); font-size: 1.2rem; font-weight: 900; }
 .reading-promo small { color: #d9ffed; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .reading-promo strong { margin: .15rem 0; font-size: 1rem; }
 .reading-promo span span { color: #e5fff2; font-size: .74rem; line-height: 1.4; }
@@ -283,7 +286,11 @@ p { line-height: 1.65; }
 .review-quality { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin: 1rem 0 0; padding: 0; border: 0; }
 .review-quality legend { grid-column: 1 / -1; width: 100%; margin-bottom: .25rem; color: var(--muted); font-size: .85rem; text-align: center; }
 .review-quality button { min-height: 3rem; }
-@media (max-width: 480px) { .review-quality { grid-template-columns: 1fr; } }
+@media (max-width: 480px) {
+  .review-quality { grid-template-columns: 1fr; }
+  .reading-check-card { grid-template-columns: auto minmax(0, 1fr); }
+  .reading-check-card .compact-button { grid-column: 1 / -1; justify-content: center; }
+}
 
 .lesson-shell { width: min(100%, 38rem); margin: 0 auto; }
 .lesson-header { display: grid; grid-template-columns: 2.5rem 1fr 2.5rem; align-items: center; margin-bottom: 1.2rem; text-align: center; }
