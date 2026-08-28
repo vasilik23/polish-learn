@@ -9,7 +9,7 @@
     {% for level in course_levels %}
       <a href="?level={{ level.name }}"{% if level.name == selected_level %} aria-current="page"{% endif %}>
         <strong>{{ level.name }}</strong>
-        <small>{% if level.topic_count %}{{ level.topic_count }} тем{% else %}Скоро{% endif %}</small>
+        <small>{{ level.topic_count_label }}</small>
       </a>
     {% endfor %}
   </nav>
@@ -24,6 +24,13 @@
           <span class="topic-emoji">{{ topic.emoji }}</span>
           <span><small>{{ selected_level }} · Тема {{ forloop.counter }}</small><strong>{{ topic.title }}</strong><span>{{ topic.description }}</span></span>
         </header>
+        <div class="topic-progress-row">
+          <span>{{ topic.completed_count }} / {{ topic.lesson_count }} уроков</span>
+          <span>{% if topic.completed %}Тема завершена{% else %}{{ topic.progress_percent }}%{% endif %}</span>
+        </div>
+        <div class="topic-progress" role="progressbar" aria-label="Прогресс темы «{{ topic.title }}»" aria-valuemin="0" aria-valuemax="{{ topic.lesson_count }}" aria-valuenow="{{ topic.completed_count }}">
+          <span style="--value: {{ topic.progress_percent }}%"></span>
+        </div>
         <div class="task-list">
           {% for task in topic.lessons %}
             <a class="task-card" href="{% url 'lesson' task.id %}">
@@ -33,6 +40,11 @@
             </a>
           {% endfor %}
         </div>
+        {% if topic.next_lesson %}
+          <a class="topic-action" href="{% url 'lesson' topic.next_lesson.id %}">Продолжить <span aria-hidden="true">→</span></a>
+        {% else %}
+          <p class="topic-complete-status"><span aria-hidden="true">✓</span> Все уроки пройдены</p>
+        {% endif %}
       </section>
     {% empty %}
       <div class="card empty-state"><span>🧭</span><h2>{{ selected_level }} уже в плане</h2><p>Сначала завершим предыдущий уровень, затем здесь появятся новые темы и уроки.</p></div>

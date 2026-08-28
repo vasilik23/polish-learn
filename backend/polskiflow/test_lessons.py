@@ -119,6 +119,7 @@ class LessonViewsTests(TestCase):
 
         a2_page = self.client.get("/course/?level=A2")
         self.assertContains(a2_page, 'href="?level=A2" aria-current="page"')
+        self.assertContains(a2_page, "1 тема")
         self.assertContains(a2_page, "Прошедшие выходные")
         self.assertContains(a2_page, "Miniony weekend")
         self.assertNotContains(a2_page, "Новая тема")
@@ -126,6 +127,43 @@ class LessonViewsTests(TestCase):
     def test_course_catalog_falls_back_to_a1_for_unknown_level(self):
         response = self.client.get("/course/?level=Z9")
         self.assertContains(response, 'href="?level=A1" aria-current="page"')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_topic_shows_all_time_progress_and_next_lesson(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A1",
+            streak_days=4,
+            completed_lesson_ids=frozenset(),
+            available=True,
+            all_completed_lesson_ids=frozenset({"words", "grammar"}),
+        )
+
+        response = self.client.get("/course/")
+
+        self.assertContains(response, "2 / 4 уроков")
+        self.assertContains(response, 'aria-label="Прогресс темы «Основы»"')
+        self.assertContains(response, 'aria-valuenow="2"')
+        self.assertContains(response, 'href="/lesson/review/">Продолжить')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_topic_shows_completed_status(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A1",
+            streak_days=4,
+            completed_lesson_ids=frozenset(),
+            available=True,
+            all_completed_lesson_ids=frozenset(
+                {"words", "grammar", "review", "quiz"}
+            ),
+        )
+
+        response = self.client.get("/course/")
+
+        self.assertContains(response, "4 / 4 уроков")
+        self.assertContains(response, "Все уроки пройдены")
+        self.assertNotContains(response, 'href="/lesson/words/">Продолжить')
 
     def test_user_menu_contains_logout(self):
         response = self.client.get("/")

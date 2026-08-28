@@ -202,10 +202,33 @@ def course(request: HttpRequest) -> HttpResponse:
     level_counts = {
         level: sum(topic["level"] == level for topic in all_topics) for level in levels
     }
+
+    def topic_count_label(count: int) -> str:
+        if count == 0:
+            return "Скоро"
+        if count % 10 == 1 and count % 100 != 11:
+            suffix = "тема"
+        elif count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
+            suffix = "темы"
+        else:
+            suffix = "тем"
+        return f"{count} {suffix}"
     topics = [topic for topic in all_topics if topic["level"] == selected_level]
     for topic in topics:
+        completed_count = 0
+        next_lesson = None
         for lesson in topic["lessons"]:
-            lesson["completed"] = lesson["id"] in dashboard.completed_lesson_ids
+            lesson["completed"] = lesson["id"] in dashboard.all_completed_lesson_ids
+            if lesson["completed"]:
+                completed_count += 1
+            elif next_lesson is None:
+                next_lesson = lesson
+        lesson_count = len(topic["lessons"])
+        topic["completed_count"] = completed_count
+        topic["lesson_count"] = lesson_count
+        topic["progress_percent"] = round(completed_count / lesson_count * 100)
+        topic["next_lesson"] = next_lesson
+        topic["completed"] = completed_count == lesson_count
     return render(
         request,
         "course.html",
@@ -213,7 +236,12 @@ def course(request: HttpRequest) -> HttpResponse:
             "dashboard": dashboard,
             "course_topics": topics,
             "course_levels": [
-                {"name": level, "topic_count": level_counts[level]} for level in levels
+                {
+                    "name": level,
+                    "topic_count": level_counts[level],
+                    "topic_count_label": topic_count_label(level_counts[level]),
+                }
+                for level in levels
             ],
             "selected_level": selected_level,
         },
