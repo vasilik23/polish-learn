@@ -265,6 +265,35 @@ class LessonViewsTests(TestCase):
         tasks_page = self.client.get("/tasks/")
         self.assertContains(tasks_page, 'class="task-complete"', count=2)
 
+    @patch("polskiflow.auth_views.load_personal_words")
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_daily_plan_includes_due_dictionary_review(
+        self, mocked_progress, mocked_words
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A1",
+            streak_days=1,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+        mocked_words.return_value = [
+            {
+                "id": str(index),
+                "word": f"word-{index}",
+                "translation": f"слово-{index}",
+                "next_review_date": "2026-01-01" if index == 0 else "2999-01-01",
+            }
+            for index in range(4)
+        ]
+
+        response = self.client.get("/tasks/")
+
+        self.assertContains(response, "Повторение словаря")
+        self.assertContains(response, "1 слово по расписанию SM-2")
+        self.assertContains(response, 'href="/dictionary/practice/"')
+        self.assertEqual(len(response.context["tasks"]), 4)
+
     def test_unknown_lesson_returns_404(self):
         self.assertEqual(self.client.get("/lesson/unknown/").status_code, 404)
 

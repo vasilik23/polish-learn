@@ -13,7 +13,7 @@
   {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
   <div class="task-list daily-task-list">
     {% for task in tasks %}
-      <a class="task-card" href="{% url 'lesson' task.id %}">
+      <a class="task-card" href="{% if task.kind == 'dictionary-review' %}{% url 'dictionary-practice' %}{% else %}{% url 'lesson' task.id %}{% endif %}">
         <span class="task-icon">{{ task.emoji }}</span>
         <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
         <span class="task-arrow" aria-hidden="true">→</span>

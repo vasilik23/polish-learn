@@ -6,11 +6,15 @@ from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
 
 
 def tasks() -> list[dict]:
-    return list(
-        Lesson.objects.filter(is_active=True).values(
-            "id", "title", "plan_title", "subtitle", "description", "minutes", "emoji"
-        )
+    rows = Lesson.objects.filter(is_active=True).values(
+        "id", "kind", "title", "plan_title", "subtitle", "description",
+        "minutes", "emoji", "topic__course__level",
     )
+    result = []
+    for row in rows:
+        level = row.pop("topic__course__level") or "A1"
+        result.append({**row, "level": level})
+    return result
 
 
 def task(lesson_id: str) -> dict | None:
