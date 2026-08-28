@@ -140,6 +140,18 @@ class ReadingViewsTests(TestCase):
     def test_unknown_text_returns_404(self):
         self.assertEqual(self.client.get("/reading/no-story/").status_code, 404)
 
+    def test_a2_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/weekend-kasi-i-pawla/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Проверь понимание текста")
+        self.assertContains(response, "5 вопросов · A2")
+        self.assertContains(response, 'href="/lesson/weekend-reading-check/"')
+
+        activity = self.client.get("/lesson/weekend-reading-check/")
+        self.assertContains(activity, "Dokąd Kasia pojechała po pracy?")
+        self.assertContains(activity, "Do Wrocławia")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()

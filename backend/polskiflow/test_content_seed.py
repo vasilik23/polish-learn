@@ -358,9 +358,12 @@ class A2PastWeekendContentTests(TestCase):
         self.assertEqual(course.level, "A2")
         self.assertEqual(topic.course, course)
         self.assertEqual(topic.position, 0)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="past-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="past-quiz").count(), 8)
+        self.assertEqual(
+            Question.objects.filter(lesson_id="weekend-reading-check").count(), 5
+        )
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="past-words").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="past-review").count(), 7)
 
@@ -368,6 +371,10 @@ class A2PastWeekendContentTests(TestCase):
         reading = ReadingText.objects.get(id="weekend-kasi-i-pawla")
         self.assertEqual(reading.level, "A2")
         self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(
+            reading.source_metadata["comprehension_lesson_id"],
+            "weekend-reading-check",
+        )
         self.assertEqual(len(reading.paragraphs), 3)
         self.assertEqual(reading.glossary["pojechała"]["lemma"], "pojechać")
         self.assertEqual(reading.glossary["poszły"]["lemma"], "pójść")
@@ -376,3 +383,4 @@ class A2PastWeekendContentTests(TestCase):
     def test_catalog_starts_a2_with_past_weekend(self):
         a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
         self.assertEqual([topic["id"] for topic in a2_topics], ["past-weekend"])
+        self.assertEqual(len(a2_topics[0]["lessons"]), 5)

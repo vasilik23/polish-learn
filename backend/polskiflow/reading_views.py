@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from polskiflow.auth_views import require_browser_user
-from polskiflow.content import reading_text, reading_texts
+from polskiflow.content import reading_text, reading_texts, task
 from polskiflow.dictionary_store import (
     delete_personal_word,
     load_personal_words,
@@ -47,10 +47,21 @@ def reader(request: HttpRequest, text_id: str) -> HttpResponse:
     text = reading_text(text_id)
     if text is None:
         raise Http404
+    metadata = text.source_metadata if isinstance(text.source_metadata, dict) else {}
+    comprehension_lesson_id = metadata.get("comprehension_lesson_id", "")
+    comprehension_task = (
+        task(comprehension_lesson_id)
+        if isinstance(comprehension_lesson_id, str) and comprehension_lesson_id
+        else None
+    )
     return render(
         request,
         "reading/reader.html",
-        {"text": text, "paragraphs": _tokenize(text.paragraphs, text.glossary)},
+        {
+            "text": text,
+            "paragraphs": _tokenize(text.paragraphs, text.glossary),
+            "comprehension_task": comprehension_task,
+        },
     )
 
 

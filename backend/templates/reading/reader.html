@@ -10,6 +10,17 @@
           <p>{% for token in paragraph %}{% if token.translation %}<button type="button" class="reader-word" data-word="{{ token.word }}" data-lemma="{{ token.lemma }}" data-translation="{{ token.translation }}" data-part-of-speech="{{ token.part_of_speech }}">{{ token.text }}</button>{% else %}{{ token.text }}{% endif %}{% endfor %}</p>
         {% endfor %}
       </div>
+      {% if comprehension_task %}
+        <section class="card reading-check-card" aria-labelledby="reading-check-title">
+          <span class="reading-check-icon" aria-hidden="true">✓</span>
+          <div>
+            <p class="eyebrow">После чтения</p>
+            <h2 id="reading-check-title">Проверь понимание текста</h2>
+            <p class="muted">{{ comprehension_task.subtitle }} · ~{{ comprehension_task.minutes }} мин</p>
+          </div>
+          <a class="compact-button" href="{% url 'lesson' comprehension_task.id %}">Начать вопросы →</a>
+        </section>
+      {% endif %}
     </article>
     <aside class="word-panel" id="word-panel">
       <div class="word-panel-placeholder"><span>👆</span><strong>Нажми на слово</strong><p>Здесь появится перевод, и слово можно будет сохранить.</p></div>
