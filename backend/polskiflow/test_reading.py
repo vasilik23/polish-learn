@@ -198,6 +198,13 @@ class ReadingViewsTests(TestCase):
         self.assertContains(activity, "Jaki problem zauważyła Lena?")
         self.assertContains(activity, "Nie działało ogrzewanie")
 
+    def test_work_reader_links_to_its_comprehension_activity(self):
+        response = self.client.get("/reading/pierwszy-tydzien-mai/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/lesson/a2work-reading-check/"')
+        activity = self.client.get("/lesson/a2work-reading-check/")
+        self.assertContains(activity, "Gdzie zaczęła pracować Maja?")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()
