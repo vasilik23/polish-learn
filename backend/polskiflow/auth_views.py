@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -19,6 +20,7 @@ from polskiflow.auth import (
 )
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
+from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.progress_store import load_dashboard_progress
 
 
@@ -176,10 +178,17 @@ def _daily_plan(request: HttpRequest):
         request.supabase_user.id,
         fallback_name,
     )
-    all_tasks = tasks()
-    for lesson_task in all_tasks:
-        lesson_task["completed"] = lesson_task["id"] in dashboard.completed_lesson_ids
-    lesson_tasks = all_tasks[:4]
+    personal_words = load_personal_words(
+        request.supabase_access_token, request.supabase_user.id
+    )
+    lesson_tasks = build_daily_plan(
+        tasks(),
+        level=dashboard.level,
+        completed_all_time=dashboard.all_completed_lesson_ids,
+        completed_today=dashboard.completed_lesson_ids,
+        personal_words=personal_words,
+        today=timezone.localdate(),
+    )
     completed_count = sum(task["completed"] for task in lesson_tasks)
     progress_percent = (
         round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
