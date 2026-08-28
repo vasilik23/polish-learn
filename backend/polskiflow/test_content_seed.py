@@ -324,3 +324,27 @@ class HealthContentTests(TestCase):
                 "work-study", "free-time", "health",
             ],
         )
+
+
+class A1FinalReviewContentTests(TestCase):
+    def test_final_review_is_twelfth_complete_topic(self):
+        topic = Topic.objects.get(id="a1-final-review")
+        self.assertEqual(topic.position, 11)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Question.objects.filter(lesson_id="final-grammar").count(), 6)
+        self.assertEqual(Question.objects.filter(lesson_id="final-quiz").count(), 12)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="final-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="final-review").count(), 8)
+
+    def test_final_reading_is_original_and_uses_normalized_lemmas(self):
+        reading = ReadingText.objects.get(id="samodzielny-dzien-leny")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["umawia"]["lemma"], "umawiać się")
+        self.assertEqual(reading.glossary["sprzedawcę"]["lemma"], "sprzedawca")
+        self.assertEqual(reading.glossary["załatwiła"]["lemma"], "załatwić")
+
+    def test_a1_catalog_has_all_twelve_curriculum_topics(self):
+        topics = course_topics()
+        self.assertEqual(len([topic for topic in topics if topic["level"] == "A1"]), 12)
+        self.assertEqual(topics[11]["id"], "a1-final-review")
