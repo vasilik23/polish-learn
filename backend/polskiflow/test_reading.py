@@ -189,6 +189,15 @@ class ReadingViewsTests(TestCase):
         self.assertContains(activity, "Kiedy Marta i Kuba wyjadą z Krakowa?")
         self.assertContains(activity, "W piątek wieczorem")
 
+    def test_housing_reader_links_to_its_comprehension_activity(self):
+        response = self.client.get("/reading/usterka-w-mieszkaniu/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/lesson/housing-reading-check/"')
+        activity = self.client.get("/lesson/housing-reading-check/")
+        self.assertContains(activity, "Jaki problem zauważyła Lena?")
+        self.assertContains(activity, "Nie działało ogrzewanie")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()

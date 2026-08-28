@@ -410,5 +410,36 @@ class A2TravelPlansContentTests(TestCase):
 
     def test_catalog_lists_both_a2_topics_in_order(self):
         a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
-        self.assertEqual([topic["id"] for topic in a2_topics], ["past-weekend", "travel-plans"])
-        self.assertEqual([len(topic["lessons"]) for topic in a2_topics], [5, 5])
+        self.assertEqual([topic["id"] for topic in a2_topics[:2]], ["past-weekend", "travel-plans"])
+        self.assertEqual([len(topic["lessons"]) for topic in a2_topics[:2]], [5, 5])
+
+
+class A2HousingServicesContentTests(TestCase):
+    def test_housing_services_is_third_complete_a2_topic(self):
+        topic = Topic.objects.get(id="housing-services")
+        self.assertEqual(topic.course_id, "a2-independence")
+        self.assertEqual(topic.position, 2)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="housing-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="housing-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="housing-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="housing-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="housing-review").count(), 7)
+
+    def test_housing_reading_is_lemma_aware_and_links_comprehension(self):
+        reading = ReadingText.objects.get(id="usterka-w-mieszkaniu")
+        self.assertEqual(reading.level, "A2")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "housing-reading-check")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["kaloryferów"]["lemma"], "kaloryfer")
+        self.assertEqual(reading.glossary["usterki"]["lemma"], "usterka")
+        self.assertEqual(reading.glossary["spóźni"]["lemma"], "spóźnić się")
+
+    def test_catalog_lists_three_a2_topics_in_order(self):
+        a2_topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual(
+            [topic["id"] for topic in a2_topics],
+            ["past-weekend", "travel-plans", "housing-services"],
+        )
+        self.assertEqual([len(topic["lessons"]) for topic in a2_topics], [5, 5, 5])
