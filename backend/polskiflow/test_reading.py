@@ -219,6 +219,14 @@ class ReadingViewsTests(TestCase):
         activity = self.client.get("/lesson/med-reading-check/")
         self.assertContains(activity, "Jak długo Adam miał objawy?")
 
+    def test_relationships_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/szczera-rozmowa-marty-i-ani/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/lesson/rel-reading-check/"')
+        self.assertContains(response, 'data-word="przyjaźnią"')
+        activity = self.client.get("/lesson/rel-reading-check/")
+        self.assertContains(activity, "Dlaczego Marta była rozczarowana?")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()
