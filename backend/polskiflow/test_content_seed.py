@@ -512,4 +512,33 @@ class A2DoctorPharmacyContentTests(TestCase):
 
     def test_catalog_lists_six_a2_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "A2"]
-        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy"])
+        self.assertEqual([topic["id"] for topic in topics[:6]], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy"])
+
+
+class A2RelationshipsEmotionsContentTests(TestCase):
+    def test_relationships_emotions_is_seventh_complete_a2_topic(self):
+        topic = Topic.objects.get(id="relationships-emotions")
+        self.assertEqual(topic.position, 6)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="rel-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="rel-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="rel-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="rel-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="rel-review").count(), 7)
+
+    def test_relationships_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="szczera-rozmowa-marty-i-ani")
+        self.assertEqual(reading.level, "A2")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "rel-reading-check")
+        self.assertEqual(len(reading.paragraphs), 3)
+        self.assertEqual(reading.glossary["przyjaźnią"]["lemma"], "przyjaźnić się")
+        self.assertEqual(reading.glossary["uspokoić"]["lemma"], "uspokoić się")
+        self.assertEqual(reading.glossary["odbudowała"]["lemma"], "odbudować")
+
+    def test_catalog_lists_seven_a2_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy", "relationships-emotions"],
+        )
