@@ -539,6 +539,34 @@ class A2RelationshipsEmotionsContentTests(TestCase):
     def test_catalog_lists_seven_a2_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "A2"]
         self.assertEqual(
-            [topic["id"] for topic in topics],
+            [topic["id"] for topic in topics[:7]],
             ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy", "relationships-emotions"],
+        )
+
+
+class A2CultureMediaContentTests(TestCase):
+    def test_culture_media_is_eighth_complete_a2_topic(self):
+        topic = Topic.objects.get(id="culture-media")
+        self.assertEqual(topic.position, 7)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="culture-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="culture-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="culture-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="culture-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="culture-review").count(), 7)
+
+    def test_culture_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="wieczor-krotkich-filmow")
+        self.assertEqual(reading.level, "A2")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "culture-reading-check")
+        self.assertEqual(reading.glossary["reżyserów"]["lemma"], "reżyser")
+        self.assertEqual(reading.glossary["reżyserką"]["lemma"], "reżyserka")
+        self.assertEqual(reading.glossary["zachęciły"]["lemma"], "zachęcić")
+
+    def test_catalog_lists_eight_a2_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy", "relationships-emotions", "culture-media"],
         )

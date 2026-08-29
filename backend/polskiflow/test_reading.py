@@ -227,6 +227,14 @@ class ReadingViewsTests(TestCase):
         activity = self.client.get("/lesson/rel-reading-check/")
         self.assertContains(activity, "Dlaczego Marta była rozczarowana?")
 
+    def test_culture_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/wieczor-krotkich-filmow/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/lesson/culture-reading-check/"')
+        self.assertContains(response, 'data-word="reżyserów"')
+        activity = self.client.get("/lesson/culture-reading-check/")
+        self.assertContains(activity, "Na jakie wydarzenie poszli Lena i Paweł?")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()
