@@ -643,3 +643,29 @@ class A2CompletionContentTests(TestCase):
                 "poland-around-us", "a2final-review",
             ],
         )
+
+
+class B1BiographyContentTests(TestCase):
+    def test_biography_is_first_complete_b1_topic(self):
+        topic = Topic.objects.get(id="b1-biography")
+        self.assertEqual(topic.course.level, "B1")
+        self.assertEqual(topic.position, 0)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="bio-grammar").count(), 6)
+        self.assertEqual(Question.objects.filter(lesson_id="bio-quiz").count(), 10)
+        self.assertEqual(Question.objects.filter(lesson_id="bio-reading-check").count(), 6)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="bio-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="bio-review").count(), 7)
+
+    def test_biography_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="bio-droga-joanny")
+        self.assertEqual(reading.level, "B1")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "bio-reading-check")
+        self.assertEqual(len(reading.paragraphs), 4)
+        self.assertEqual(reading.glossary["dorastała"]["lemma"], "dorastać")
+        self.assertEqual(reading.glossary["punktem"]["lemma"], "punkt zwrotny")
+
+    def test_catalog_starts_b1_with_biography(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "B1"]
+        self.assertEqual([topic["id"] for topic in topics], ["b1-biography"])

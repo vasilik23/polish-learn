@@ -264,6 +264,13 @@ class ReadingViewsTests(TestCase):
         activity = self.client.get("/lesson/a2final-reading-check/")
         self.assertContains(activity, "Dlaczego Lena pojechała do Torunia?")
 
+    def test_b1_biography_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/bio-droga-joanny/")
+        self.assertContains(response, 'href="/lesson/bio-reading-check/"')
+        self.assertContains(response, 'data-word="dorastała"')
+        activity = self.client.get("/lesson/bio-reading-check/")
+        self.assertContains(activity, "Gdzie dorastała Joanna?")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()
