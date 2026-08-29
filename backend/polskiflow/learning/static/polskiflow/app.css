@@ -240,6 +240,16 @@ p { line-height: 1.65; }
 .profile-stat strong { margin-bottom: .2rem; font-size: 1.15rem; }
 .profile-stat small { color: var(--muted); line-height: 1.4; }
 .profile-settings { margin-top: 2rem; }
+.profile-form { display: grid; gap: 1rem; margin-bottom: 1rem; }
+.profile-form-fields { display: grid; gap: 1rem; }
+.profile-form label { display: grid; gap: .4rem; font-weight: 800; }
+.profile-form label small { color: var(--muted); font-size: .72rem; font-weight: 500; }
+.profile-form input, .profile-form select { width: 100%; padding: .75rem .8rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--surface); color: var(--text); font: inherit; }
+.profile-form input:focus-visible, .profile-form select:focus-visible { outline: 3px solid var(--primary-soft); border-color: var(--primary); }
+.profile-form button { justify-self: start; }
+.form-message, .form-error { margin: 0; padding: .75rem .85rem; border-radius: .7rem; }
+.form-message { background: #e8f8ef; color: #176b3a; }
+.form-error { background: #fff0f0; color: #9f2424; }
 .settings-list { padding-block: .35rem; }
 .setting-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .8rem; padding: .9rem 0; }
 .setting-row + .setting-row { border-top: 1px solid var(--line); }

@@ -33,6 +33,28 @@
 
   <section class="profile-settings" aria-labelledby="settings-title">
     <div class="section-heading"><div><p class="eyebrow">Персонализация</p><h2 id="settings-title">Настройки</h2></div></div>
+    <form class="card profile-form" method="post">
+      {% csrf_token %}
+      {% if profile_message %}<p class="form-message" role="status">{{ profile_message }}</p>{% endif %}
+      {% if profile_error %}<p class="form-error" role="alert">{{ profile_error }}</p>{% endif %}
+      <div class="profile-form-fields">
+        <label>
+          <span>Имя</span>
+          <input name="display_name" type="text" value="{{ profile_form.display_name }}" maxlength="80" autocomplete="name" required aria-describedby="display-name-help">
+          <small id="display-name-help">Будет отображаться в профиле и приветствии.</small>
+        </label>
+        <label>
+          <span>Уровень курса</span>
+          <select name="level" aria-describedby="level-help">
+            {% for level in profile_levels %}
+              <option value="{{ level }}"{% if profile_form.level == level %} selected{% endif %}>{{ level }}</option>
+            {% endfor %}
+          </select>
+          <small id="level-help">Определяет материалы в плане на день.</small>
+        </label>
+      </div>
+      <button type="submit">Сохранить изменения</button>
+    </form>
     <div class="card settings-list">
       <div class="setting-row">
         <span class="setting-icon" aria-hidden="true">◐</span>
@@ -45,6 +67,5 @@
         <span class="setting-value">{{ dashboard.level }}</span>
       </div>
     </div>
-    <p class="profile-note">Изменение имени, уровня и темы появится после добавления безопасного сохранения настроек.</p>
   </section>
 {% endblock %}
