@@ -226,6 +226,9 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "слов в словаре")
         self.assertContains(response, "Настройки")
         self.assertContains(response, 'role="progressbar"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, 'name="display_name"')
+        self.assertContains(response, 'name="level"')
 
     def test_profile_requires_authentication(self):
         self.auth_patch.stop()
@@ -234,6 +237,64 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/profile/")
 
         self.assertRedirects(response, "/login/?next=%2Fprofile%2F", fetch_redirect_response=False)
+
+    @patch("polskiflow.auth_views.save_profile_settings", return_value=True)
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_updates_name_and_level(
+        self, mocked_progress, _mocked_words, mocked_save
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            "learner", "A1", 0, frozenset(), True
+        )
+
+        response = self.client.post(
+            "/profile/", {"display_name": "  Анна  ", "level": "b1"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mocked_save.assert_called_once_with("access", "user-123", "Анна", "B1")
+        self.assertContains(response, "Профиль сохранён")
+        self.assertContains(response, "Анна")
+        self.assertContains(response, 'value="B1" selected')
+
+    @patch("polskiflow.auth_views.save_profile_settings")
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_rejects_invalid_name_and_level(
+        self, mocked_progress, _mocked_words, mocked_save
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            "learner", "A1", 0, frozenset(), True
+        )
+
+        empty_name = self.client.post(
+            "/profile/", {"display_name": " ", "level": "A2"}
+        )
+        invalid_level = self.client.post(
+            "/profile/", {"display_name": "Анна", "level": "C2"}
+        )
+
+        self.assertContains(empty_name, "Укажите имя")
+        self.assertContains(invalid_level, "Выберите уровень от A1 до C1")
+        mocked_save.assert_not_called()
+
+    @patch("polskiflow.auth_views.save_profile_settings", return_value=False)
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_reports_store_failure(
+        self, mocked_progress, _mocked_words, _mocked_save
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            "learner", "A1", 0, frozenset(), True
+        )
+
+        response = self.client.post(
+            "/profile/", {"display_name": "Анна", "level": "A2"}
+        )
+
+        self.assertContains(response, "Не удалось сохранить профиль")
+        self.assertContains(response, 'value="A2" selected')
 
     def test_sources_explains_original_content_feeds_and_references(self):
         response = self.client.get("/sources/")

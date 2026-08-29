@@ -122,6 +122,35 @@ def save_lesson_completion(
         return False
 
 
+def save_profile_settings(
+    access_token: str | None,
+    user_id: str,
+    display_name: str,
+    level: str,
+) -> bool:
+    """Update the authenticated learner's existing profile through RLS."""
+
+    if not _configured(access_token):
+        return False
+    request = Request(
+        f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/profiles?"
+        f"{urlencode({'id': f'eq.{user_id}'})}",
+        data=json.dumps({"display_name": display_name, "level": level}).encode(),
+        method="PATCH",
+        headers={
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+    )
+    try:
+        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+            return response.status in (200, 204)
+    except (HTTPError, URLError, TimeoutError):
+        return False
+
+
 def _get_rows(table: str, query: dict[str, str], access_token: str) -> list[dict] | None:
     request = Request(
         f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/{table}?{urlencode(query)}",

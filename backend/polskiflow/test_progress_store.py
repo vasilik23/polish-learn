@@ -4,10 +4,45 @@ from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, override_settings
 
-from polskiflow.progress_store import load_dashboard_progress, save_lesson_completion
+from polskiflow.progress_store import (
+    load_dashboard_progress,
+    save_lesson_completion,
+    save_profile_settings,
+)
 
 
 class ProgressStoreTests(SimpleTestCase):
+    def test_unconfigured_profile_store_does_not_attempt_a_write(self):
+        self.assertFalse(save_profile_settings("token", "user", "Anna", "A2"))
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+        SUPABASE_AUTH_TIMEOUT=2,
+    )
+    @patch("polskiflow.progress_store.urlopen")
+    def test_profile_is_updated_with_user_token(self, mocked_urlopen):
+        mocked_urlopen.return_value.__enter__.return_value = MagicMock(status=204)
+
+        saved = save_profile_settings("access", "user-123", "Anna", "B1")
+
+        self.assertTrue(saved)
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(request.method, "PATCH")
+        self.assertEqual(request.headers["Authorization"], "Bearer access")
+        self.assertEqual(
+            json.loads(request.data), {"display_name": "Anna", "level": "B1"}
+        )
+        self.assertIn("profiles?id=eq.user-123", request.full_url)
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+    )
+    @patch("polskiflow.progress_store.urlopen", side_effect=TimeoutError)
+    def test_profile_update_reports_data_api_failure(self, _mocked_urlopen):
+        self.assertFalse(save_profile_settings("access", "user", "Anna", "A2"))
+
     def test_unconfigured_store_does_not_attempt_a_write(self):
         self.assertFalse(save_lesson_completion("token", "user", "quiz", 5, 4))
 

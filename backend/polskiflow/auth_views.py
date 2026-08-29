@@ -1,5 +1,6 @@
 """Browser views for the transitional Django authentication flow."""
 
+from dataclasses import replace
 from functools import wraps
 from urllib.parse import urlencode
 
@@ -22,7 +23,10 @@ from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.password_policy import password_error
-from polskiflow.progress_store import load_dashboard_progress
+from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
+
+
+PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1")
 
 
 def require_browser_user(view):
@@ -136,6 +140,7 @@ def daily_tasks(request: HttpRequest) -> HttpResponse:
 
 
 @require_browser_user
+@require_http_methods(["GET", "POST"])
 def profile(request: HttpRequest) -> HttpResponse:
     fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
     dashboard = load_dashboard_progress(
@@ -153,6 +158,37 @@ def profile(request: HttpRequest) -> HttpResponse:
         request.supabase_access_token,
         request.supabase_user.id,
     )
+    profile_form = {
+        "display_name": dashboard.display_name,
+        "level": dashboard.level,
+    }
+    profile_message = ""
+    profile_error = ""
+    if request.method == "POST":
+        profile_form = {
+            "display_name": request.POST.get("display_name", "").strip(),
+            "level": request.POST.get("level", "").upper(),
+        }
+        if not profile_form["display_name"]:
+            profile_error = "Укажите имя"
+        elif len(profile_form["display_name"]) > 80:
+            profile_error = "Имя должно быть не длиннее 80 символов"
+        elif profile_form["level"] not in PROFILE_LEVELS:
+            profile_error = "Выберите уровень от A1 до C1"
+        elif save_profile_settings(
+            request.supabase_access_token,
+            request.supabase_user.id,
+            profile_form["display_name"],
+            profile_form["level"],
+        ):
+            dashboard = replace(
+                dashboard,
+                display_name=profile_form["display_name"],
+                level=profile_form["level"],
+            )
+            profile_message = "Профиль сохранён"
+        else:
+            profile_error = "Не удалось сохранить профиль. Попробуйте ещё раз."
     return render(
         request,
         "profile.html",
@@ -164,6 +200,10 @@ def profile(request: HttpRequest) -> HttpResponse:
             "progress_percent": progress_percent,
             "dictionary_count": len(personal_words or []),
             "dictionary_available": personal_words is not None,
+            "profile_levels": PROFILE_LEVELS,
+            "profile_form": profile_form,
+            "profile_message": profile_message,
+            "profile_error": profile_error,
         },
     )
 
