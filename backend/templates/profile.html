@@ -31,6 +31,17 @@
     </div>
   </section>
 
+  <section aria-labelledby="weekly-title">
+    <div class="section-heading">
+      <div><p class="eyebrow">Последние 7 дней</p><h2 id="weekly-title">Недельная активность</h2></div>
+    </div>
+    <div class="profile-stats weekly-stats">
+      <article class="card profile-stat"><span aria-hidden="true">▦</span><strong>{{ dashboard.weekly_completed_count }}</strong><small>уроков завершено</small></article>
+      <article class="card profile-stat"><span aria-hidden="true">●</span><strong>{{ dashboard.weekly_active_days }} / 7</strong><small>активных дней</small></article>
+    </div>
+    <p class="muted">Считаются уникальные уроки и дни активности за сегодня и шесть предыдущих дней.</p>
+  </section>
+
   <section class="profile-settings" aria-labelledby="settings-title">
     <div class="section-heading"><div><p class="eyebrow">Персонализация</p><h2 id="settings-title">Настройки</h2></div></div>
     <form class="card profile-form" method="post">

@@ -21,6 +21,15 @@
           <a class="compact-button" href="{% url 'lesson' comprehension_task.id %}">Начать вопросы →</a>
         </section>
       {% endif %}
+      <section class="card reading-check-card" aria-labelledby="reading-words-title">
+        <span class="reading-check-icon" aria-hidden="true">◇</span>
+        <div>
+          <p class="eyebrow">Слова из текста</p>
+          <h2 id="reading-words-title">Закрепи сохранённую лексику</h2>
+          <p class="muted">После добавления слов потренируй их и запусти интервальное повторение SM-2.</p>
+        </div>
+        <a class="compact-button" href="{% url 'dictionary-practice' %}">Тренировать →</a>
+      </section>
     </article>
     <aside class="word-panel" id="word-panel">
       <div class="word-panel-placeholder"><span>👆</span><strong>Нажми на слово</strong><p>Здесь появится перевод, и слово можно будет сохранить.</p></div>

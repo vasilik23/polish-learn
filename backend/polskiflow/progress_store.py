@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -21,6 +21,8 @@ class DashboardProgress:
     available: bool
     all_completed_lesson_ids: frozenset[str] = frozenset()
     active_days: int = 0
+    weekly_active_days: int = 0
+    weekly_completed_count: int = 0
 
     @property
     def completed_count(self) -> int:
@@ -56,6 +58,8 @@ def load_dashboard_progress(
     completion_rows = completions or []
     today = _utc_today()
     active_dates = []
+    weekly_dates = set()
+    weekly_lesson_ids = set()
     completed_today = set()
     completed_all_time = set()
     for completion in completion_rows:
@@ -65,6 +69,10 @@ def load_dashboard_progress(
             continue
         active_dates.append(plan_date)
         lesson_id = completion.get("lesson_id")
+        if today - timedelta(days=6) <= plan_date <= today:
+            weekly_dates.add(plan_date)
+            if lesson_id:
+                weekly_lesson_ids.add(lesson_id)
         if lesson_id:
             completed_all_time.add(lesson_id)
             if plan_date == today:
@@ -78,6 +86,8 @@ def load_dashboard_progress(
         available=profile is not None and completions is not None,
         all_completed_lesson_ids=frozenset(completed_all_time),
         active_days=len(set(active_dates)),
+        weekly_active_days=len(weekly_dates),
+        weekly_completed_count=len(weekly_lesson_ids),
     )
 
 
