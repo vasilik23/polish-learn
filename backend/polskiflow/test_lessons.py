@@ -82,6 +82,10 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Цель на сегодня")
+        self.assertContains(response, "Начать занятия")
+        self.assertContains(response, 'role="progressbar"')
+        self.assertContains(response, 'aria-label="Выполнение цели на сегодня"')
+        self.assertContains(response, 'aria-valuenow="0"')
         self.assertNotContains(response, "Słówka dnia")
         self.assertNotContains(response, "Задания на сегодня")
 
@@ -290,6 +294,10 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertContains(response, 'name="display_name"')
         self.assertContains(response, 'name="level"')
+        self.assertContains(response, "Сохранить профиль")
+        self.assertContains(response, "плане на день, курсе и библиотеке")
+        self.assertNotContains(response, "Сейчас используется светлая тема")
+        self.assertNotContains(response, 'class="settings-list"')
 
     def test_profile_requires_authentication(self):
         self.auth_patch.stop()

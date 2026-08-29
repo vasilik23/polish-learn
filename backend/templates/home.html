@@ -15,14 +15,14 @@
 
   <div class="dashboard-grid home-goal-grid">
     <section class="card daily-card" id="daily-plan">
-      <div class="progress-ring" style="--value: {{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
+      <div class="progress-ring" style="--value: {{ progress_percent }}" role="progressbar" aria-label="Выполнение цели на сегодня" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
       <div class="daily-copy">
         <p class="eyebrow">Цель на сегодня</p>
         <h2>{{ completed_count }} из {{ tasks|length }}</h2>
         <p class="muted">Небольшой шаг каждый день — большой результат.</p>
       </div>
       {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
-      <a class="compact-button daily-action" href="{% url 'daily-tasks' %}">{% if completed_count == tasks|length %}Повторить задания{% else %}Продолжить занятия{% endif %}</a>
+      <a class="compact-button daily-action" href="{% url 'daily-tasks' %}">{% if completed_count == tasks|length %}Повторить задания{% elif completed_count %}Продолжить занятия{% else %}Начать занятия{% endif %}</a>
     </section>
   </div>
 {% endblock %}

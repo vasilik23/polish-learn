@@ -374,6 +374,7 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 
 @media (min-width: 700px) {
   .dashboard-grid { grid-template-columns: minmax(17rem, .85fr) 1.45fr; align-items: start; }
+  .home-goal-grid { width: 100%; margin-left: 0; margin-right: auto; grid-template-columns: minmax(0, 42rem); }
   .daily-card { position: sticky; top: 1.5rem; grid-row: span 2; }
   .task-list { grid-template-columns: repeat(2, 1fr); }
   .reading-grid { grid-template-columns: repeat(2, 1fr); }
