@@ -1,7 +1,29 @@
 <div class="progress-label">Вопрос {{ index|add:1 }} из {{ total }}</div>
 <div class="lesson-progress"><span style="--value: {% widthratio index|add:1 total 100 %}%; width: var(--value)"></span></div>
-<div class="card question-card"><p class="eyebrow">Выбери ответ</p><h2>{{ question.prompt }}</h2></div>
-{% if selected == None %}
+<div class="card question-card"><p class="eyebrow">{% if sentence_builder %}Составь предложение{% else %}Выбери ответ{% endif %}</p><h2>{{ question.prompt }}</h2></div>
+{% if sentence_builder %}
+  {% if builder_answer == None %}
+    <form class="sentence-builder" data-sentence-builder hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
+      {% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><input type="hidden" name="answer_order" value="[]" data-builder-order>
+      <div class="sentence-builder-answer" data-builder-answer aria-live="polite"><span class="muted">Нажимай на слова в правильном порядке</span></div>
+      <div class="sentence-builder-tokens" data-builder-tokens aria-label="Доступные слова">
+        {% for token in builder_tokens %}<button type="button" class="sentence-token" data-token-index="{{ forloop.counter0 }}">{{ token }}</button>{% endfor %}
+      </div>
+      <div class="sentence-builder-controls"><button type="button" class="secondary" data-builder-reset disabled>Сбросить</button><button type="submit" data-builder-submit disabled>Проверить</button></div>
+      <p class="field-hint">Добавленное слово можно нажать ещё раз, чтобы вернуть его.</p>
+    </form>
+  {% else %}
+    <div class="sentence-builder-result {% if builder_correct %}correct{% else %}wrong{% endif %}" aria-live="polite">
+      <p class="eyebrow">{% if builder_correct %}Верно{% else %}Попробуй запомнить порядок{% endif %}</p>
+      <p class="assembled-sentence">{% for word in builder_answer_words %}{{ word }}{% if not forloop.last %} {% endif %}{% endfor %}</p>
+      {% if not builder_correct %}<p class="correct-sentence">Правильно: <strong>{{ builder_correct_sentence }}</strong></p>{% endif %}
+    </div>
+    <p class="card feedback">{{ question.explanation }}</p>
+    <form hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
+      {% csrf_token %}<input type="hidden" name="action" value="next"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}"><input type="hidden" name="answer_order" value="{{ builder_answer_json }}"><button>{% if index|add:1 == total %}Завершить урок{% else %}Следующий вопрос →{% endif %}</button>
+    </form>
+  {% endif %}
+{% elif selected == None %}
   <form class="options" hx-post="{% url 'lesson-step' lesson_id %}" hx-target="#lesson-flow" hx-swap="innerHTML">
     {% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="index" value="{{ index }}"><input type="hidden" name="score" value="{{ score }}">
     {% for option in question.options %}<button type="submit" name="choice" value="{{ forloop.counter0 }}"><span>{{ forloop.counter }}.</span>&nbsp; {{ option }}</button>{% endfor %}

@@ -329,6 +329,21 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .options button.correct { border-color: var(--green); background: var(--green-soft); color: #176b47; }
 .options button.wrong { border-color: var(--red); background: var(--red-soft); color: #a52f46; }
 .feedback { margin-top: .8rem; padding: 1rem; border-left: 4px solid var(--primary); }
+.sentence-builder { margin-top: .8rem; }
+.sentence-builder-answer, .sentence-builder-tokens { display: flex; flex-wrap: wrap; align-content: flex-start; gap: .55rem; min-width: 0; }
+.sentence-builder-answer { min-height: 5.2rem; padding: .85rem; border: 2px dashed var(--line); border-radius: 1rem; background: var(--surface); }
+.sentence-builder-answer > .muted { align-self: center; width: 100%; text-align: center; font-size: .84rem; }
+.sentence-builder-tokens { margin-top: .75rem; }
+.sentence-token { width: auto; max-width: 100%; min-height: 2.65rem; margin: 0; padding: .55rem .8rem; overflow-wrap: anywhere; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.sentence-token:hover:not(:disabled) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.sentence-token:disabled { opacity: .35; cursor: default; }
+.sentence-token.selected { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.sentence-builder-controls { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: .7rem; }
+.sentence-builder-result { margin-top: .8rem; padding: 1rem; border: 1px solid; border-radius: 1rem; }
+.sentence-builder-result.correct { border-color: var(--green); background: var(--green-soft); color: #176b47; }
+.sentence-builder-result.wrong { border-color: var(--red); background: var(--red-soft); color: #a52f46; }
+.assembled-sentence { margin: .2rem 0 0; overflow-wrap: anywhere; font-size: 1.15rem; font-weight: 800; }
+.correct-sentence { margin: .65rem 0 0; }
 .htmx-request { opacity: .58; pointer-events: none; }
 .error, .message { padding: .8rem 1rem; border-radius: .85rem; font-size: .86rem; }
 .error { color: #a52f46; background: var(--red-soft); }
