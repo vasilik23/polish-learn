@@ -489,4 +489,27 @@ class A2ShoppingReturnsContentTests(TestCase):
 
     def test_catalog_lists_five_a2_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "A2"]
-        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns"])
+        self.assertEqual([topic["id"] for topic in topics[:5]], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns"])
+
+
+class A2DoctorPharmacyContentTests(TestCase):
+    def test_doctor_pharmacy_is_sixth_complete_a2_topic(self):
+        topic = Topic.objects.get(id="doctor-pharmacy")
+        self.assertEqual(topic.position, 5)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="med-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="med-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="med-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="med-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="med-review").count(), 7)
+
+    def test_medical_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="adam-u-lekarza-i-w-aptece")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "med-reading-check")
+        self.assertEqual(reading.glossary["płuca"]["lemma"], "płuco")
+        self.assertEqual(reading.glossary["pogorszy"]["lemma"], "pogorszyć się")
+
+    def test_catalog_lists_six_a2_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy"])
