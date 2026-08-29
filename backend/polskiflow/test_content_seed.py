@@ -731,6 +731,57 @@ class B1WorkEducationContentTests(TestCase):
     def test_catalog_lists_four_b1_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "B1"]
         self.assertEqual(
-            [topic["id"] for topic in topics],
+            [topic["id"] for topic in topics[:4]],
             ["b1-biography", "b1-travel", "b1-work-development", "b1-education"],
+        )
+
+
+class B1RelationshipsThroughCultureContentTests(TestCase):
+    def test_four_topics_have_complete_vertical_lesson_sets(self):
+        expectations = (
+            ("b1-relationships", 4, "b1rel"),
+            ("b1-healthy-lifestyle", 5, "b1health"),
+            ("b1-media-internet", 6, "b1media"),
+            ("b1-culture", 7, "b1culture"),
+        )
+        for topic_id, position, prefix in expectations:
+            with self.subTest(topic_id=topic_id):
+                topic = Topic.objects.get(id=topic_id)
+                self.assertEqual(topic.course.level, "B1")
+                self.assertEqual(topic.position, position)
+                self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-grammar").count(), 6)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-quiz").count(), 10)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-reading-check").count(), 6)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-words").count(), 8)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-review").count(), 7)
+
+    def test_four_readings_are_original_and_lemma_aware(self):
+        expectations = (
+            ("b1rel-weekend-na-dwa-sposoby", "b1rel-reading-check"),
+            ("b1health-maly-krok-kuby", "b1health-reading-check"),
+            ("b1media-wiadomosc-ktora-wymagala-sprawdzenia", "b1media-reading-check"),
+            ("b1culture-wieczor-z-ksiazka-i-filmem", "b1culture-reading-check"),
+        )
+        for reading_id, lesson_id in expectations:
+            with self.subTest(reading_id=reading_id):
+                reading = ReadingText.objects.get(id=reading_id)
+                self.assertEqual(reading.level, "B1")
+                self.assertEqual(reading.source_metadata["origin"], "original")
+                self.assertEqual(reading.source_metadata["comprehension_lesson_id"], lesson_id)
+                self.assertEqual(len(reading.paragraphs), 4)
+                self.assertGreaterEqual(len(reading.glossary), 14)
+                for entry in reading.glossary.values():
+                    self.assertTrue(entry["lemma"])
+                    self.assertTrue(entry["translation"])
+                    self.assertTrue(entry["part_of_speech"])
+
+    def test_catalog_lists_eight_b1_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "B1"]
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            [
+                "b1-biography", "b1-travel", "b1-work-development", "b1-education",
+                "b1-relationships", "b1-healthy-lifestyle", "b1-media-internet", "b1-culture",
+            ],
         )

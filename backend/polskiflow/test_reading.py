@@ -448,3 +448,30 @@ class ReadingViewsTests(TestCase):
             {"id": "word-3", "word": "chleb", "translation": "хлеб", "context": "Jem chleb."},
             {"id": "word-4", "word": "okno", "translation": "окно", "context": "Otwieram okno."},
         ]
+
+
+class B1NewReadingRoutesTests(TestCase):
+    def setUp(self):
+        self.client.cookies[ACCESS_COOKIE] = "access"
+        self.auth_patch = patch(
+            "polskiflow.auth.authenticate_access_token",
+            return_value=SupabaseUser(
+                "00000000-0000-0000-0000-000000000123", "reader@example.com"
+            ),
+        )
+        self.auth_patch.start()
+        self.addCleanup(self.auth_patch.stop)
+
+    def test_new_b1_readings_link_to_their_comprehension_lessons(self):
+        expectations = (
+            ("b1rel-weekend-na-dwa-sposoby", "b1rel-reading-check"),
+            ("b1health-maly-krok-kuby", "b1health-reading-check"),
+            ("b1media-wiadomosc-ktora-wymagala-sprawdzenia", "b1media-reading-check"),
+            ("b1culture-wieczor-z-ksiazka-i-filmem", "b1culture-reading-check"),
+        )
+        for reading_id, lesson_id in expectations:
+            with self.subTest(reading_id=reading_id):
+                response = self.client.get(f"/reading/{reading_id}/")
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'href="/lesson/{lesson_id}/"')
+                self.assertContains(response, "Добавить в словарь")

@@ -61,22 +61,10 @@
               <option value="{{ level }}"{% if profile_form.level == level %} selected{% endif %}>{{ level }}</option>
             {% endfor %}
           </select>
-          <small id="level-help">Определяет материалы в плане на день.</small>
+          <small id="level-help">Определяет материалы в плане на день, курсе и библиотеке.</small>
         </label>
       </div>
-      <button type="submit">Сохранить изменения</button>
+      <button type="submit">Сохранить профиль</button>
     </form>
-    <div class="card settings-list">
-      <div class="setting-row">
-        <span class="setting-icon" aria-hidden="true">◐</span>
-        <span><strong>Оформление</strong><small>Сейчас используется светлая тема</small></span>
-        <span class="setting-value">Светлая</span>
-      </div>
-      <div class="setting-row">
-        <span class="setting-icon" aria-hidden="true">◎</span>
-        <span><strong>Уровень курса</strong><small>Материалы подобраны для текущего уровня</small></span>
-        <span class="setting-value">{{ dashboard.level }}</span>
-      </div>
-    </div>
   </section>
 {% endblock %}
