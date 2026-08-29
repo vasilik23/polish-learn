@@ -468,6 +468,10 @@ class B1NewReadingRoutesTests(TestCase):
             ("b1health-maly-krok-kuby", "b1health-reading-check"),
             ("b1media-wiadomosc-ktora-wymagala-sprawdzenia", "b1media-reading-check"),
             ("b1culture-wieczor-z-ksiazka-i-filmem", "b1culture-reading-check"),
+            ("b1soc-sasiedzki-ogrod", "b1soc-reading-check"),
+            ("b1eco-rzeka-wraca-do-miasta", "b1eco-reading-check"),
+            ("b1region-dwa-spojrzenia-na-beskid", "b1region-reading-check"),
+            ("b1final-projekt-marty", "b1final-reading-check"),
         )
         for reading_id, lesson_id in expectations:
             with self.subTest(reading_id=reading_id):
