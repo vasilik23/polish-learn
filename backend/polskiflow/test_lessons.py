@@ -277,6 +277,28 @@ class LessonViewsTests(TestCase):
         tasks_page = self.client.get("/tasks/")
         self.assertContains(tasks_page, 'class="task-complete"', count=2)
 
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_today_and_tasks_keep_a_newly_completed_lesson_in_daily_progress(
+        self, mocked_progress, _mocked_words
+    ):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A1",
+            streak_days=1,
+            completed_lesson_ids=frozenset({"words"}),
+            available=True,
+            all_completed_lesson_ids=frozenset({"words"}),
+        )
+
+        home = self.client.get("/")
+        tasks_page = self.client.get("/tasks/")
+
+        self.assertContains(home, "1 из 4")
+        self.assertContains(home, "25%")
+        self.assertContains(tasks_page, "1 из 4 выполнено")
+        self.assertContains(tasks_page, 'class="task-complete"', count=1)
+
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_daily_plan_includes_due_dictionary_review(

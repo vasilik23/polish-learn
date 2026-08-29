@@ -42,6 +42,23 @@ class DailyPlanTests(SimpleTestCase):
         )
         self.assertTrue(plan[0]["completed"])
 
+    def test_completed_today_stays_in_plan_after_it_enters_history(self):
+        plan = build_daily_plan(
+            self.lessons,
+            level="A2",
+            completed_all_time=frozenset({"a2-one"}),
+            completed_today=frozenset({"a2-one"}),
+            personal_words=[],
+            today=date(2026, 8, 28),
+        )
+
+        self.assertEqual(
+            [task["id"] for task in plan],
+            ["a2-one", "a2-two", "a2-three", "a2-four"],
+        )
+        self.assertTrue(plan[0]["completed"])
+        self.assertEqual(sum(task["completed"] for task in plan), 1)
+
     def test_due_dictionary_review_replaces_fourth_lesson(self):
         words = [
             {

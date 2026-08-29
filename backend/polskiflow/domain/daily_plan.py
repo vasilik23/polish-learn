@@ -19,12 +19,25 @@ def build_daily_plan(
 
     level_lessons = [lesson for lesson in lessons if lesson.get("level") == level]
     candidates = level_lessons or lessons
+    completed_in_plan = [
+        lesson for lesson in candidates if lesson["id"] in completed_today
+    ]
     unfinished = [
-        lesson for lesson in candidates if lesson["id"] not in completed_all_time
+        lesson
+        for lesson in candidates
+        if lesson["id"] not in completed_all_time
+        and lesson["id"] not in completed_today
     ]
-    ordered = unfinished + [
-        lesson for lesson in candidates if lesson["id"] in completed_all_time
+    previously_completed = [
+        lesson
+        for lesson in candidates
+        if lesson["id"] in completed_all_time
+        and lesson["id"] not in completed_today
     ]
+    # Keep today's completed lessons visible when the plan is rebuilt after a
+    # lesson. Otherwise they fall behind unfinished lessons and the dashboard
+    # appears not to update even though the completion was saved correctly.
+    ordered = completed_in_plan + unfinished + previously_completed
 
     due_count = _due_word_count(personal_words, today)
     can_review = personal_words is not None and len(personal_words) >= 4 and due_count > 0
