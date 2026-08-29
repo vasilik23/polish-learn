@@ -98,6 +98,12 @@ class ReadingViewsTests(TestCase):
         response = self.client.get("/reading/test-story/")
 
         self.assertContains(response, 'data-word="kota"')
+
+    def test_reader_links_saved_words_to_sm2_practice(self):
+        response = self.client.get("/reading/test-story/")
+
+        self.assertContains(response, "Закрепи сохранённую лексику")
+        self.assertContains(response, 'href="/dictionary/practice/"')
         self.assertContains(response, 'data-lemma="kot"')
         self.assertContains(response, 'data-translation="кот"')
         self.assertContains(response, 'data-part-of-speech="существительное"')
@@ -270,6 +276,13 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, 'data-word="dorastała"')
         activity = self.client.get("/lesson/bio-reading-check/")
         self.assertContains(activity, "Gdzie dorastała Joanna?")
+
+    def test_b1_travel_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/b1trip-nieplanowana-przesiadka/")
+        self.assertContains(response, 'href="/lesson/b1trip-reading-check/"')
+        self.assertContains(response, 'data-word="zdążą"')
+        activity = self.client.get("/lesson/b1trip-reading-check/")
+        self.assertContains(activity, "Dokąd jechali Marta i Paweł?")
 
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):

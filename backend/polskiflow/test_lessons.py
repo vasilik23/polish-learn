@@ -212,10 +212,15 @@ class LessonViewsTests(TestCase):
             available=True,
             all_completed_lesson_ids=frozenset({"words", "grammar"}),
             active_days=7,
+            weekly_active_days=4,
+            weekly_completed_count=6,
         )
         mocked_words.return_value = [{"word": "dom"}, {"word": "dzień"}]
 
         response = self.client.get("/profile/")
+        self.assertContains(response, "Недельная активность")
+        self.assertContains(response, "6")
+        self.assertContains(response, "4 / 7")
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Василий")

@@ -668,4 +668,28 @@ class B1BiographyContentTests(TestCase):
 
     def test_catalog_starts_b1_with_biography(self):
         topics = [topic for topic in course_topics() if topic["level"] == "B1"]
-        self.assertEqual([topic["id"] for topic in topics], ["b1-biography"])
+        self.assertEqual([topic["id"] for topic in topics[:1]], ["b1-biography"])
+
+
+class B1TravelContentTests(TestCase):
+    def test_travel_is_second_complete_b1_topic(self):
+        topic = Topic.objects.get(id="b1-travel")
+        self.assertEqual(topic.position, 1)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="b1trip-grammar").count(), 6)
+        self.assertEqual(Question.objects.filter(lesson_id="b1trip-quiz").count(), 10)
+        self.assertEqual(Question.objects.filter(lesson_id="b1trip-reading-check").count(), 6)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="b1trip-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="b1trip-review").count(), 7)
+
+    def test_travel_reading_is_original_and_lemma_aware(self):
+        reading = ReadingText.objects.get(id="b1trip-nieplanowana-przesiadka")
+        self.assertEqual(reading.level, "B1")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "b1trip-reading-check")
+        self.assertEqual(reading.glossary["zdążą"]["lemma"], "zdążyć")
+        self.assertEqual(reading.glossary["przechowalni"]["lemma"], "przechowalnia")
+
+    def test_catalog_lists_two_b1_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "B1"]
+        self.assertEqual([topic["id"] for topic in topics], ["b1-biography", "b1-travel"])
