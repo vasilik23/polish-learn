@@ -141,6 +141,62 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, 'href="?level=A1" aria-current="page"')
 
     @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_defaults_to_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/course/")
+
+        self.assertContains(response, 'href="?level=A2" aria-current="page"')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_explicit_level_overrides_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/course/?level=A1")
+
+        self.assertContains(response, 'href="?level=A1" aria-current="page"')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_invalid_level_falls_back_to_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/course/?level=Z9")
+
+        self.assertContains(response, 'href="?level=A2" aria-current="page"')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_invalid_profile_level_falls_back_to_a1(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="Z9",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/course/")
+
+        self.assertContains(response, 'href="?level=A1" aria-current="page"')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_course_topic_shows_all_time_progress_and_next_lesson(self, mocked_progress):
         mocked_progress.return_value = DashboardProgress(
             display_name="Василий",

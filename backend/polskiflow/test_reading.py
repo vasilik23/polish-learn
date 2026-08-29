@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
 from polskiflow.learning.models import ReadingText
+from polskiflow.progress_store import DashboardProgress
 
 
 class ReadingViewsTests(TestCase):
@@ -79,6 +80,52 @@ class ReadingViewsTests(TestCase):
         response = self.client.get("/reading/?level=unknown")
         self.assertContains(response, "Krótka historia")
         self.assertContains(response, 'href="?level=A1#texts-title" aria-current="page"')
+
+    @patch("polskiflow.reading_views.load_dashboard_progress")
+    def test_library_defaults_to_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Czytelnik",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/reading/")
+
+        self.assertContains(response, "Historia A2")
+        self.assertNotContains(response, "Krótka historia")
+        self.assertContains(response, 'href="?level=A2#texts-title" aria-current="page"')
+
+    @patch("polskiflow.reading_views.load_dashboard_progress")
+    def test_library_explicit_level_overrides_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Czytelnik",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/reading/?level=A1")
+
+        self.assertContains(response, "Krótka historia")
+        self.assertNotContains(response, "Historia A2")
+
+    @patch("polskiflow.reading_views.load_dashboard_progress")
+    def test_library_invalid_level_falls_back_to_profile_level(self, mocked_progress):
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Czytelnik",
+            level="A2",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+        )
+
+        response = self.client.get("/reading/?level=unknown")
+
+        self.assertContains(response, "Historia A2")
+        self.assertContains(response, 'href="?level=A2#texts-title" aria-current="page"')
 
     def test_library_filters_news_by_allowlisted_category(self):
         response = self.client.get("/reading/?category=sport")
