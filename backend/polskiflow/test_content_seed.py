@@ -466,4 +466,27 @@ class A2WorkContentTests(TestCase):
 
     def test_catalog_lists_four_a2_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "A2"]
-        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work"])
+        self.assertEqual([topic["id"] for topic in topics[:4]], ["past-weekend", "travel-plans", "housing-services", "a2-work"])
+
+
+class A2ShoppingReturnsContentTests(TestCase):
+    def test_shopping_returns_is_fifth_complete_a2_topic(self):
+        topic = Topic.objects.get(id="shopping-returns")
+        self.assertEqual(topic.position, 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="returns-grammar").count(), 5)
+        self.assertEqual(Question.objects.filter(lesson_id="returns-quiz").count(), 8)
+        self.assertEqual(Question.objects.filter(lesson_id="returns-reading-check").count(), 5)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="returns-words").count(), 8)
+        self.assertEqual(LessonFlashcard.objects.filter(lesson_id="returns-review").count(), 7)
+
+    def test_returns_reading_has_lemma_aware_glossary(self):
+        reading = ReadingText.objects.get(id="reklamacja-natalii")
+        self.assertEqual(reading.source_metadata["origin"], "original")
+        self.assertEqual(reading.source_metadata["comprehension_lesson_id"], "returns-reading-check")
+        self.assertEqual(reading.glossary["wyprzedaży"]["lemma"], "wyprzedaż")
+        self.assertEqual(reading.glossary["wymianę"]["lemma"], "wymiana")
+
+    def test_catalog_lists_five_a2_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual([topic["id"] for topic in topics], ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns"])

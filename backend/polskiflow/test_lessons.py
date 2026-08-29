@@ -54,6 +54,18 @@ class LessonViewsTests(TestCase):
         grammar_prompts = ["Слово «kawa»", "Слово «dom»", "Слово «miasto»"]
         for position, prompt in enumerate(grammar_prompts):
             Question.objects.create(lesson_id="grammar", prompt=prompt, options=["мужской", "женский", "средний"], correct=position % 3, explanation="Пояснение", position=position)
+        Question.objects.create(
+            lesson_id="grammar",
+            prompt="Составьте: Марек работает сегодня дома.",
+            options=[
+                "Marek dzisiaj pracuje w domu.",
+                "Marek pracuje dzisiaj w domu.",
+                "Dzisiaj dom Marek w pracuje.",
+            ],
+            correct=1,
+            explanation="Нейтральный порядок: подлежащее, сказуемое, время и место.",
+            position=3,
+        )
         quiz_prompts = ["Как переводится «cześć»?", "Что значит «dziękuję»?", "Выберите перевод", "Как будет «да»?", "Как будет «нет»?"]
         for position, prompt in enumerate(quiz_prompts):
             Question.objects.create(lesson_id="quiz", prompt=prompt, options=["нет", "привет", "спасибо"], correct=1, explanation="Cześć — неформальное «привет».", position=position)
@@ -331,6 +343,45 @@ class LessonViewsTests(TestCase):
             "/lesson/grammar/step/", {"action": "start", "index": 0, "score": 0}
         )
         self.assertContains(exercise, "Слово «kawa»")
+
+    def test_grammar_sentence_builder_is_accessible_and_server_validated(self):
+        question = self.client.post(
+            "/lesson/grammar/step/",
+            {"action": "next", "index": 2, "score": 0, "selected": 2},
+        )
+        self.assertContains(question, "Составь предложение")
+        self.assertContains(question, "data-sentence-builder")
+        self.assertContains(question, 'type="button" class="sentence-token"')
+        self.assertContains(question, "Сбросить")
+        self.assertContains(question, "Проверить")
+
+        missing_word = self.client.post(
+            "/lesson/grammar/step/",
+            {"action": "answer", "index": 3, "score": 0, "answer_order": "[0]"},
+        )
+        self.assertEqual(missing_word.status_code, 400)
+
+        question_context = question.context
+        shuffled = question_context["builder_tokens"]
+        correct_words = "Marek pracuje dzisiaj w domu.".split()
+        correct_order = [shuffled.index(word) for word in correct_words]
+        answered = self.client.post(
+            "/lesson/grammar/step/",
+            {
+                "action": "answer",
+                "index": 3,
+                "score": 0,
+                "answer_order": __import__("json").dumps(correct_order),
+            },
+        )
+        self.assertContains(answered, "Верно")
+        self.assertContains(answered, "Нейтральный порядок")
+
+        tampered_next = self.client.post(
+            "/lesson/grammar/step/",
+            {"action": "next", "index": 3, "score": 0, "answer_order": "[0, 0, 1, 2, 3]"},
+        )
+        self.assertEqual(tampered_next.status_code, 400)
 
     def test_review_uses_only_its_linked_flashcards(self):
         page = self.client.get("/lesson/review/")
