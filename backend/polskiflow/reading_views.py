@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from polskiflow.auth_views import require_browser_user
+from polskiflow.auth_views import require_browser_user, select_cefr_level
 from polskiflow.content import reading_text, reading_texts, task
 from polskiflow.dictionary_store import (
     delete_personal_word,
@@ -18,7 +18,7 @@ from polskiflow.dictionary_store import (
     save_personal_word_review,
 )
 from polskiflow.domain.sm2 import DEFAULT_SM2_STATE, Sm2State, sm2_next
-from polskiflow.progress_store import save_lesson_completion
+from polskiflow.progress_store import load_dashboard_progress, save_lesson_completion
 from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
@@ -32,9 +32,13 @@ def reading_library(request: HttpRequest) -> HttpResponse:
     selected_category = request.GET.get("category", "")
     if selected_category not in CATEGORY_IDS:
         selected_category = ""
-    selected_level = request.GET.get("level", "A1").upper()
-    if selected_level not in READING_LEVELS:
-        selected_level = "A1"
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        fallback_name,
+    )
+    selected_level = select_cefr_level(request, dashboard.level)
     texts = reading_texts()
     for text in texts:
         if text.get("level") not in READING_LEVELS:

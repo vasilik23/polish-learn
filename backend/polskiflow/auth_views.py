@@ -29,6 +29,21 @@ from polskiflow.progress_store import load_dashboard_progress, save_profile_sett
 PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1")
 
 
+def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
+    """Prefer an explicit valid filter, otherwise use the learner's level."""
+
+    fallback_level = (
+        profile_level.upper()
+        if isinstance(profile_level, str) and profile_level.upper() in PROFILE_LEVELS
+        else "A1"
+    )
+    requested_level = request.GET.get("level")
+    if requested_level is None:
+        return fallback_level
+    requested_level = requested_level.upper()
+    return requested_level if requested_level in PROFILE_LEVELS else fallback_level
+
+
 def require_browser_user(view):
     @wraps(view)
     def protected(request: HttpRequest, *args, **kwargs):
@@ -246,9 +261,8 @@ def course(request: HttpRequest) -> HttpResponse:
         request.supabase_user.id,
         fallback_name,
     )
-    levels = ("A1", "A2", "B1", "B2", "C1")
-    requested_level = request.GET.get("level", "A1").upper()
-    selected_level = requested_level if requested_level in levels else "A1"
+    levels = PROFILE_LEVELS
+    selected_level = select_cefr_level(request, dashboard.level)
     all_topics = course_topics()
     level_counts = {
         level: sum(topic["level"] == level for topic in all_topics) for level in levels
