@@ -594,6 +594,52 @@ class A2InstitutionsContentTests(TestCase):
     def test_catalog_lists_nine_a2_topics(self):
         topics = [topic for topic in course_topics() if topic["level"] == "A2"]
         self.assertEqual(
-            [topic["id"] for topic in topics],
+            [topic["id"] for topic in topics[:9]],
             ["past-weekend", "travel-plans", "housing-services", "a2-work", "shopping-returns", "doctor-pharmacy", "relationships-emotions", "culture-media", "institutions"],
+        )
+
+
+class A2CompletionContentTests(TestCase):
+    def test_remaining_topics_have_complete_lesson_sets(self):
+        expectations = (
+            ("weather-nature", 9, "weather", 5, 8, 5),
+            ("poland-around-us", 10, "poland", 5, 8, 5),
+            ("a2final-review", 11, "a2final", 8, 12, 6),
+        )
+        for topic_id, position, prefix, grammar_count, quiz_count, reading_count in expectations:
+            with self.subTest(topic_id=topic_id):
+                topic = Topic.objects.get(id=topic_id)
+                self.assertEqual(topic.position, position)
+                self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+                grammar_id = f"{prefix}-diagnosis" if prefix == "a2final" else f"{prefix}-grammar"
+                self.assertEqual(Question.objects.filter(lesson_id=grammar_id).count(), grammar_count)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-quiz").count(), quiz_count)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-reading-check").count(), reading_count)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-words").count(), 8)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-review").count(), 8 if prefix == "a2final" else 7)
+
+    def test_new_readings_are_original_and_lemma_aware(self):
+        expectations = (
+            ("weather-wycieczka-przed-burza", "weather-reading-check", "wzgórza", "wzgórze"),
+            ("poland-maja-odkrywa-torun", "poland-reading-check", "przewodniczką", "przewodniczka"),
+            ("a2final-weekend-leny", "a2final-reading-check", "kłótni", "kłótnia"),
+        )
+        for reading_id, lesson_id, surface, lemma in expectations:
+            with self.subTest(reading_id=reading_id):
+                reading = ReadingText.objects.get(id=reading_id)
+                self.assertEqual(reading.level, "A2")
+                self.assertEqual(reading.source_metadata["origin"], "original")
+                self.assertEqual(reading.source_metadata["comprehension_lesson_id"], lesson_id)
+                self.assertEqual(reading.glossary[surface]["lemma"], lemma)
+
+    def test_a2_catalog_is_complete(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "A2"]
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            [
+                "past-weekend", "travel-plans", "housing-services", "a2-work",
+                "shopping-returns", "doctor-pharmacy", "relationships-emotions",
+                "culture-media", "institutions", "weather-nature",
+                "poland-around-us", "a2final-review",
+            ],
         )

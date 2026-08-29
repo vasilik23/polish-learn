@@ -243,6 +243,27 @@ class ReadingViewsTests(TestCase):
         activity = self.client.get("/lesson/office-reading-check/")
         self.assertContains(activity, "Po co Natalia przyszła do urzędu?")
 
+    def test_weather_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/weather-wycieczka-przed-burza/")
+        self.assertContains(response, 'href="/lesson/weather-reading-check/"')
+        self.assertContains(response, 'data-word="wzgórza"')
+        activity = self.client.get("/lesson/weather-reading-check/")
+        self.assertContains(activity, "Dokąd pojechali Lena i Kuba?")
+
+    def test_poland_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/poland-maja-odkrywa-torun/")
+        self.assertContains(response, 'href="/lesson/poland-reading-check/"')
+        self.assertContains(response, 'data-word="przewodniczką"')
+        activity = self.client.get("/lesson/poland-reading-check/")
+        self.assertContains(activity, "Dokąd pojechała grupa Mai?")
+
+    def test_final_a2_reader_links_to_comprehension_activity(self):
+        response = self.client.get("/reading/a2final-weekend-leny/")
+        self.assertContains(response, 'href="/lesson/a2final-reading-check/"')
+        self.assertContains(response, 'data-word="kłótni"')
+        activity = self.client.get("/lesson/a2final-reading-check/")
+        self.assertContains(activity, "Dlaczego Lena pojechała do Torunia?")
+
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_builds_quiz_from_personal_words(self, load_words):
         load_words.return_value = self._practice_words()
