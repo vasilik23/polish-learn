@@ -27,6 +27,32 @@ from polskiflow.progress_store import load_dashboard_progress, save_profile_sett
 
 
 PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1")
+WRITING_PROMPTS = (
+    {
+        "id": "formal-request",
+        "title": "Официальная просьба",
+        "task": "Напиши 80–100 слов администратору курса: объясни, почему пропустишь занятие, попроси материалы и предложи новый срок сдачи задания.",
+        "hint": "Начни с «Szanowna Pani / Szanowny Panie», раздели причины и просьбы на абзацы.",
+    },
+    {
+        "id": "recommendation",
+        "title": "Рекомендация места",
+        "task": "Посоветуй другу польский город или место для выходных в 90–120 словах. Приведи минимум два аргумента и одно практическое предостережение.",
+        "hint": "Используй связки «po pierwsze», «poza tym», «jednak» и заверши ясной рекомендацией.",
+    },
+    {
+        "id": "opinion",
+        "title": "Личное мнение",
+        "task": "Ответь в 100–120 словах: лучше учиться самостоятельно или на курсах? Обозначь позицию, аргумент, контраргумент и вывод.",
+        "hint": "Полезные рамки: «moim zdaniem», «z jednej strony», «z drugiej strony», «dlatego uważam, że…».",
+    },
+    {
+        "id": "story",
+        "title": "Короткая история",
+        "task": "Опиши в 100–130 словах ситуацию, когда планы неожиданно изменились. Покажи последовательность событий, реакцию и итог.",
+        "hint": "Свяжи события словами «najpierw», «nagle», «wtedy», «w końcu» и проверь формы прошедшего времени.",
+    },
+)
 
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
@@ -226,6 +252,12 @@ def profile(request: HttpRequest) -> HttpResponse:
 def sources(request: HttpRequest) -> HttpResponse:
     """Show the public attribution and content-source policy summary."""
     return render(request, "sources.html")
+
+
+@require_browser_user
+def writing_practice(request: HttpRequest) -> HttpResponse:
+    """Offer honest, browser-local B1 writing practice without auto-grading."""
+    return render(request, "writing.html", {"writing_prompts": WRITING_PROMPTS})
 
 
 def _daily_plan(request: HttpRequest):

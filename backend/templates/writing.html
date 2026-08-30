@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Письменная практика B1 · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header writing-header">
+    <div><p class="eyebrow">Практика B1</p><h1>Письменные ответы</h1><p class="muted">Напиши черновик и оцени его по понятным критериям. Здесь нет автоматической проверки: решение о готовности принимаешь ты.</p></div>
+    <a class="compact-button" href="{% url 'course' %}?level=B1">К темам B1 →</a>
+  </header>
+
+  <section class="card writing-workspace" aria-label="Редактор письменного ответа">
+    <label for="writing-prompt">Выбери задание</label>
+    <select id="writing-prompt" class="writing-prompt-select">
+      {% for prompt in writing_prompts %}<option value="{{ prompt.id }}">{{ prompt.title }}</option>{% endfor %}
+    </select>
+
+    {% for prompt in writing_prompts %}
+      <div class="writing-prompt" data-writing-prompt="{{ prompt.id }}"{% if not forloop.first %} hidden{% endif %}>
+        <p class="eyebrow">Задание {{ forloop.counter }}</p>
+        <h2>{{ prompt.title }}</h2>
+        <p>{{ prompt.task }}</p>
+        <p class="writing-hint"><strong>Ориентир:</strong> {{ prompt.hint }}</p>
+        <label for="draft-{{ prompt.id }}">Твой черновик</label>
+        <textarea id="draft-{{ prompt.id }}" rows="12" data-writing-draft="{{ prompt.id }}" aria-describedby="draft-help-{{ prompt.id }}"></textarea>
+        <div class="writing-draft-meta" id="draft-help-{{ prompt.id }}">
+          <span data-word-count aria-live="polite">0 слов</span>
+          <span data-save-status role="status">Черновик сохраняется только в этом браузере</span>
+        </div>
+        <fieldset class="writing-checklist">
+          <legend>Самопроверка перед завершением</legend>
+          <label><input type="checkbox"> Я ответил на все части задания и соблюдаю объём.</label>
+          <label><input type="checkbox"> Текст разделён на логичные абзацы, связки не повторяются.</label>
+          <label><input type="checkbox"> Я проверил окончания, согласование и формы глаголов.</label>
+          <label><input type="checkbox"> Регистр и приветствие соответствуют ситуации.</label>
+        </fieldset>
+        <button class="secondary writing-reset" type="button" data-reset-draft>Удалить этот черновик</button>
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}
+{% block scripts %}
+  <script>
+    (function () {
+      const select = document.querySelector("#writing-prompt");
+      const panels = Array.from(document.querySelectorAll("[data-writing-prompt]"));
+      const storagePrefix = "polskiflow-writing-b1:{{ request.supabase_user.id|escapejs }}:";
+
+      function words(value) {
+        const trimmed = value.trim();
+        return trimmed ? trimmed.split(/\s+/u).length : 0;
+      }
+
+      function updateCount(panel, value) {
+        panel.querySelector("[data-word-count]").textContent = words(value) + " слов";
+      }
+
+      function showPrompt(id) {
+        panels.forEach(function (panel) { panel.hidden = panel.dataset.writingPrompt !== id; });
+      }
+
+      panels.forEach(function (panel) {
+        const textarea = panel.querySelector("[data-writing-draft]");
+        const status = panel.querySelector("[data-save-status]");
+        const key = storagePrefix + textarea.dataset.writingDraft;
+        try { textarea.value = localStorage.getItem(key) || ""; } catch (error) { status.textContent = "Локальное сохранение недоступно"; }
+        updateCount(panel, textarea.value);
+        textarea.addEventListener("input", function () {
+          updateCount(panel, textarea.value);
+          try { localStorage.setItem(key, textarea.value); status.textContent = "Черновик сохранён в этом браузере"; }
+          catch (error) { status.textContent = "Не удалось сохранить черновик локально"; }
+        });
+        panel.querySelector("[data-reset-draft]").addEventListener("click", function () {
+          if (!window.confirm("Удалить черновик этого задания? Восстановить его не получится.")) return;
+          textarea.value = "";
+          panel.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) { checkbox.checked = false; });
+          try { localStorage.removeItem(key); } catch (error) { /* Поле всё равно очищено. */ }
+          updateCount(panel, "");
+          status.textContent = "Черновик удалён";
+          textarea.focus();
+        });
+      });
+      select.addEventListener("change", function () { showPrompt(select.value); });
+    }());
+  </script>
+{% endblock %}

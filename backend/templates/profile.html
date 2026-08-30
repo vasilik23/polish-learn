@@ -36,10 +36,20 @@
       <div><p class="eyebrow">Последние 7 дней</p><h2 id="weekly-title">Недельная активность</h2></div>
     </div>
     <div class="profile-stats weekly-stats">
-      <article class="card profile-stat"><span aria-hidden="true">▦</span><strong>{{ dashboard.weekly_completed_count }}</strong><small>уроков завершено</small></article>
-      <article class="card profile-stat"><span aria-hidden="true">●</span><strong>{{ dashboard.weekly_active_days }} / 7</strong><small>активных дней</small></article>
+      <article class="card profile-stat weekly-stat">
+        <span aria-hidden="true">▦</span><strong>{{ dashboard.weekly_completed_count }}</strong><small>уроков завершено</small>
+        <p class="weekly-compare {% if dashboard.weekly_completed_delta > 0 %}is-positive{% elif dashboard.weekly_completed_delta < 0 %}is-negative{% endif %}">
+          {% if dashboard.weekly_completed_delta > 0 %}↑ на {{ dashboard.weekly_completed_delta }} больше{% elif dashboard.weekly_completed_delta < 0 %}↓ на {{ dashboard.weekly_completed_delta|stringformat:"d"|slice:"1:" }} меньше{% else %}без изменений{% endif %}
+        </p>
+      </article>
+      <article class="card profile-stat weekly-stat">
+        <span aria-hidden="true">●</span><strong>{{ dashboard.weekly_active_days }} / 7</strong><small>активных дней</small>
+        <p class="weekly-compare {% if dashboard.weekly_active_days_delta > 0 %}is-positive{% elif dashboard.weekly_active_days_delta < 0 %}is-negative{% endif %}">
+          {% if dashboard.weekly_active_days_delta > 0 %}↑ на {{ dashboard.weekly_active_days_delta }} больше{% elif dashboard.weekly_active_days_delta < 0 %}↓ на {{ dashboard.weekly_active_days_delta|stringformat:"d"|slice:"1:" }} меньше{% else %}без изменений{% endif %}
+        </p>
+      </article>
     </div>
-    <p class="muted">Считаются уникальные уроки и дни активности за сегодня и шесть предыдущих дней.</p>
+    <p class="muted">Сравниваем сегодня и шесть предыдущих дней с предшествующими семью днями. В прошлый период: {{ dashboard.previous_week_completed_count }} уроков за {{ dashboard.previous_week_active_days }} активных дней.</p>
   </section>
 
   <section class="profile-settings" aria-labelledby="settings-title">

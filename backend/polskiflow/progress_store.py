@@ -23,10 +23,20 @@ class DashboardProgress:
     active_days: int = 0
     weekly_active_days: int = 0
     weekly_completed_count: int = 0
+    previous_week_active_days: int = 0
+    previous_week_completed_count: int = 0
 
     @property
     def completed_count(self) -> int:
         return len(self.completed_lesson_ids)
+
+    @property
+    def weekly_active_days_delta(self) -> int:
+        return self.weekly_active_days - self.previous_week_active_days
+
+    @property
+    def weekly_completed_delta(self) -> int:
+        return self.weekly_completed_count - self.previous_week_completed_count
 
 
 def load_dashboard_progress(
@@ -60,6 +70,8 @@ def load_dashboard_progress(
     active_dates = []
     weekly_dates = set()
     weekly_lesson_ids = set()
+    previous_week_dates = set()
+    previous_week_lesson_ids = set()
     completed_today = set()
     completed_all_time = set()
     for completion in completion_rows:
@@ -73,6 +85,10 @@ def load_dashboard_progress(
             weekly_dates.add(plan_date)
             if lesson_id:
                 weekly_lesson_ids.add(lesson_id)
+        elif today - timedelta(days=13) <= plan_date <= today - timedelta(days=7):
+            previous_week_dates.add(plan_date)
+            if lesson_id:
+                previous_week_lesson_ids.add(lesson_id)
         if lesson_id:
             completed_all_time.add(lesson_id)
             if plan_date == today:
@@ -88,6 +104,8 @@ def load_dashboard_progress(
         active_days=len(set(active_dates)),
         weekly_active_days=len(weekly_dates),
         weekly_completed_count=len(weekly_lesson_ids),
+        previous_week_active_days=len(previous_week_dates),
+        previous_week_completed_count=len(previous_week_lesson_ids),
     )
 
 

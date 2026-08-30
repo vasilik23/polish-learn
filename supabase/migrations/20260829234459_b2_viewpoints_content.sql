@@ -1,0 +1,76 @@
+insert into public.courses(id,title,description,level,position,is_active) values ('b2-advanced','Уверенное общение','Аргументация и работа со сложными сообщениями уровня B2','B2',3,true) on conflict(id) do update set title=excluded.title,description=excluded.description,level=excluded.level,position=excluded.position,is_active=excluded.is_active;
+
+insert into public.topics(id,course_id,title,description,emoji,position,is_active) values ('b2-viewpoints','b2-advanced','Точки зрения','Строим аргумент, учитываем ограничения и отвечаем на возражения','⚖️',0,true) on conflict(id) do update set course_id=excluded.course_id,title=excluded.title,description=excluded.description,emoji=excluded.emoji,position=excluded.position,is_active=excluded.is_active;
+
+insert into public.lessons(id,topic_id,kind,title,plan_title,subtitle,description,minutes,emoji,position,is_active,theory_title,theory_sections,source_metadata) values
+('b2view-words','b2-viewpoints','words','Słowa w kontekście','Новая лексика','8 карточек · B2','Лексика аргументации',10,'⚖️',168,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-grammar','b2-viewpoints','grammar','Argument i ustępstwo','Языковой фокус','6 заданий · B2','Маркеры аргументации и уступки',13,'✏️',169,true,'Аргумент и уступка','[["Структура","Обозначь stanowisko, добавь uzasadnienie и dowód, затем сформулируй wniosek."],["Уступка","Wprawdzie… ale, mimo że и niemniej jednak признают ограничение, не отменяя основную мысль."],["Контраргумент","Сначала точно назови zastrzeżenie, затем odnieś się do niego через данные или пример."]]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-review','b2-viewpoints','review','Powtórka aktywna','Активное повторение','7 карточек · B2','Закрепи лексику темы',9,'🔄',170,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-quiz','b2-viewpoints','quiz','Quiz: Точки зрения','Проверка темы','10 вопросов · B2','Проверь аргументацию и лексику',10,'🎯',171,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-reading-check','b2-viewpoints','quiz','Czy rozumiesz tekst?','Понимание текста','6 вопросов · B2','Проследи позиции и контраргументы',8,'📖',172,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}')
+on conflict(id) do update set topic_id=excluded.topic_id,kind=excluded.kind,title=excluded.title,plan_title=excluded.plan_title,subtitle=excluded.subtitle,description=excluded.description,minutes=excluded.minutes,emoji=excluded.emoji,position=excluded.position,is_active=excluded.is_active,theory_title=excluded.theory_title,theory_sections=excluded.theory_sections,source_metadata=excluded.source_metadata;
+
+insert into public.flashcards(id,polish,translation,example,position,is_active,source_metadata) values
+('b2view-1','stanowisko','позиция','Autorka jasno przedstawia swoje stanowisko.',542,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-2','założenie','предпосылка','To założenie wymaga dodatkowego uzasadnienia.',543,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-3','uzasadnienie','обоснование','Dobre uzasadnienie opiera się na danych.',544,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-4','dowód','доказательство','Jeden przykład nie zawsze stanowi dowód.',545,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-5','wniosek','вывод','Wniosek wynika z przedstawionych argumentów.',546,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-6','zastrzeżenie','оговорка','Mam jedno zastrzeżenie do tej propozycji.',547,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-7','kontrargument','контраргумент','Rozmówca odpowiedział trafnym kontrargumentem.',548,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-8','przekonujący','убедительный','Jej wywód był logiczny i przekonujący.',549,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-9','z jednej strony','с одной стороны','Z jednej strony zmiana ułatwi pracę.',550,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-10','z drugiej strony','с другой стороны','Z drugiej strony zwiększy koszty.',551,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-11','wprawdzie','правда, хотя','Wprawdzie plan jest ambitny, ale wykonalny.',552,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-12','niemniej jednak','тем не менее','Brakuje czasu, niemniej jednak warto spróbować.',553,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-13','mimo że','несмотря на то что','Mimo że się różnimy, możemy współpracować.',554,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-14','odnieść się do','ответить на; обратиться к','Odniosę się do najważniejszego zarzutu.',555,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2view-15','podważyć','поставить под сомнение','Nowe dane mogą podważyć tę tezę.',556,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}')
+on conflict(id) do update set polish=excluded.polish,translation=excluded.translation,example=excluded.example,position=excluded.position,is_active=excluded.is_active,source_metadata=excluded.source_metadata;
+
+delete from public.lesson_flashcards where lesson_id in ('b2view-words','b2view-review');
+insert into public.lesson_flashcards(lesson_id,flashcard_id,position) values
+('b2view-words','b2view-1',0),
+('b2view-words','b2view-2',1),
+('b2view-words','b2view-3',2),
+('b2view-words','b2view-4',3),
+('b2view-words','b2view-5',4),
+('b2view-words','b2view-6',5),
+('b2view-words','b2view-7',6),
+('b2view-words','b2view-8',7),
+('b2view-review','b2view-9',0),
+('b2view-review','b2view-10',1),
+('b2view-review','b2view-11',2),
+('b2view-review','b2view-12',3),
+('b2view-review','b2view-13',4),
+('b2view-review','b2view-14',5),
+('b2view-review','b2view-15',6);
+
+delete from public.questions where lesson_id in ('b2view-grammar','b2view-quiz','b2view-reading-check');
+insert into public.questions(lesson_id,prompt,options,correct,explanation,position) values
+('b2view-grammar','___ rozwiązanie jest wygodne, ale nie uwzględnia potrzeb seniorów.','["Wprawdzie","Ponieważ","Dlatego"]',0,'Wprawdzie zapowiada ustępstwo, po którym zwykle pojawia się ale lub jednak.',0),
+('b2view-grammar','Projekt jest kosztowny. ___ może przynieść oszczędności w przyszłości.','["Niemniej jednak","W rezultacie że","Z powodu"]',0,'Niemniej jednak wprowadza kontrast wobec wcześniejszego zastrzeżenia.',1),
+('b2view-grammar','Mimo że badanie było niewielkie, jego wyniki ___ uwagę.','["zasługują na","podważają do","odnoszą się"]',0,'Mimo że łączy fakt ograniczający z wnioskiem, który pozostaje aktualny.',2),
+('b2view-grammar','Chciałbym odnieść się ___ argumentu dotyczącego kosztów.','["do","z","nad"]',0,'Odnieść się do łączy się z dopełniaczem.',3),
+('b2view-grammar','Составьте: С одной стороны предложение экономит время, с другой — ограничивает выбор.','["Z jednej strony propozycja oszczędza czas, z drugiej strony ogranicza wybór.","Wprawdzie propozycja czas, ponieważ wybór ograniczony.","Z powodu jednej strony propozycję ogranicza wyborem."]',0,'Para z jednej strony… z drugiej strony równoważy dwa aspekty stanowiska.',4),
+('b2view-grammar','Составьте: Хотя я понимаю это возражение, новые данные подтверждают наш вывод.','["Mimo że rozumiem to zastrzeżenie, nowe dane potwierdzają nasz wniosek.","Niemniej rozumiem do zastrzeżenia, dane wnioskiem.","Ponieważ zastrzeżenie, ale dane podważyć wniosek."]',0,'Mimo że wprowadza ustępstwo, a zdanie główne zachowuje właściwy szyk.',5),
+('b2view-quiz','Что означает stanowisko в дискуссии?','["позиция по вопросу","случайный пример","название встречи"]',0,'Stanowisko — jasno określona opinia lub pozycja.',0),
+('b2view-quiz','Który element pokazuje, dlaczego teza ma sens?','["uzasadnienie","zastrzeżenie","powitanie"]',0,'Uzasadnienie łączy tezę z argumentami lub danymi.',1),
+('b2view-quiz','Wprawdzie termin jest krótki, ___ zdążymy przygotować raport.','["ale","ponieważ","z powodu"]',0,'Wprawdzie naturalnie łączy się z ale lub jednak.',2),
+('b2view-quiz','Как вежливо ответить на возражение?','["Rozumiem to zastrzeżenie, jednak…","To absurd i koniec.","Nie będę odpowiadać."]',0,'Pierwsza forma uznaje perspektywę rozmówcy i zapowiada odpowiedź.',3),
+('b2view-quiz','Nowe wyniki mogą ___ wcześniejsze założenie.','["podważyć","odnieść","przekonać do niego dowód"]',0,'Podważyć założenie — wykazać, że może być błędne.',4),
+('b2view-quiz','Który marker wprowadza przeciwny aspekt?','["z drugiej strony","w związku z tym","na przykład"]',0,'Z drugiej strony sygnalizuje kontrastującą perspektywę.',5),
+('b2view-quiz','Mimo że nie mamy pełnych danych, ___.','["możemy sformułować wstępny wniosek","ponieważ pełne dane","z powodu jednak"]',0,'Zdanie główne wyraża rezultat aktualny mimo ograniczenia.',6),
+('b2view-quiz','Co robi kontrargument?','["odpowiada na argument strony przeciwnej","powtarza tezę bez podstaw","zmienia temat"]',0,'Kontrargument odnosi się bezpośrednio do wcześniejszego argumentu.',7),
+('b2view-quiz','Które zdanie zawiera ostrożne zastrzeżenie?','["Rozwiązanie jest obiecujące, choć wymaga dalszych testów.","Rozwiązanie jest zawsze idealne.","Nie ma o czym rozmawiać."]',0,'Choć wskazuje ograniczenie bez odrzucania całej propozycji.',8),
+('b2view-quiz','Jaki porządek buduje przekonujący wywód?','["stanowisko — uzasadnienie — przykład — wniosek","wniosek — zmiana tematu — slogan","przykład bez tezy"]',0,'Taka kolejność pozwala odbiorcy śledzić tok rozumowania.',9),
+('b2view-reading-check','Czego dotyczyła debata?','["Ograniczenia ruchu samochodów w centrum","Budowy lotniska","Programu szkolnego"]',0,'Debata dotyczyła strefy z ograniczonym ruchem.',0),
+('b2view-reading-check','Jakie stanowisko zajęła Lena?','["Poparła pilotaż z warunkami","Odrzuciła każdą zmianę","Nie zabrała głosu"]',0,'Lena poparła próbę, ale wskazała potrzebne zabezpieczenia.',1),
+('b2view-reading-check','Jakie zastrzeżenie zgłosił Marek?','["Problemy osób dojeżdżających z przedmieść","Brak miejsc w kinie","Koszt podręczników"]',0,'Marek mówił o mieszkańcach bez dobrego transportu publicznego.',2),
+('b2view-reading-check','Na czym opierał się kontrargument Leny?','["Na danych z pilotażu w innym mieście","Na osobistej niechęci","Na niepotwierdzonej plotce"]',0,'Przywołała porównywalny pilotaż i jego wyniki.',3),
+('b2view-reading-check','Co uczestnicy dodali do rekomendacji?','["Wyjątki i ocenę skutków po pół roku","Zakaz publikacji wyników","Natychmiastową stałą zmianę bez testu"]',0,'Rekomendacja uwzględniła wyjątki oraz ewaluację.',4),
+('b2view-reading-check','Jaki jest główny wniosek tekstu?','["Dobra debata może udoskonalić pierwotne stanowisko","Ustępstwo oznacza porażkę","Najlepiej ignorować kontrargumenty"]',0,'Rozmowa doprowadziła do bardziej precyzyjnej propozycji.',5);
+
+insert into public.reading_texts(id,topic_id,title,description,level,minutes,emoji,paragraphs,glossary,source_metadata,position,is_active) values
+('b2view-debata-o-spokojnym-centrum','b2-viewpoints','Debata o spokojnym centrum','Как оговорки и контраргументы улучшают городскую рекомендацию','B2',11,'⚖️','["Podczas debaty miejskiej omawiano ograniczenie ruchu samochodów w centrum. Lena poparła pomysł, ponieważ czystsze powietrze i bezpieczniejsze ulice uznała za przekonujące korzyści. Zastrzegła jednak, że sama deklaracja celu nie stanowi jeszcze dowodu skuteczności.","Marek przedstawił kontrargument. Wprawdzie mieszkańcy centrum zyskaliby spokojniejszą przestrzeń, ale osoby dojeżdżające z przedmieść mogłyby mieć trudniejszy dostęp do usług. Jego zdaniem projekt opierał się na założeniu, że każdy ma dogodny transport publiczny.","Lena odniosła się do tego zastrzeżenia, przywołując wyniki podobnego pilotażu. Z jednej strony dane potwierdzały spadek ruchu, z drugiej strony pokazywały większe obciążenie kilku linii autobusowych. Mimo że wyniki nie rozstrzygały wszystkiego, pozwalały podważyć twierdzenie, że zmiana zawsze utrudnia dojazd.","Uczestnicy nie musieli wybierać między bezwarunkowym poparciem a całkowitym sprzeciwem. Dodali do rekomendacji częstsze kursy, wyjątki dla osób z niepełnosprawnościami oraz ocenę skutków po sześciu miesiącach. Niemniej jednak zachowali główny cel projektu.","Końcowy wniosek był bardziej precyzyjny niż początkowe stanowiska. Debata pokazała, że ustępstwo nie osłabia argumentacji, jeśli pomaga dostrzec ograniczenia, odpowiedzieć na kontrargument i zaproponować rozwiązanie możliwe do sprawdzenia."]','{"omawiano":{"lemma":"omawiać","translation":"обсуждали","part_of_speech":"глагол"},"ograniczenie":{"lemma":"ograniczenie","translation":"ограничение","part_of_speech":"существительное"},"zastrzegła":{"lemma":"zastrzec","translation":"оговорила","part_of_speech":"глагол"},"skuteczności":{"lemma":"skuteczność","translation":"эффективность","part_of_speech":"существительное"},"dojeżdżające":{"lemma":"dojeżdżać","translation":"ездящие издалека","part_of_speech":"причастие"},"przedmieść":{"lemma":"przedmieście","translation":"пригород","part_of_speech":"существительное"},"dogodny":{"lemma":"dogodny","translation":"удобный","part_of_speech":"прилагательное"},"przywołując":{"lemma":"przywołać","translation":"приводя","part_of_speech":"деепричастие"},"pilotażu":{"lemma":"pilotaż","translation":"пилотный проект","part_of_speech":"существительное"},"obciążenie":{"lemma":"obciążenie","translation":"нагрузка","part_of_speech":"существительное"},"rozstrzygały":{"lemma":"rozstrzygać","translation":"решали однозначно","part_of_speech":"глагол"},"podważyć":{"lemma":"podważyć","translation":"поставить под сомнение","part_of_speech":"глагол"},"bezwarunkowym":{"lemma":"bezwarunkowy","translation":"безусловный","part_of_speech":"прилагательное"},"sprzeciwem":{"lemma":"sprzeciw","translation":"возражение","part_of_speech":"существительное"},"niepełnosprawnościami":{"lemma":"niepełnosprawność","translation":"инвалидность","part_of_speech":"существительное"},"skutków":{"lemma":"skutek","translation":"последствие","part_of_speech":"существительное"},"ustępstwo":{"lemma":"ustępstwo","translation":"уступка","part_of_speech":"существительное"},"dostrzec":{"lemma":"dostrzec","translation":"заметить","part_of_speech":"глагол"}}','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30","comprehension_lesson_id":"b2view-reading-check"}',36,true)
+on conflict(id) do update set topic_id=excluded.topic_id,title=excluded.title,description=excluded.description,level=excluded.level,minutes=excluded.minutes,emoji=excluded.emoji,paragraphs=excluded.paragraphs,glossary=excluded.glossary,source_metadata=excluded.source_metadata,position=excluded.position,is_active=excluded.is_active;
