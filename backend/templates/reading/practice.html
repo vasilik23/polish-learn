@@ -7,7 +7,7 @@
       {% if question %}
         {% include "reading/_practice_question.html" %}
       {% else %}
-        <div class="card empty-state practice-empty"><span>🧠</span><h1>{% if word_count >= 4 %}На сегодня всё{% else %}Нужно минимум 4 слова{% endif %}</h1><p class="muted">{% if word_count >= 4 %}Следующая тренировка появится, когда слова снова будут готовы к повторению.{% else %}Сейчас в словаре: {{ word_count }}. Добавляй слова из текстов, и тренировка откроется автоматически.{% endif %}</p><a class="button" href="{% url 'reading-library' %}">Найти новые слова</a>{% if not available %}<p class="save-error">Словарь временно недоступен.</p>{% endif %}</div>
+        <div class="card empty-state practice-empty"><span>🧠</span><h1>{% if source_text_id and source_word_count == 0 %}Слова этого текста ещё не сохранены{% elif word_count >= 4 %}На сегодня всё{% else %}Нужно минимум 4 слова{% endif %}</h1><p class="muted">{% if source_text_id and source_word_count == 0 %}Вернись к тексту, нажми на полезные слова и добавь их в личный словарь.{% elif source_text_id %}Для вариантов ответа нужно минимум 4 разные леммы в словаре. Сейчас сохранено: {{ word_count }}.{% elif word_count >= 4 %}Следующая тренировка появится, когда слова снова будут готовы к повторению.{% else %}Сейчас в словаре: {{ word_count }}. Добавляй слова из текстов, и тренировка откроется автоматически.{% endif %}</p><a class="button" href="{% url 'reading-library' %}">Найти новые слова</a>{% if not available %}<p class="save-error">Словарь временно недоступен.</p>{% endif %}</div>
       {% endif %}
     </div>
   </div>

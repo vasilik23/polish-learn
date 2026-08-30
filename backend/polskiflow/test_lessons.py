@@ -316,7 +316,13 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/course/?level=B1")
 
         self.assertContains(response, "Письменная практика B1")
-        self.assertContains(response, 'href="/writing/"')
+        self.assertContains(response, 'href="/writing/?level=B1"')
+
+    def test_b2_course_links_to_level_specific_writing_practice(self):
+        response = self.client.get("/course/?level=B2")
+
+        self.assertContains(response, "Письменная практика B2")
+        self.assertContains(response, 'href="/writing/?level=B2"')
 
     def test_writing_practice_has_local_drafts_and_honest_self_check(self):
         response = self.client.get("/writing/")
@@ -328,6 +334,22 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Самопроверка перед завершением", count=4)
         self.assertContains(response, 'localStorage.setItem(key, textarea.value)')
         self.assertContains(response, 'window.confirm("Удалить черновик этого задания?')
+
+    def test_writing_practice_supports_b2_and_separates_local_storage(self):
+        response = self.client.get("/writing/?level=B2")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Практика B2")
+        self.assertContains(response, "Сравнение двух сообщений")
+        self.assertContains(response, 'data-writing-draft="source-comparison"')
+        self.assertContains(response, "polskiflow-writing-b2:")
+        self.assertContains(response, 'href="?level=B2" aria-current="page"')
+
+    def test_writing_practice_falls_back_to_b1_for_unknown_level(self):
+        response = self.client.get("/writing/?level=C1")
+
+        self.assertContains(response, "Практика B1")
+        self.assertNotContains(response, "Сравнение двух сообщений")
 
     def test_writing_practice_requires_authentication(self):
         self.auth_patch.stop()

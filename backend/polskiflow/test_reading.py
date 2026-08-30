@@ -150,7 +150,10 @@ class ReadingViewsTests(TestCase):
         response = self.client.get("/reading/test-story/")
 
         self.assertContains(response, "Закрепи сохранённую лексику")
-        self.assertContains(response, 'href="/dictionary/practice/"')
+        self.assertContains(
+            response,
+            'href="/dictionary/practice/?source=test-story&amp;mode=lemma"',
+        )
         self.assertContains(response, 'data-lemma="kot"')
         self.assertContains(response, 'data-translation="кот"')
         self.assertContains(response, 'data-part-of-speech="существительное"')
@@ -165,6 +168,10 @@ class ReadingViewsTests(TestCase):
         )
 
         self.assertContains(response, "теперь в словаре")
+        self.assertContains(
+            response,
+            'href="/dictionary/practice/?source=test-story&amp;mode=lemma"',
+        )
         save_word.assert_called_once_with(
             "access",
             "00000000-0000-0000-0000-000000000123",
@@ -341,6 +348,89 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "dom")
         self.assertContains(response, "дом")
         self.assertContains(response, "молоко")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_reader_practice_asks_for_lemma_and_scopes_questions_to_text(
+        self, load_words
+    ):
+        words = self._practice_words()
+        words[0]["source_text_id"] = "test-story"
+        load_words.return_value = words
+
+        response = self.client.get(
+            "/dictionary/practice/?source=test-story&mode=lemma"
+        )
+
+        self.assertContains(response, "Выбери польскую лемму")
+        self.assertContains(response, ">дом<")
+        self.assertContains(response, ">dom<")
+        self.assertContains(response, "Слово 1 из 1")
+        self.assertNotContains(response, ">молоко<")
+        self.assertEqual(
+            self.client.session["dictionary_practice_word_ids"], ["word-1"]
+        )
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_reader_practice_has_honest_empty_state_for_unsaved_text(
+        self, load_words
+    ):
+        load_words.return_value = self._practice_words()
+
+        response = self.client.get("/dictionary/practice/?source=test-story")
+
+        self.assertContains(response, "Слова этого текста ещё не сохранены")
+        self.assertContains(response, "добавь их в личный словарь")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_reader_practice_keeps_sm2_due_filter(self, load_words):
+        words = self._practice_words()
+        words[0].update(
+            source_text_id="test-story", next_review_date="2999-01-01"
+        )
+        load_words.return_value = words
+
+        response = self.client.get("/dictionary/practice/?source=test-story")
+
+        self.assertContains(response, "На сегодня всё")
+        self.assertNotContains(response, "Выбери польскую лемму")
+
+    def test_reader_practice_rejects_unknown_source(self):
+        response = self.client.get("/dictionary/practice/?source=unknown-story")
+
+        self.assertEqual(response.status_code, 404)
+
+    @patch("polskiflow.reading_views.save_personal_word_review", return_value=True)
+    @patch("polskiflow.reading_views.save_lesson_completion", return_value=True)
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_reader_practice_preserves_scoped_mode_and_updates_sm2(
+        self, load_words, _save_completion, save_review
+    ):
+        words = self._practice_words()
+        words[0]["source_text_id"] = "test-story"
+        load_words.return_value = words
+        session = self.client.session
+        session["dictionary_practice_word_ids"] = ["word-1"]
+        session["dictionary_practice_mode"] = "lemma"
+        session["dictionary_practice_source"] = "test-story"
+        session.save()
+
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {
+                "action": "next",
+                "index": 0,
+                "score": 0,
+                "selected": 0,
+                "quality": "good",
+            },
+        )
+
+        self.assertContains(
+            response,
+            'href="/dictionary/practice/?source=test-story&amp;mode=lemma"',
+        )
+        self.assertEqual(save_review.call_args.args[2], "word-1")
+        self.assertEqual(save_review.call_args.args[3].repetitions, 1)
 
     @patch("polskiflow.reading_views.load_personal_words")
     def test_practice_requires_four_distinct_translations(self, load_words):

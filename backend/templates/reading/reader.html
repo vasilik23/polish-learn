@@ -28,7 +28,7 @@
           <h2 id="reading-words-title">Закрепи сохранённую лексику</h2>
           <p class="muted">После добавления слов потренируй их и запусти интервальное повторение SM-2.</p>
         </div>
-        <a class="compact-button" href="{% url 'dictionary-practice' %}">Тренировать →</a>
+        <a class="compact-button" href="{% url 'dictionary-practice' %}?source={{ text.id|urlencode }}&amp;mode=lemma">Тренировать слова текста →</a>
       </section>
     </article>
     <aside class="word-panel" id="word-panel">

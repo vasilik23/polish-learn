@@ -24,6 +24,9 @@ from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
 REVIEW_QUALITIES = {"again", "hard", "good", "easy"}
 PRACTICE_WORD_IDS_SESSION_KEY = "dictionary_practice_word_ids"
+PRACTICE_MODE_SESSION_KEY = "dictionary_practice_mode"
+PRACTICE_SOURCE_SESSION_KEY = "dictionary_practice_source"
+PRACTICE_MODES = {"translation", "lemma"}
 READING_LEVELS = ("A1", "A2", "B1", "B2", "C1")
 
 
@@ -116,16 +119,35 @@ def dictionary_practice(request: HttpRequest) -> HttpResponse:
     words = load_personal_words(
         request.supabase_access_token, request.supabase_user.id
     )
-    questions = _practice_questions(words or [])
+    source_text_id = request.GET.get("source", "").strip()
+    if source_text_id and reading_text(source_text_id) is None:
+        raise Http404
+    mode = request.GET.get("mode", "")
+    if mode not in PRACTICE_MODES:
+        mode = "lemma" if source_text_id else "translation"
+    questions = _practice_questions(
+        words or [], source_text_id=source_text_id or None, mode=mode
+    )
     request.session[PRACTICE_WORD_IDS_SESSION_KEY] = [
         question["id"] for question in questions
     ]
+    request.session[PRACTICE_MODE_SESSION_KEY] = mode
+    request.session[PRACTICE_SOURCE_SESSION_KEY] = source_text_id
+    source_word_count = (
+        sum(word.get("source_text_id") == source_text_id for word in (words or []))
+        if source_text_id
+        else len(words or [])
+    )
     return render(
         request,
         "reading/practice.html",
         {
             "available": words is not None,
             "word_count": len(words or []),
+            "source_text_id": source_text_id,
+            "source_word_count": source_word_count,
+            "mode": mode,
+            "repeat_url": _practice_url(source_text_id, mode),
             "question": questions[0] if questions else None,
             "total": len(questions),
             "index": 0,
@@ -142,9 +164,16 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
         request.supabase_access_token, request.supabase_user.id
     )
     session_word_ids = request.session.get(PRACTICE_WORD_IDS_SESSION_KEY)
+    mode = request.session.get(PRACTICE_MODE_SESSION_KEY, "translation")
+    if mode not in PRACTICE_MODES:
+        mode = "translation"
+    source_text_id = request.session.get(PRACTICE_SOURCE_SESSION_KEY, "")
+    if not isinstance(source_text_id, str):
+        source_text_id = ""
     questions = _practice_questions(
         words or [],
         word_ids=session_word_ids if isinstance(session_word_ids, list) else None,
+        mode=mode,
     )
     try:
         index = int(request.POST.get("index", "0"))
@@ -192,6 +221,8 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
         next_score = score + (selected == question["correct"])
         if index + 1 >= len(questions):
             request.session.pop(PRACTICE_WORD_IDS_SESSION_KEY, None)
+            request.session.pop(PRACTICE_MODE_SESSION_KEY, None)
+            request.session.pop(PRACTICE_SOURCE_SESSION_KEY, None)
             saved = save_lesson_completion(
                 request.supabase_access_token,
                 request.supabase_user.id,
@@ -207,6 +238,7 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
                     "total": len(questions),
                     "saved": saved,
                     "review_saved": review_saved,
+                    "repeat_url": _practice_url(source_text_id, mode),
                 },
             )
         context = _practice_context(questions, index + 1, next_score, None)
@@ -244,7 +276,11 @@ def add_dictionary_word(request: HttpRequest, text_id: str) -> HttpResponse:
     return render(
         request,
         "reading/_save_status.html",
-        {"saved": saved, "word": word},
+        {
+            "saved": saved,
+            "word": word,
+            "practice_url": _practice_url(text.id, "lemma"),
+        },
     )
 
 
@@ -307,7 +343,11 @@ def _glossary_entries(glossary: dict) -> dict[str, dict[str, str]]:
 
 
 def _practice_questions(
-    words: list[dict], limit: int = 10, word_ids: list[str] | None = None
+    words: list[dict],
+    limit: int = 10,
+    word_ids: list[str] | None = None,
+    source_text_id: str | None = None,
+    mode: str = "translation",
 ) -> list[dict]:
     usable = [
         word
@@ -317,38 +357,60 @@ def _practice_questions(
         and word["word"].strip()
         and word["translation"].strip()
     ]
-    translations = list(dict.fromkeys(word["translation"] for word in usable))
-    if len(translations) < 4:
+    answer_key = "word" if mode == "lemma" else "translation"
+    answers = list(dict.fromkeys(word[answer_key] for word in usable))
+    if len(answers) < 4:
         return []
     if word_ids is None:
-        chosen_words = [word for word in usable if _is_due(word.get("next_review_date"))]
+        chosen_words = [
+            word
+            for word in usable
+            if (not source_text_id or word.get("source_text_id") == source_text_id)
+            and _is_due(word.get("next_review_date"))
+        ]
         chosen_words.sort(key=lambda word: word.get("next_review_date") or "")
     else:
         words_by_id = {str(word.get("id", "")): word for word in usable}
         chosen_words = [words_by_id[word_id] for word_id in word_ids if word_id in words_by_id]
     questions = []
     for index, word in enumerate(chosen_words[:limit]):
-        correct_translation = word["translation"]
-        distractors = [item for item in translations if item != correct_translation][:3]
+        correct_answer = word[answer_key]
+        distractors = [item for item in answers if item != correct_answer][:3]
         if len(distractors) < 3:
             continue
-        options = distractors + [correct_translation]
+        options = distractors + [correct_answer]
         correct = index % 4
         options[correct], options[-1] = options[-1], options[correct]
         questions.append(
             {
                 "id": str(word.get("id", "")),
                 "word": word["word"],
+                "prompt": word["translation"] if mode == "lemma" else word["word"],
+                "instruction": (
+                    "Выбери польскую лемму"
+                    if mode == "lemma"
+                    else "Выбери перевод"
+                ),
                 "context": word.get("context") or "",
                 "options": options,
                 "correct": correct,
-                "correct_answer": correct_translation,
+                "correct_answer": correct_answer,
                 "ease_factor": word.get("ease_factor", DEFAULT_SM2_STATE.ease_factor),
                 "interval_days": word.get("interval_days", DEFAULT_SM2_STATE.interval_days),
                 "repetitions": word.get("repetitions", DEFAULT_SM2_STATE.repetitions),
             }
         )
     return questions
+
+
+def _practice_url(source_text_id: str, mode: str) -> str:
+    params = {}
+    if source_text_id:
+        params["source"] = source_text_id
+    if mode != "translation":
+        params["mode"] = mode
+    query = urlencode(params)
+    return f"/dictionary/practice/{'?' + query if query else ''}"
 
 
 def _is_due(value: object, today: date | None = None) -> bool:
