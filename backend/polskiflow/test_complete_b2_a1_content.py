@@ -4,6 +4,16 @@ from polskiflow.learning.models import Course, Lesson, ReadingText, Topic
 
 
 class CompleteB2AndA1ContentTests(TestCase):
+    def test_first_four_c1_topics_are_complete_vertical_blocks(self):
+        course = Course.objects.get(id="c1-proficiency")
+        self.assertEqual(course.level, "C1")
+        self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 4)
+        for topic in Topic.objects.filter(course=course):
+            self.assertEqual(topic.lessons.filter(is_active=True).count(), 5)
+            reading = ReadingText.objects.get(topic=topic, is_active=True)
+            self.assertGreaterEqual(len(reading.glossary), 15)
+            self.assertTrue(reading.source_metadata["comprehension_lesson_id"])
+
     def test_b2_catalog_is_complete_and_each_new_topic_has_full_path(self):
         course = Course.objects.get(id="b2-advanced")
         self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 12)

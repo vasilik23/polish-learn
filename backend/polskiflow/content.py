@@ -34,10 +34,15 @@ def task(lesson_id: str) -> dict | None:
 
 
 def course_topics() -> list[dict]:
-    active_lessons = Lesson.objects.filter(is_active=True).order_by("position", "id")
+    active_lessons = (
+        Lesson.objects.filter(is_active=True)
+        .only("id", "topic_id", "title", "description", "minutes", "emoji", "position")
+        .order_by("position", "id")
+    )
     topics = (
         Topic.objects.filter(is_active=True, course__is_active=True)
         .select_related("course")
+        .only("id", "title", "description", "emoji", "position", "course__level", "course__position")
         .prefetch_related(
             Prefetch("lessons", queryset=active_lessons, to_attr="active_lessons")
         )

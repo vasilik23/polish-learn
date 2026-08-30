@@ -103,6 +103,8 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(dashboard.active_days, 2)
         self.assertEqual(dashboard.weekly_active_days, 2)
         self.assertEqual(dashboard.weekly_completed_count, 3)
+        self.assertEqual(dashboard.monthly_active_days, 2)
+        self.assertEqual(dashboard.monthly_completed_count, 3)
         self.assertTrue(dashboard.available)
         for call in mocked_urlopen.call_args_list:
             request = call.args[0]

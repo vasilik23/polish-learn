@@ -281,6 +281,7 @@ class LessonViewsTests(TestCase):
 
         response = self.client.get("/profile/")
         self.assertContains(response, "Недельная активность")
+        self.assertContains(response, "Месячный обзор")
         self.assertContains(response, "6")
         self.assertContains(response, "4 / 7")
         self.assertContains(response, "на 3 больше")
