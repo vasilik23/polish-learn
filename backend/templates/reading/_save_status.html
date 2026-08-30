@@ -1,1 +1,1 @@
-{% if saved %}<p class="save-success">✓ «{{ word }}» теперь в словаре</p>{% else %}<p class="save-error">Не удалось сохранить. Попробуйте ещё раз.</p>{% endif %}
+{% if saved %}<p class="save-success">✓ «{{ word }}» теперь в словаре</p><a class="compact-button saved-word-practice" href="{{ practice_url }}">Тренировать слова текста →</a>{% else %}<p class="save-error">Не удалось сохранить. Попробуйте ещё раз.</p>{% endif %}

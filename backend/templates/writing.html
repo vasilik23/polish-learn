@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Письменная практика B1 · PolskiFlow{% endblock %}
+{% block title %}Письменная практика {{ selected_writing_level }} · PolskiFlow{% endblock %}
 {% block content %}
   <header class="content-header writing-header">
-    <div><p class="eyebrow">Практика B1</p><h1>Письменные ответы</h1><p class="muted">Напиши черновик и оцени его по понятным критериям. Здесь нет автоматической проверки: решение о готовности принимаешь ты.</p></div>
-    <a class="compact-button" href="{% url 'course' %}?level=B1">К темам B1 →</a>
+    <div><p class="eyebrow">Практика {{ selected_writing_level }}</p><h1>Письменные ответы</h1><p class="muted">Напиши черновик и оцени его по понятным критериям. Здесь нет автоматической проверки: решение о готовности принимаешь ты.</p></div>
+    <a class="compact-button" href="{% url 'course' %}?level={{ selected_writing_level }}">К темам {{ selected_writing_level }} →</a>
   </header>
+
+  <nav class="course-levels writing-levels" aria-label="Уровень письменной практики">
+    {% for level in writing_levels %}<a href="?level={{ level }}"{% if level == selected_writing_level %} aria-current="page"{% endif %}><strong>{{ level }}</strong><small>4 задания</small></a>{% endfor %}
+  </nav>
 
   <section class="card writing-workspace" aria-label="Редактор письменного ответа">
     <label for="writing-prompt">Выбери задание</label>
@@ -41,7 +45,7 @@
     (function () {
       const select = document.querySelector("#writing-prompt");
       const panels = Array.from(document.querySelectorAll("[data-writing-prompt]"));
-      const storagePrefix = "polskiflow-writing-b1:{{ request.supabase_user.id|escapejs }}:";
+      const storagePrefix = "polskiflow-writing-{{ selected_writing_level|lower }}:{{ request.supabase_user.id|escapejs }}:";
 
       function words(value) {
         const trimmed = value.trim();

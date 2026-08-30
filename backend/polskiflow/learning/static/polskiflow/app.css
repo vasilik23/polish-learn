@@ -304,6 +304,7 @@ p { line-height: 1.65; }
 .word-panel-result h2 { margin-bottom: .25rem; font-size: 1.65rem; }
 .selected-translation { margin-bottom: .5rem; color: var(--green); font-size: 1.05rem; font-weight: 700; }
 .save-success, .save-error { margin: .75rem 0 0; padding: .65rem; border-radius: .7rem; font-size: .76rem; }
+.saved-word-practice { width: 100%; margin-top: .55rem; justify-content: center; }
 .save-success { background: var(--green-soft); color: #176b47; }
 .save-error { background: var(--red-soft); color: #a52f46; }
 .dictionary-list { display: grid; gap: .7rem; }

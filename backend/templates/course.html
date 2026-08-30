@@ -17,11 +17,11 @@
     <div><p class="eyebrow">Уровень {{ selected_level }}</p><h2>Темы и уроки</h2></div>
     {% if course_topics %}<span>{{ course_topics|length }} тем</span>{% endif %}
   </div>
-  {% if selected_level == "B1" %}
+  {% if selected_level == "B1" or selected_level == "B2" %}
     <aside class="card writing-callout" aria-labelledby="writing-callout-title">
       <span class="writing-callout-icon" aria-hidden="true">✎</span>
-      <div><p class="eyebrow">Письменная практика B1</p><h2 id="writing-callout-title">Сформулируй ответ своими словами</h2><p class="muted">Четыре задания, локальный черновик и критерии для самостоятельной проверки.</p></div>
-      <a class="compact-button" href="{% url 'writing-practice' %}">Открыть практику →</a>
+      <div><p class="eyebrow">Письменная практика {{ selected_level }}</p><h2 id="writing-callout-title">Сформулируй ответ своими словами</h2><p class="muted">Четыре задания, локальный черновик и критерии для самостоятельной проверки.</p></div>
+      <a class="compact-button" href="{% url 'writing-practice' %}?level={{ selected_level }}">Открыть практику →</a>
     </aside>
   {% endif %}
   <div class="topic-list" aria-label="Темы курса">

@@ -2,8 +2,8 @@
 <div class="progress-label">Слово {{ index|add:1 }} из {{ total }}</div>
 <div class="lesson-progress"><span style="--value: {% widthratio index|add:1 total 100 %}%"></span></div>
 <section class="card question-card practice-card">
-  <p class="eyebrow">Выбери перевод</p>
-  <h1>{{ question.word }}</h1>
+  <p class="eyebrow">{{ question.instruction }}</p>
+  <h1>{{ question.prompt }}</h1>
   {% if question.context %}<p class="practice-context">“{{ question.context|truncatechars:180 }}”</p>{% endif %}
 </section>
 {% if selected == None %}

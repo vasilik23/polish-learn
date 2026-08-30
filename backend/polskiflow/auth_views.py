@@ -27,7 +27,8 @@ from polskiflow.progress_store import load_dashboard_progress, save_profile_sett
 
 
 PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1")
-WRITING_PROMPTS = (
+WRITING_PROMPTS = {
+    "B1": (
     {
         "id": "formal-request",
         "title": "Официальная просьба",
@@ -52,7 +53,34 @@ WRITING_PROMPTS = (
         "task": "Опиши в 100–130 словах ситуацию, когда планы неожиданно изменились. Покажи последовательность событий, реакцию и итог.",
         "hint": "Свяжи события словами «najpierw», «nagle», «wtedy», «w końcu» и проверь формы прошедшего времени.",
     },
-)
+    ),
+    "B2": (
+        {
+            "id": "source-comparison",
+            "title": "Сравнение двух сообщений",
+            "task": "Напиши 180–220 слов: сопоставь два сообщения об одном событии, отдели подтверждённые факты от оценок и сформулируй осторожный вывод.",
+            "hint": "Укажи источники и степень уверенности: «według», «źródło podaje», «prawdopodobnie», «nie można wykluczyć». ",
+        },
+        {
+            "id": "reasoned-recommendation",
+            "title": "Обоснованная рекомендация",
+            "task": "Подготовь 180–220 слов для городской консультации: представь решение, два аргумента, существенное ограничение и ответ на возможное возражение.",
+            "hint": "Организуй позицию связками «wprawdzie», «jednak», «co więcej», «biorąc to pod uwagę». ",
+        },
+        {
+            "id": "formal-summary",
+            "title": "Итог деловой встречи",
+            "task": "Напиши 160–200 слов участникам встречи: нейтрально подведи итог обсуждения, зафиксируй решение, ответственных и следующие сроки.",
+            "hint": "Соблюдай официальный регистр и отделяй принятые решения от предложений, которые ещё обсуждаются.",
+        },
+        {
+            "id": "critical-review",
+            "title": "Критическая рецензия",
+            "task": "Напиши 200–240 слов о книге или фильме: кратко представь произведение, интерпретируй один приём, оцени его эффект и обоснуй рекомендацию.",
+            "hint": "Не пересказывай весь сюжет; связывай наблюдение и интерпретацию через «dzięki temu», «można odczytać jako», «sugeruje». ",
+        },
+    ),
+}
 
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
@@ -256,8 +284,19 @@ def sources(request: HttpRequest) -> HttpResponse:
 
 @require_browser_user
 def writing_practice(request: HttpRequest) -> HttpResponse:
-    """Offer honest, browser-local B1 writing practice without auto-grading."""
-    return render(request, "writing.html", {"writing_prompts": WRITING_PROMPTS})
+    """Offer honest, browser-local B1/B2 writing practice without auto-grading."""
+    selected_level = request.GET.get("level", "B1").upper()
+    if selected_level not in WRITING_PROMPTS:
+        selected_level = "B1"
+    return render(
+        request,
+        "writing.html",
+        {
+            "writing_prompts": WRITING_PROMPTS[selected_level],
+            "writing_levels": tuple(WRITING_PROMPTS),
+            "selected_writing_level": selected_level,
+        },
+    )
 
 
 def _daily_plan(request: HttpRequest):
