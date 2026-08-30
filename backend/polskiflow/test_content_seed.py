@@ -23,7 +23,7 @@ class IntroductionsContentTests(TestCase):
     def test_daily_plan_contains_complete_introductions_block(self):
         lessons = Lesson.objects.filter(topic_id="introductions")
 
-        self.assertEqual(lessons.count(), 4)
+        self.assertEqual(lessons.count(), 7)
         self.assertEqual(Question.objects.filter(lesson_id="grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="quiz").count(), 8)
         self.assertEqual(
@@ -69,7 +69,7 @@ class CountriesLanguagesContentTests(TestCase):
     def test_topic_has_complete_vertical_block(self):
         lessons = Lesson.objects.filter(topic_id="countries-languages")
 
-        self.assertEqual(lessons.count(), 4)
+        self.assertEqual(lessons.count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="countries-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="countries-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="countries-words").count(), 8)
@@ -88,8 +88,8 @@ class CountriesLanguagesContentTests(TestCase):
         topics = course_topics()
 
         self.assertEqual([topic["id"] for topic in topics[:2]], ["introductions", "countries-languages"])
-        self.assertEqual(len(topics[0]["lessons"]), 4)
-        self.assertEqual(len(topics[1]["lessons"]), 4)
+        self.assertEqual(len(topics[0]["lessons"]), 7)
+        self.assertEqual(len(topics[1]["lessons"]), 5)
 
 
 class FamilyContentTests(TestCase):
@@ -100,7 +100,7 @@ class FamilyContentTests(TestCase):
         self.assertEqual(topic.course_id, "a1-foundations")
 
     def test_family_has_complete_vertical_block(self):
-        self.assertEqual(Lesson.objects.filter(topic_id="family").count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic_id="family").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="family-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="family-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="family-words").count(), 8)
@@ -119,7 +119,7 @@ class FamilyContentTests(TestCase):
         topics = course_topics()
 
         self.assertEqual([topic["id"] for topic in topics[:3]], ["introductions", "countries-languages", "family"])
-        self.assertEqual(len(topics[2]["lessons"]), 4)
+        self.assertEqual(len(topics[2]["lessons"]), 5)
 
 
 class DailyRoutineContentTests(TestCase):
@@ -127,7 +127,7 @@ class DailyRoutineContentTests(TestCase):
         topic = Topic.objects.get(id="daily-routine")
 
         self.assertEqual(topic.position, 3)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="daily-routine-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="daily-routine-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="daily-routine-words").count(), 8)
@@ -154,7 +154,7 @@ class HomeContentTests(TestCase):
     def test_home_is_fifth_complete_topic(self):
         topic = Topic.objects.get(id="home")
         self.assertEqual(topic.position, 4)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="home-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="home-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="home-words").count(), 8)
@@ -178,7 +178,7 @@ class FoodShoppingContentTests(TestCase):
     def test_food_shopping_is_sixth_complete_topic(self):
         topic = Topic.objects.get(id="food-shopping")
         self.assertEqual(topic.position, 5)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="food-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="food-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="food-words").count(), 8)
@@ -202,7 +202,7 @@ class CityDirectionsContentTests(TestCase):
     def test_city_directions_is_seventh_complete_topic(self):
         topic = Topic.objects.get(id="city-directions")
         self.assertEqual(topic.position, 6)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="city-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="city-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="city-words").count(), 8)
@@ -227,7 +227,7 @@ class TimeMeetingsContentTests(TestCase):
     def test_time_meetings_is_eighth_complete_topic(self):
         topic = Topic.objects.get(id="time-meetings")
         self.assertEqual(topic.position, 7)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="time-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="time-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="time-words").count(), 8)
@@ -252,7 +252,7 @@ class WorkStudyContentTests(TestCase):
     def test_work_study_is_ninth_complete_topic(self):
         topic = Topic.objects.get(id="work-study")
         self.assertEqual(topic.position, 8)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="work-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="work-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="work-words").count(), 8)
@@ -277,7 +277,7 @@ class FreeTimeContentTests(TestCase):
     def test_free_time_is_tenth_complete_topic(self):
         topic = Topic.objects.get(id="free-time")
         self.assertEqual(topic.position, 9)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="free-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="free-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="free-words").count(), 8)
@@ -302,7 +302,7 @@ class HealthContentTests(TestCase):
     def test_health_is_eleventh_complete_topic(self):
         topic = Topic.objects.get(id="health")
         self.assertEqual(topic.position, 10)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="health-grammar").count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="health-quiz").count(), 8)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="health-words").count(), 8)
@@ -331,7 +331,7 @@ class A1FinalReviewContentTests(TestCase):
     def test_final_review_is_twelfth_complete_topic(self):
         topic = Topic.objects.get(id="a1-final-review")
         self.assertEqual(topic.position, 11)
-        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 4)
+        self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
         self.assertEqual(Question.objects.filter(lesson_id="final-grammar").count(), 6)
         self.assertEqual(Question.objects.filter(lesson_id="final-quiz").count(), 12)
         self.assertEqual(LessonFlashcard.objects.filter(lesson_id="final-words").count(), 8)
@@ -685,7 +685,7 @@ class B2SecondTopicsContentTests(TestCase):
                     self.assertTrue(entry["translation"])
                     self.assertTrue(entry["part_of_speech"])
 
-    def test_b2_catalog_lists_eight_topics_in_order(self):
+    def test_b2_catalog_lists_all_topics_in_order(self):
         topics = [topic for topic in course_topics() if topic["level"] == "B2"]
         self.assertEqual(
             [topic["id"] for topic in topics],
@@ -693,6 +693,8 @@ class B2SecondTopicsContentTests(TestCase):
                 "b2-viewpoints", "b2-news", "b2-professional-communication",
                 "b2-science-technology", "b2-economy-consumption", "b2-law-civic",
                 "b2-psychology-relationships", "b2-literature-cinema",
+                "b2-public-discussion", "b2-intercultural-communication",
+                "b2-academic-skills", "b2-final-project",
             ],
         )
 
