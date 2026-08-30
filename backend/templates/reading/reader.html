@@ -5,6 +5,17 @@
     <article class="reader-article">
       <header class="lesson-header reader-header"><a class="back-button" href="{% url 'reading-library' %}" aria-label="Назад">←</a><strong>{{ text.title }}</strong><span class="level-badge">{{ text.level }}</span></header>
       <div class="reader-meta"><span>{{ text.emoji }} {{ text.description }}</span><span>◷ {{ text.minutes }} мин</span></div>
+      {{ text.paragraphs|json_script:"reading-audio-text" }}
+      <section class="card reading-audio" data-reading-audio hidden aria-labelledby="reading-audio-title">
+        <div><p class="eyebrow">Аудирование</p><h2 id="reading-audio-title">Послушай текст по-польски</h2><p class="muted" data-audio-status aria-live="polite">Готово к воспроизведению</p></div>
+        <div class="reading-audio-actions">
+          <button type="button" data-audio-play>▶ Слушать</button>
+          <button type="button" data-audio-pause disabled>Ⅱ Пауза</button>
+          <button type="button" data-audio-stop disabled>■ Стоп</button>
+          <label><span>Скорость</span><select data-audio-rate><option value="0.8">0,8×</option><option value="1" selected>1×</option><option value="1.15">1,15×</option></select></label>
+        </div>
+        <noscript><p class="muted">Для аудирования нужен JavaScript и системный синтез речи.</p></noscript>
+      </section>
       <div class="reading-paper">
         {% for paragraph in paragraphs %}
           <p>{% for token in paragraph %}{% if token.translation %}<button type="button" class="reader-word" data-word="{{ token.word }}" data-lemma="{{ token.lemma }}" data-translation="{{ token.translation }}" data-part-of-speech="{{ token.part_of_speech }}">{{ token.text }}</button>{% else %}{{ token.text }}{% endif %}{% endfor %}</p>
@@ -46,6 +57,26 @@
 {% endblock %}
 {% block scripts %}
   <script>
+    (() => {
+      const panel = document.querySelector('[data-reading-audio]');
+      if (!panel || !('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
+      panel.hidden = false;
+      const text = JSON.parse(document.querySelector('#reading-audio-text').textContent).join(' ');
+      const play = panel.querySelector('[data-audio-play]');
+      const pause = panel.querySelector('[data-audio-pause]');
+      const stop = panel.querySelector('[data-audio-stop]');
+      const rate = panel.querySelector('[data-audio-rate]');
+      const status = panel.querySelector('[data-audio-status]');
+      let utterance = null;
+      const reset = (message = 'Готово к воспроизведению') => { play.textContent = '▶ Слушать'; pause.textContent = 'Ⅱ Пауза'; pause.disabled = true; stop.disabled = true; status.textContent = message; utterance = null; };
+      play.addEventListener('click', () => {
+        if (speechSynthesis.paused) { speechSynthesis.resume(); pause.textContent = 'Ⅱ Пауза'; status.textContent = 'Воспроизведение'; return; }
+        speechSynthesis.cancel(); utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'pl-PL'; utterance.rate = Number(rate.value); utterance.onend = () => reset('Текст прослушан'); utterance.onerror = () => reset('Не удалось запустить системный польский голос'); speechSynthesis.speak(utterance); play.textContent = '↻ Сначала'; pause.disabled = false; stop.disabled = false; status.textContent = 'Воспроизведение';
+      });
+      pause.addEventListener('click', () => { if (speechSynthesis.paused) { speechSynthesis.resume(); pause.textContent = 'Ⅱ Пауза'; status.textContent = 'Воспроизведение'; } else { speechSynthesis.pause(); pause.textContent = '▶ Продолжить'; status.textContent = 'Пауза'; } });
+      stop.addEventListener('click', () => { speechSynthesis.cancel(); reset('Воспроизведение остановлено'); });
+      window.addEventListener('pagehide', () => speechSynthesis.cancel());
+    })();
     document.querySelectorAll('.reader-word').forEach((button) => button.addEventListener('click', () => {
       document.querySelectorAll('.reader-word.selected').forEach((word) => word.classList.remove('selected'));
       button.classList.add('selected');

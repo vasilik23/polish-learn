@@ -146,6 +146,15 @@ class ReadingViewsTests(TestCase):
 
         self.assertContains(response, 'data-word="kota"')
 
+    def test_reader_offers_private_system_speech_controls(self):
+        response = self.client.get("/reading/test-story/")
+
+        self.assertContains(response, "Послушай текст по-польски")
+        self.assertContains(response, 'data-audio-play')
+        self.assertContains(response, "SpeechSynthesisUtterance")
+        self.assertContains(response, "pl-PL")
+        self.assertNotContains(response, "audio src=")
+
     def test_reader_links_saved_words_to_sm2_practice(self):
         response = self.client.get("/reading/test-story/")
 
