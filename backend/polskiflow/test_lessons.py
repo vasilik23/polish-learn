@@ -375,7 +375,7 @@ class LessonViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        mocked_save.assert_called_once_with("access", "user-123", "Анна", "B1")
+        mocked_save.assert_called_once_with("access", "user-123", "Анна", "B1", 4)
         self.assertContains(response, "Профиль сохранён")
         self.assertContains(response, "Анна")
         self.assertContains(response, 'value="B1" selected')

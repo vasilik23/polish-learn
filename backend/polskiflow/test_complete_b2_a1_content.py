@@ -4,10 +4,10 @@ from polskiflow.learning.models import Course, Lesson, ReadingText, Topic
 
 
 class CompleteB2AndA1ContentTests(TestCase):
-    def test_first_four_c1_topics_are_complete_vertical_blocks(self):
+    def test_first_eight_c1_topics_are_complete_vertical_blocks(self):
         course = Course.objects.get(id="c1-proficiency")
         self.assertEqual(course.level, "C1")
-        self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 4)
+        self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 8)
         for topic in Topic.objects.filter(course=course):
             self.assertEqual(topic.lessons.filter(is_active=True).count(), 5)
             reading = ReadingText.objects.get(topic=topic, is_active=True)

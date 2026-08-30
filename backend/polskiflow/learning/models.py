@@ -184,6 +184,7 @@ class Profile(models.Model):
     id = models.UUIDField(primary_key=True)
     display_name = models.TextField(blank=True, null=True)
     level = models.CharField(max_length=2, choices=Level.choices, default=Level.A1)
+    daily_goal_lessons = models.PositiveSmallIntegerField(default=4)
     streak_days = models.PositiveIntegerField(default=0)
     last_active_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

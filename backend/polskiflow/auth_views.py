@@ -230,6 +230,7 @@ def profile(request: HttpRequest) -> HttpResponse:
     profile_form = {
         "display_name": dashboard.display_name,
         "level": dashboard.level,
+        "daily_goal_lessons": dashboard.daily_goal_lessons,
     }
     profile_message = ""
     profile_error = ""
@@ -237,6 +238,7 @@ def profile(request: HttpRequest) -> HttpResponse:
         profile_form = {
             "display_name": request.POST.get("display_name", "").strip(),
             "level": request.POST.get("level", "").upper(),
+            "daily_goal_lessons": request.POST.get("daily_goal_lessons", str(dashboard.daily_goal_lessons)),
         }
         if not profile_form["display_name"]:
             profile_error = "Укажите имя"
@@ -244,16 +246,20 @@ def profile(request: HttpRequest) -> HttpResponse:
             profile_error = "Имя должно быть не длиннее 80 символов"
         elif profile_form["level"] not in PROFILE_LEVELS:
             profile_error = "Выберите уровень от A1 до C1"
+        elif not profile_form["daily_goal_lessons"].isdigit() or not 1 <= int(profile_form["daily_goal_lessons"]) <= 10:
+            profile_error = "Цель должна быть от 1 до 10 уроков в день"
         elif save_profile_settings(
             request.supabase_access_token,
             request.supabase_user.id,
             profile_form["display_name"],
             profile_form["level"],
+            int(profile_form["daily_goal_lessons"]),
         ):
             dashboard = replace(
                 dashboard,
                 display_name=profile_form["display_name"],
                 level=profile_form["level"],
+                daily_goal_lessons=int(profile_form["daily_goal_lessons"]),
             )
             profile_message = "Профиль сохранён"
         else:
@@ -316,6 +322,7 @@ def _daily_plan(request: HttpRequest):
         completed_today=dashboard.completed_lesson_ids,
         personal_words=personal_words,
         today=timezone.localdate(),
+        daily_task_limit=dashboard.daily_goal_lessons,
     )
     completed_count = sum(task["completed"] for task in lesson_tasks)
     progress_percent = (

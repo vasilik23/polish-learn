@@ -93,3 +93,15 @@ class DailyPlanTests(SimpleTestCase):
         )
 
         self.assertNotIn("dictionary-practice", {task["id"] for task in plan})
+
+    def test_profile_goal_controls_plan_size(self):
+        plan = build_daily_plan(
+            self.lessons,
+            level="A2",
+            completed_all_time=frozenset(),
+            completed_today=frozenset(),
+            personal_words=[],
+            today=date(2026, 8, 28),
+            daily_task_limit=2,
+        )
+        self.assertEqual(len(plan), 2)
