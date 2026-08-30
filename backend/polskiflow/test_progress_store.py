@@ -31,7 +31,7 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(request.method, "PATCH")
         self.assertEqual(request.headers["Authorization"], "Bearer access")
         self.assertEqual(
-            json.loads(request.data), {"display_name": "Anna", "level": "B1"}
+            json.loads(request.data), {"display_name": "Anna", "level": "B1", "daily_goal_lessons": 4}
         )
         self.assertIn("profiles?id=eq.user-123", request.full_url)
 

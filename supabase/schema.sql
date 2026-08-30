@@ -5,6 +5,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text,
   level text default 'A1' check (level in ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')),
+  daily_goal_lessons smallint not null default 4 check (daily_goal_lessons between 1 and 10),
   streak_days int not null default 0,
   last_active_date date,
   created_at timestamptz default now()

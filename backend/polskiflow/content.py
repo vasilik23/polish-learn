@@ -1,5 +1,9 @@
 """Database-backed lesson content queries."""
 
+from copy import deepcopy
+
+from django.core.cache import cache
+from django.db import connection
 from django.db.models import Prefetch
 
 from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
@@ -34,6 +38,13 @@ def task(lesson_id: str) -> dict | None:
 
 
 def course_topics() -> list[dict]:
+    """Return an isolated copy of the public catalog cached for five minutes."""
+    if str(connection.settings_dict.get("NAME", "")).startswith("file:memorydb"):
+        return _load_course_topics()
+    return deepcopy(cache.get_or_set("course-topics:v2", _load_course_topics, 300))
+
+
+def _load_course_topics() -> list[dict]:
     active_lessons = (
         Lesson.objects.filter(is_active=True)
         .only("id", "topic_id", "title", "description", "minutes", "emoji", "position")

@@ -74,6 +74,14 @@
           <small id="display-name-help">Будет отображаться в профиле и приветствии.</small>
         </label>
         <label>
+          <span>Цель на день</span>
+          <select name="daily_goal_lessons" aria-describedby="daily-goal-help">
+            {% for goal in "123456789" %}<option value="{{ goal }}"{% if profile_form.daily_goal_lessons|stringformat:"s" == goal %} selected{% endif %}>{{ goal }} урок{% if goal != "1" %}а{% endif %}</option>{% endfor %}
+            <option value="10"{% if profile_form.daily_goal_lessons|stringformat:"s" == "10" %} selected{% endif %}>10 уроков</option>
+          </select>
+          <small id="daily-goal-help">От 1 до 10 завершённых уроков в день.</small>
+        </label>
+        <label>
           <span>Уровень курса</span>
           <select name="level" aria-describedby="level-help">
             {% for level in profile_levels %}

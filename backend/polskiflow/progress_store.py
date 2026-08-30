@@ -27,6 +27,7 @@ class DashboardProgress:
     previous_week_completed_count: int = 0
     monthly_active_days: int = 0
     monthly_completed_count: int = 0
+    daily_goal_lessons: int = 4
 
     @property
     def completed_count(self) -> int:
@@ -53,7 +54,7 @@ def load_dashboard_progress(
 
     profile = _get_rows(
         "profiles",
-        {"select": "display_name,level", "id": f"eq.{user_id}", "limit": "1"},
+        {"select": "display_name,level,daily_goal_lessons", "id": f"eq.{user_id}", "limit": "1"},
         access_token,
     )
     completions = _get_rows(
@@ -116,6 +117,7 @@ def load_dashboard_progress(
         previous_week_completed_count=len(previous_week_lesson_ids),
         monthly_active_days=len(monthly_dates),
         monthly_completed_count=len(monthly_lesson_ids),
+        daily_goal_lessons=profile_row.get("daily_goal_lessons") or 4,
     )
 
 
@@ -165,6 +167,7 @@ def save_profile_settings(
     user_id: str,
     display_name: str,
     level: str,
+    daily_goal_lessons: int = 4,
 ) -> bool:
     """Update the authenticated learner's existing profile through RLS."""
 
@@ -173,7 +176,7 @@ def save_profile_settings(
     request = Request(
         f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/profiles?"
         f"{urlencode({'id': f'eq.{user_id}'})}",
-        data=json.dumps({"display_name": display_name, "level": level}).encode(),
+        data=json.dumps({"display_name": display_name, "level": level, "daily_goal_lessons": daily_goal_lessons}).encode(),
         method="PATCH",
         headers={
             "apikey": settings.SUPABASE_ANON_KEY,

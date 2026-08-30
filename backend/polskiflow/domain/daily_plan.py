@@ -14,6 +14,7 @@ def build_daily_plan(
     completed_today: frozenset[str],
     personal_words: list[dict] | None,
     today: date,
+    daily_task_limit: int = DAILY_TASK_LIMIT,
 ) -> list[dict]:
     """Choose the next lessons and, when useful, an SM-2 review."""
 
@@ -41,7 +42,7 @@ def build_daily_plan(
 
     due_count = _due_word_count(personal_words, today)
     can_review = personal_words is not None and len(personal_words) >= 4 and due_count > 0
-    lesson_limit = DAILY_TASK_LIMIT - int(can_review)
+    lesson_limit = max(1, min(10, daily_task_limit)) - int(can_review)
     plan = [dict(lesson) for lesson in ordered[:lesson_limit]]
 
     if can_review:
