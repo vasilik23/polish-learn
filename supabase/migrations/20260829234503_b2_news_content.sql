@@ -1,0 +1,74 @@
+insert into public.topics(id,course_id,title,description,emoji,position,is_active) values ('b2-news','b2-advanced','Новости','Сопоставляем сообщения, отделяем факты от оценок и указываем степень уверенности','📰',1,true) on conflict(id) do update set course_id=excluded.course_id,title=excluded.title,description=excluded.description,emoji=excluded.emoji,position=excluded.position,is_active=excluded.is_active;
+
+insert into public.lessons(id,topic_id,kind,title,plan_title,subtitle,description,minutes,emoji,position,is_active,theory_title,theory_sections,source_metadata) values
+('b2news-words','b2-news','words','Słowa w kontekście','Новая лексика','8 карточек · B2','Лексика новостей и проверки источников',10,'📰',173,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-grammar','b2-news','grammar','Kto to powiedział?','Языковой фокус','6 заданий · B2','Косвенная речь и модальность источника',13,'✏️',174,true,'Источник, факт и оценка','[["Косвенная речь","Powiedział, że… и przekazała, że… передают содержание без дословной цитаты."],["Степень уверенности","Według, jak podaje, ma/miał и podobno показывают, кому принадлежит сообщение и насколько оно подтверждено."],["Факт или оценка","Факт можно проверить; слова przełomowy, skandaliczny или katastrofalny требуют пометки как оценка автора."]]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-review','b2-news','review','Powtórka aktywna','Активное повторение','7 карточек · B2','Закрепи лексику темы',9,'🔄',175,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-quiz','b2-news','quiz','Quiz: Новости','Проверка темы','10 вопросов · B2','Проверь работу с фактами и источниками',10,'🎯',176,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-reading-check','b2-news','quiz','Czy rozumiesz tekst?','Понимание текста','6 вопросов · B2','Сопоставь сообщения и степень уверенности',8,'📖',177,true,'','[]','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}')
+on conflict(id) do update set topic_id=excluded.topic_id,kind=excluded.kind,title=excluded.title,plan_title=excluded.plan_title,subtitle=excluded.subtitle,description=excluded.description,minutes=excluded.minutes,emoji=excluded.emoji,position=excluded.position,is_active=excluded.is_active,theory_title=excluded.theory_title,theory_sections=excluded.theory_sections,source_metadata=excluded.source_metadata;
+
+insert into public.flashcards(id,polish,translation,example,position,is_active,source_metadata) values
+('b2news-1','doniesienie','сообщение в СМИ','Pierwsze doniesienia nie zawierały szczegółów.',557,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-2','relacja','репортаж; изложение','Relacja świadka różniła się od komunikatu.',558,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-3','nagłówek','заголовок','Nagłówek upraszczał treść raportu.',559,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-4','źródło','источник','Redakcja podała źródło danych.',560,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-5','potwierdzić','подтвердить','Rzecznik potwierdził termin otwarcia.',561,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-6','zaprzeczyć','опровергнуть','Ministerstwo zaprzeczyło tej informacji.',562,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-7','wynikać z','следовать из','Z raportu wynika, że emisje spadły.',563,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-8','rzekomy','предполагаемый, мнимый','Rzekomy dokument okazał się fałszywy.',564,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-9','według','согласно','Według ekspertki zmiana potrwa rok.',565,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-10','jak podaje','как сообщает','Jak podaje urząd, prace zakończą się jesienią.',566,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-11','miał','якобы; как сообщается','Pociąg miał odjechać z opóźnieniem.',567,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-12','podobno','как говорят','Podobno decyzja zapadnie jutro.',568,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-13','ocenić','оценить','Komentator ocenił plan jako ryzykowny.',569,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-14','bezstronny','беспристрастный','Bezstronny opis oddziela fakt od opinii.',570,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}'),
+('b2news-15','sprostowanie','опровержение, исправление','Portal opublikował sprostowanie błędnej daty.',571,true,'{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30"}')
+on conflict(id) do update set polish=excluded.polish,translation=excluded.translation,example=excluded.example,position=excluded.position,is_active=excluded.is_active,source_metadata=excluded.source_metadata;
+
+delete from public.lesson_flashcards where lesson_id in ('b2news-words','b2news-review');
+insert into public.lesson_flashcards(lesson_id,flashcard_id,position) values
+('b2news-words','b2news-1',0),
+('b2news-words','b2news-2',1),
+('b2news-words','b2news-3',2),
+('b2news-words','b2news-4',3),
+('b2news-words','b2news-5',4),
+('b2news-words','b2news-6',5),
+('b2news-words','b2news-7',6),
+('b2news-words','b2news-8',7),
+('b2news-review','b2news-9',0),
+('b2news-review','b2news-10',1),
+('b2news-review','b2news-11',2),
+('b2news-review','b2news-12',3),
+('b2news-review','b2news-13',4),
+('b2news-review','b2news-14',5),
+('b2news-review','b2news-15',6);
+
+delete from public.questions where lesson_id in ('b2news-grammar','b2news-quiz','b2news-reading-check');
+insert into public.questions(lesson_id,prompt,options,correct,explanation,position) values
+('b2news-grammar','Rzeczniczka powiedziała, że remont ___ trzy miesiące.','["potrwa","potrwałby wczoraj","trwać"]',0,'W mowie zależnej po że zachowujemy osobową formę zgodną z perspektywą czasową.',0),
+('b2news-grammar','Według raportu liczba pasażerów ___.','["wzrosła","wzrosnąć","wzrostem"]',0,'Według + dopełniacz wskazuje źródło, a zdanie przekazuje jego treść.',1),
+('b2news-grammar','Nowa linia ___ zostać otwarta w listopadzie.','["ma","miała że","podaje"]',0,'Ma + bezokolicznik może sygnalizować plan podany przez źródło, bez gwarancji autora.',2),
+('b2news-grammar','Autor nazwał decyzję „przełomową”. To przede wszystkim ___.','["ocena","sprawdzalny fakt","data"]',0,'Przymiotnik wartościujący wyraża ocenę, a nie sam fakt.',3),
+('b2news-grammar','Составьте: По данным управления, мост будет открыт в понедельник.','["Według urzędu most zostanie otwarty w poniedziałek.","Urząd podobno most otworzyć poniedziałkiem.","Jak urząd że most otwarto poniedziałek."]',0,'Według wymaga dopełniacza, a zostanie otwarty jest poprawną formą strony biernej.',4),
+('b2news-grammar','Составьте: Свидетель сообщил, что поезд остановился перед станцией.','["Świadek przekazał, że pociąg zatrzymał się przed stacją.","Świadek przekazać pociąg zatrzymuje przed stacji.","Według świadek że pociągiem zatrzymał."]',0,'Czasownik przekazał wprowadza mowę zależną przez że.',5),
+('b2news-quiz','Что такое sprostowanie?','["публичное исправление ошибки","эмоциональный заголовок","анонимный комментарий"]',0,'Sprostowanie koryguje wcześniej podaną nieprawdziwą informację.',0),
+('b2news-quiz','Które zdanie wyraźnie wskazuje źródło?','["Jak podaje urząd, tunel jest już otwarty.","Wszyscy wiedzą, że tunel działa.","To na pewno najlepszy tunel."]',0,'Jak podaje urząd przypisuje wiadomość konkretnemu źródłu.',1),
+('b2news-quiz','Słowo „katastrofalny” w nagłówku jest zwykle ___.','["oceną","neutralną datą","nazwą źródła"]',0,'To określenie wartościujące.',2),
+('b2news-quiz','Z komunikatu ___, że lot został odwołany.','["wynika","zaprzecza do","potwierdza się źródłem"]',0,'Wynikać z czego — z komunikatu wynika.',3),
+('b2news-quiz','Jak przekazać niepotwierdzoną informację?','["Podobno rozmowy zostaną wznowione.","Rozmowy bez wątpienia wznowiono.","Potwierdzono, choć nikt tego nie potwierdził."]',0,'Podobno sygnalizuje dystans i brak pełnego potwierdzenia.',4),
+('b2news-quiz','Ministerstwo ___ doniesieniom o rezygnacji.','["zaprzeczyło","wyniknęło","oceniło jako źródłu"]',0,'Zaprzeczyć czemu łączy się z celownikiem.',5),
+('b2news-quiz','Która informacja jest faktem możliwym do sprawdzenia?','["Głosowanie zakończyło się o 18.00.","Debata była nudna.","To skandaliczny wynik."]',0,'Godzinę można zweryfikować niezależnie od oceny.',6),
+('b2news-quiz','Rzecznik powiedział: „Prace zakończą się jutro”. W mowie zależnej:','["Rzecznik powiedział, że prace zakończą się następnego dnia.","Rzecznik powiedział prace jutro kończyć.","Według rzecznik prace zakończenie."]',0,'Że wprowadza treść, a następnego dnia dostosowuje określenie czasu.',7),
+('b2news-quiz','Po co porównujemy kilka relacji?','["Aby zauważyć różnice, braki i wspólne fakty","Aby wybrać najgłośniejszy nagłówek","Aby pominąć źródła"]',0,'Porównanie pomaga oddzielić potwierdzone elementy od interpretacji.',8),
+('b2news-quiz','Który nagłówek jest najbardziej bezstronny?','["Rada przyjęła budżet 12 głosami do 8","Wspaniałe zwycięstwo rozsądku!","Szokująca porażka przeciwników!"]',0,'Pierwszy podaje sprawdzalny wynik bez oceniających epitetów.',9),
+('b2news-reading-check','Jakiego wydarzenia dotyczyły trzy publikacje?','["Awarii systemu biletowego","Otwarcia stadionu","Prognozy pogody"]',0,'Wszystkie materiały dotyczyły awarii biletów.',0),
+('b2news-reading-check','Co potwierdził operator?','["Awarię i brak opłat za przejazdy podczas problemu","Atak hakerski","Zwolnienie dyrektora"]',0,'Komunikat potwierdził dwa konkretne fakty.',1),
+('b2news-reading-check','Czego operator nie potwierdził?','["Przyczyny awarii","Godziny publikacji komunikatu","Istnienia aplikacji"]',0,'Przyczyna miała być ustalona później.',2),
+('b2news-reading-check','Jak portal zmienił ton drugiej wersji?','["Zastąpił oceniający nagłówek neutralnym","Dodał więcej wykrzykników","Usunął sprostowanie"]',0,'Redakcja złagodziła język po aktualizacji.',3),
+('b2news-reading-check','Co wynikało ze wspólnego porównania źródeł?','["Fakty były węższe niż pierwsze sugestie","Wszystkie pogłoski były prawdziwe","Nie było żadnej awarii"]',0,'Potwierdzono awarię, ale nie sensacyjne przyczyny.',4),
+('b2news-reading-check','Jaką zasadę przyjęła grupa?','["Osobno zapisywać fakt, źródło i ocenę","Udostępniać pierwszy nagłówek","Uznawać podobno za potwierdzenie"]',0,'Taki zapis pomaga kontrolować stopień pewności.',5);
+
+insert into public.reading_texts(id,topic_id,title,description,level,minutes,emoji,paragraphs,glossary,source_metadata,position,is_active) values
+('b2news-trzy-relacje-o-jednej-awarii','b2-news','Trzy relacje o jednej awarii','Как сравнение сообщений отделяет подтверждённые факты от предположений','B2',11,'📰','["W poniedziałek rano trzy portale opisały awarię miejskiego systemu biletowego. Pierwszy nagłówek głosił, że doszło do „paraliżu komunikacji”, drugi informował o czasowych trudnościach, a trzeci powoływał się na anonimowego pasażera, według którego problem miał trwać cały dzień.","Komunikat operatora potwierdził awarię aplikacji i podał, że podczas przerwy kontrolerzy nie będą pobierać opłat. Nie wskazał jednak przyczyny. Rzeczniczka przekazała jedynie, że zespół techniczny analizuje dane, a dokładniejsze informacje zostaną opublikowane po zakończeniu prac.","Jeden portal zasugerował rzekomy atak hakerski. Źródłem tej tezy był komentarz bez nazwiska, którego nie potwierdziła ani policja, ani operator. Kilka godzin później redakcja dodała sprostowanie: przyczyna pozostawała nieznana, a wcześniejszy nagłówek zmieniono na bardziej bezstronny.","Na zajęciach grupa porównała relacje zdanie po zdaniu. Z jednej strony wszystkie źródła mówiły o niedziałającej aplikacji. Z drugiej strony tylko oficjalny komunikat precyzował zasady przejazdu, podczas gdy portale dodawały oceny takie jak „chaos” albo „poważny kryzys”.","Z porównania wynikało, że zakres potwierdzonych faktów był znacznie węższy niż sugerowały pierwsze doniesienia. Uczestnicy postanowili odtąd zapisywać osobno: co się wydarzyło, kto to potwierdził oraz które słowa są interpretacją autora. Dzięki temu podobno nie zamienia się niepostrzeżenie w na pewno."]','{"awarię":{"lemma":"awaria","translation":"сбой","part_of_speech":"существительное"},"głosił":{"lemma":"głosić","translation":"гласил","part_of_speech":"глагол"},"paraliżu":{"lemma":"paraliż","translation":"паралич","part_of_speech":"существительное"},"powoływał się":{"lemma":"powoływać się","translation":"ссылался","part_of_speech":"глагол"},"pobierać":{"lemma":"pobierać","translation":"взимать","part_of_speech":"глагол"},"wskazał":{"lemma":"wskazać","translation":"указал","part_of_speech":"глагол"},"dokładniejsze":{"lemma":"dokładny","translation":"более подробные","part_of_speech":"прилагательное"},"rzekomy":{"lemma":"rzekomy","translation":"предполагаемый","part_of_speech":"прилагательное"},"tezy":{"lemma":"teza","translation":"тезис","part_of_speech":"существительное"},"nazwiska":{"lemma":"nazwisko","translation":"фамилия","part_of_speech":"существительное"},"pozostawała":{"lemma":"pozostawać","translation":"оставалась","part_of_speech":"глагол"},"bezstronny":{"lemma":"bezstronny","translation":"беспристрастный","part_of_speech":"прилагательное"},"precyzował":{"lemma":"precyzować","translation":"уточнял","part_of_speech":"глагол"},"zakres":{"lemma":"zakres","translation":"объём","part_of_speech":"существительное"},"doniesienia":{"lemma":"doniesienie","translation":"сообщения","part_of_speech":"существительное"},"interpretacją":{"lemma":"interpretacja","translation":"интерпретация","part_of_speech":"существительное"},"odtąd":{"lemma":"odtąd","translation":"отныне","part_of_speech":"наречие"},"niepostrzeżenie":{"lemma":"niepostrzeżenie","translation":"незаметно","part_of_speech":"наречие"}}','{"origin":"original","created_for":"PolskiFlow","verified_at":"2026-08-30","comprehension_lesson_id":"b2news-reading-check"}',37,true)
+on conflict(id) do update set topic_id=excluded.topic_id,title=excluded.title,description=excluded.description,level=excluded.level,minutes=excluded.minutes,emoji=excluded.emoji,paragraphs=excluded.paragraphs,glossary=excluded.glossary,source_metadata=excluded.source_metadata,position=excluded.position,is_active=excluded.is_active;

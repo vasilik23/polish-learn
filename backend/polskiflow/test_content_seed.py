@@ -837,3 +837,56 @@ class B1CompletionContentTests(TestCase):
                 "b1-society", "b1-ecology", "b1-poland-regions", "b1-final-project",
             ],
         )
+
+
+class B2FirstTopicsContentTests(TestCase):
+    def test_first_four_topics_have_complete_vertical_lesson_sets(self):
+        expectations = (
+            ("b2-viewpoints", 0, "b2view"),
+            ("b2-news", 1, "b2news"),
+            ("b2-professional-communication", 2, "b2prof"),
+            ("b2-science-technology", 3, "b2tech"),
+        )
+        for topic_id, position, prefix in expectations:
+            with self.subTest(topic_id=topic_id):
+                topic = Topic.objects.get(id=topic_id)
+                self.assertEqual(topic.course.level, "B2")
+                self.assertEqual(topic.position, position)
+                self.assertEqual(Lesson.objects.filter(topic=topic).count(), 5)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-grammar").count(), 6)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-quiz").count(), 10)
+                self.assertEqual(Question.objects.filter(lesson_id=f"{prefix}-reading-check").count(), 6)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-words").count(), 8)
+                self.assertEqual(LessonFlashcard.objects.filter(lesson_id=f"{prefix}-review").count(), 7)
+
+    def test_first_four_readings_are_original_and_lemma_aware(self):
+        expectations = (
+            ("b2view-debata-o-spokojnym-centrum", "b2view-reading-check"),
+            ("b2news-trzy-relacje-o-jednej-awarii", "b2news-reading-check"),
+            ("b2prof-spotkanie-ktore-konczy-sie-decyzja", "b2prof-reading-check"),
+            ("b2tech-czujniki-ktore-oszczedzaja-wode", "b2tech-reading-check"),
+        )
+        for reading_id, lesson_id in expectations:
+            with self.subTest(reading_id=reading_id):
+                reading = ReadingText.objects.get(id=reading_id)
+                self.assertEqual(reading.level, "B2")
+                self.assertEqual(reading.source_metadata["origin"], "original")
+                self.assertEqual(reading.source_metadata["comprehension_lesson_id"], lesson_id)
+                self.assertGreaterEqual(len(reading.paragraphs), 4)
+                self.assertGreaterEqual(len(reading.glossary), 16)
+                for entry in reading.glossary.values():
+                    self.assertTrue(entry["lemma"])
+                    self.assertTrue(entry["translation"])
+                    self.assertTrue(entry["part_of_speech"])
+
+    def test_b2_catalog_starts_with_four_complete_topics(self):
+        topics = [topic for topic in course_topics() if topic["level"] == "B2"]
+        self.assertEqual(
+            [topic["id"] for topic in topics],
+            [
+                "b2-viewpoints",
+                "b2-news",
+                "b2-professional-communication",
+                "b2-science-technology",
+            ],
+        )

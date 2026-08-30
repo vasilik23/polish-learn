@@ -274,6 +274,8 @@ class LessonViewsTests(TestCase):
             active_days=7,
             weekly_active_days=4,
             weekly_completed_count=6,
+            previous_week_active_days=2,
+            previous_week_completed_count=3,
         )
         mocked_words.return_value = [{"word": "dom"}, {"word": "dzień"}]
 
@@ -281,6 +283,9 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Недельная активность")
         self.assertContains(response, "6")
         self.assertContains(response, "4 / 7")
+        self.assertContains(response, "на 3 больше")
+        self.assertContains(response, "на 2 больше")
+        self.assertContains(response, "В прошлый период: 3 уроков за 2 активных дней")
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Василий")
@@ -306,6 +311,31 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/profile/")
 
         self.assertRedirects(response, "/login/?next=%2Fprofile%2F", fetch_redirect_response=False)
+
+    def test_b1_course_links_to_writing_practice(self):
+        response = self.client.get("/course/?level=B1")
+
+        self.assertContains(response, "Письменная практика B1")
+        self.assertContains(response, 'href="/writing/"')
+
+    def test_writing_practice_has_local_drafts_and_honest_self_check(self):
+        response = self.client.get("/writing/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Письменные ответы")
+        self.assertContains(response, "нет автоматической проверки")
+        self.assertContains(response, 'data-writing-draft="formal-request"')
+        self.assertContains(response, "Самопроверка перед завершением", count=4)
+        self.assertContains(response, 'localStorage.setItem(key, textarea.value)')
+        self.assertContains(response, 'window.confirm("Удалить черновик этого задания?')
+
+    def test_writing_practice_requires_authentication(self):
+        self.auth_patch.stop()
+        self.client.cookies.clear()
+
+        response = self.client.get("/writing/")
+
+        self.assertRedirects(response, "/login/?next=%2Fwriting%2F", fetch_redirect_response=False)
 
     @patch("polskiflow.auth_views.save_profile_settings", return_value=True)
     @patch("polskiflow.auth_views.load_personal_words", return_value=[])
