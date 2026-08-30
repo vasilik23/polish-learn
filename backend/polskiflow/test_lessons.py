@@ -371,11 +371,11 @@ class LessonViewsTests(TestCase):
         )
 
         response = self.client.post(
-            "/profile/", {"display_name": "  Анна  ", "level": "b1"}
+            "/profile/", {"display_name": "  Анна  ", "level": "b1", "daily_goal_lessons": "6"}
         )
 
         self.assertEqual(response.status_code, 200)
-        mocked_save.assert_called_once_with("access", "user-123", "Анна", "B1", 4)
+        mocked_save.assert_called_once_with("access", "user-123", "Анна", "B1", 6)
         self.assertContains(response, "Профиль сохранён")
         self.assertContains(response, "Анна")
         self.assertContains(response, 'value="B1" selected')
@@ -396,9 +396,13 @@ class LessonViewsTests(TestCase):
         invalid_level = self.client.post(
             "/profile/", {"display_name": "Анна", "level": "C2"}
         )
+        invalid_goal = self.client.post(
+            "/profile/", {"display_name": "Анна", "level": "A2", "daily_goal_lessons": "11"}
+        )
 
         self.assertContains(empty_name, "Укажите имя")
         self.assertContains(invalid_level, "Выберите уровень от A1 до C1")
+        self.assertContains(invalid_goal, "Цель должна быть от 1 до 10")
         mocked_save.assert_not_called()
 
     @patch("polskiflow.auth_views.save_profile_settings", return_value=False)
