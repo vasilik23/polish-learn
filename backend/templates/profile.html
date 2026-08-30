@@ -31,6 +31,27 @@
     </div>
   </section>
 
+  <section aria-labelledby="achievements-title">
+    <div class="section-heading">
+      <div><p class="eyebrow">Мотивация</p><h2 id="achievements-title">Достижения</h2></div>
+      <strong>{{ unlocked_achievements }} / {{ achievements|length }}</strong>
+    </div>
+    <div class="achievement-grid">
+      {% for achievement in achievements %}
+        <article class="card achievement-card{% if achievement.unlocked %} is-unlocked{% endif %}">
+          <span class="achievement-icon" aria-hidden="true">{{ achievement.icon }}</span>
+          <div><h3>{{ achievement.title }}</h3><p>{{ achievement.description }}</p></div>
+          {% if achievement.unlocked %}
+            <strong class="achievement-state">Открыто</strong>
+          {% else %}
+            <div class="achievement-progress" role="progressbar" aria-label="{{ achievement.title }}" aria-valuemin="0" aria-valuemax="{{ achievement.target }}" aria-valuenow="{{ achievement.current }}"><span style="--value: {{ achievement.progress_percent }}%"></span></div>
+            <small>{{ achievement.current }} / {{ achievement.target }}</small>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
   <section aria-labelledby="monthly-title">
     <div class="section-heading"><div><p class="eyebrow">Последние 30 дней</p><h2 id="monthly-title">Месячный обзор</h2></div></div>
     <div class="profile-stats weekly-stats">

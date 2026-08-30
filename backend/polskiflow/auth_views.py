@@ -21,6 +21,7 @@ from polskiflow.auth import (
 )
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
+from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.password_policy import password_error
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
@@ -227,6 +228,13 @@ def profile(request: HttpRequest) -> HttpResponse:
         request.supabase_access_token,
         request.supabase_user.id,
     )
+    dictionary_count = len(personal_words or [])
+    achievements = build_achievements(
+        completed_lessons=completed_lessons,
+        streak_days=dashboard.streak_days,
+        dictionary_count=dictionary_count,
+        active_days=dashboard.active_days,
+    )
     profile_form = {
         "display_name": dashboard.display_name,
         "level": dashboard.level,
@@ -273,8 +281,10 @@ def profile(request: HttpRequest) -> HttpResponse:
             "completed_lessons": completed_lessons,
             "total_lessons": total_lessons,
             "progress_percent": progress_percent,
-            "dictionary_count": len(personal_words or []),
+            "dictionary_count": dictionary_count,
             "dictionary_available": personal_words is not None,
+            "achievements": achievements,
+            "unlocked_achievements": sum(item.unlocked for item in achievements),
             "profile_levels": PROFILE_LEVELS,
             "profile_form": profile_form,
             "profile_message": profile_message,

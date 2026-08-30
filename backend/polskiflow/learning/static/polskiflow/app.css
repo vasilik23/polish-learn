@@ -248,6 +248,17 @@ p { line-height: 1.65; }
 .weekly-compare { margin: .75rem 0 0; color: var(--muted); font-size: .75rem; font-weight: 700; }
 .weekly-compare.is-positive { color: var(--green); }
 .weekly-compare.is-negative { color: var(--red); }
+.achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.achievement-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .75rem; opacity: .72; }
+.achievement-card.is-unlocked { opacity: 1; border-color: color-mix(in srgb, var(--green) 35%, var(--line)); }
+.achievement-icon { display: grid; place-items: center; width: 2.8rem; aspect-ratio: 1; border-radius: .9rem; background: var(--primary-soft); font-size: 1.35rem; filter: grayscale(1); }
+.achievement-card.is-unlocked .achievement-icon { filter: none; }
+.achievement-card h3 { margin: 0 0 .2rem; font-size: .92rem; }
+.achievement-card p { margin: 0; color: var(--muted); font-size: .74rem; line-height: 1.4; }
+.achievement-state { grid-column: 1 / -1; color: var(--green); font-size: .72rem; }
+.achievement-progress { grid-column: 1 / -1; height: .4rem; overflow: hidden; border-radius: 999px; background: var(--line); }
+.achievement-progress span { display: block; width: var(--value); height: 100%; border-radius: inherit; background: var(--primary); }
+.achievement-card > small { grid-column: 1 / -1; color: var(--muted); font-size: .68rem; }
 .profile-settings { margin-top: 2rem; }
 .profile-form { display: grid; gap: 1rem; margin-bottom: 1rem; }
 .profile-form-fields { display: grid; gap: 1rem; }
@@ -338,6 +349,7 @@ p { line-height: 1.65; }
 .review-quality legend { grid-column: 1 / -1; width: 100%; margin-bottom: .25rem; color: var(--muted); font-size: .85rem; text-align: center; }
 .review-quality button { min-height: 3rem; }
 @media (max-width: 480px) {
+  .achievement-grid { grid-template-columns: 1fr; }
   .review-quality { grid-template-columns: 1fr; }
   .reading-check-card { grid-template-columns: auto minmax(0, 1fr); }
   .reading-check-card .compact-button { grid-column: 1 / -1; justify-content: center; }
