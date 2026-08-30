@@ -454,6 +454,48 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "Насколько легко вспомнилось слово?")
         self.assertContains(response, "Трудно")
 
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_context_practice_accepts_typed_lemma_case_insensitively(self, load_words):
+        load_words.return_value = self._practice_words()
+        start = self.client.get("/dictionary/practice/?mode=context")
+        self.assertContains(start, "В контексте")
+        self.assertContains(start, "To jest _____")
+        self.assertContains(start, 'name="answer"')
+
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {"action": "answer", "index": 0, "score": 0, "answer": " DOM "},
+        )
+        self.assertContains(response, "Верно!")
+        self.assertContains(response, "Насколько легко вспомнилось слово?")
+
+    @patch("polskiflow.reading_views.save_personal_word_review", return_value=True)
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_wrong_typed_answer_forces_again_schedule(self, load_words, save_review):
+        load_words.return_value = self._practice_words()
+        self.client.get("/dictionary/practice/?mode=context")
+        self.client.post(
+            "/dictionary/practice/step/",
+            {"action": "answer", "index": 0, "score": 0, "answer": "okno"},
+        )
+        response = self.client.post(
+            "/dictionary/practice/step/",
+            {"action": "next", "index": 0, "score": 0, "quality": "easy"},
+        )
+        self.assertEqual(response.status_code, 200)
+        result = save_review.call_args.args[3]
+        self.assertEqual(result.repetitions, 0)
+        self.assertEqual(result.interval_days, 1)
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_context_practice_works_with_one_due_word(self, load_words):
+        words = self._practice_words()
+        for word in words[1:]:
+            word["next_review_date"] = "2999-01-01"
+        load_words.return_value = words
+        response = self.client.get("/dictionary/practice/?mode=context")
+        self.assertContains(response, "Слово 1 из 1")
+
     @patch("polskiflow.reading_views.save_personal_word_review", return_value=True)
     @patch("polskiflow.reading_views.save_lesson_completion", return_value=True)
     @patch("polskiflow.reading_views.load_personal_words")

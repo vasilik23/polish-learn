@@ -1,6 +1,7 @@
 """Reading library and personal dictionary browser flows."""
 
 import re
+import unicodedata
 from datetime import date
 from urllib.parse import urlencode
 
@@ -26,7 +27,8 @@ REVIEW_QUALITIES = {"again", "hard", "good", "easy"}
 PRACTICE_WORD_IDS_SESSION_KEY = "dictionary_practice_word_ids"
 PRACTICE_MODE_SESSION_KEY = "dictionary_practice_mode"
 PRACTICE_SOURCE_SESSION_KEY = "dictionary_practice_source"
-PRACTICE_MODES = {"translation", "lemma"}
+PRACTICE_ANSWER_SESSION_KEY = "dictionary_practice_answer"
+PRACTICE_MODES = {"translation", "lemma", "context"}
 READING_LEVELS = ("A1", "A2", "B1", "B2", "C1")
 
 
@@ -133,6 +135,7 @@ def dictionary_practice(request: HttpRequest) -> HttpResponse:
     ]
     request.session[PRACTICE_MODE_SESSION_KEY] = mode
     request.session[PRACTICE_SOURCE_SESSION_KEY] = source_text_id
+    request.session.pop(PRACTICE_ANSWER_SESSION_KEY, None)
     source_word_count = (
         sum(word.get("source_text_id") == source_text_id for word in (words or []))
         if source_text_id
@@ -147,6 +150,10 @@ def dictionary_practice(request: HttpRequest) -> HttpResponse:
             "source_text_id": source_text_id,
             "source_word_count": source_word_count,
             "mode": mode,
+            "mode_urls": {
+                item: _practice_url(source_text_id, item)
+                for item in ("translation", "lemma", "context")
+            },
             "repeat_url": _practice_url(source_text_id, mode),
             "question": questions[0] if questions else None,
             "total": len(questions),
@@ -185,24 +192,61 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
     action = request.POST.get("action", "")
     question = questions[index]
     if action == "answer":
-        try:
-            selected = int(request.POST["choice"])
-        except (KeyError, ValueError):
-            return HttpResponseBadRequest("Выберите ответ")
-        if not 0 <= selected < len(question["options"]):
-            return HttpResponseBadRequest("Некорректный ответ")
-        context = _practice_context(questions, index, score, selected)
+        if mode == "context":
+            submitted_answer = request.POST.get("answer", "")
+            if not submitted_answer.strip():
+                return HttpResponseBadRequest("Введите польскую лемму")
+            answer_correct = _normalize_typed_answer(
+                submitted_answer
+            ) == _normalize_typed_answer(question["correct_answer"])
+            request.session[PRACTICE_ANSWER_SESSION_KEY] = {
+                "index": index,
+                "word_id": question["id"],
+                "correct": answer_correct,
+            }
+            context = _practice_context(
+                questions,
+                index,
+                score,
+                None,
+                answered=True,
+                answer_correct=answer_correct,
+                submitted_answer=submitted_answer.strip(),
+            )
+        else:
+            try:
+                selected = int(request.POST["choice"])
+            except (KeyError, ValueError):
+                return HttpResponseBadRequest("Выберите ответ")
+            if not 0 <= selected < len(question["options"]):
+                return HttpResponseBadRequest("Некорректный ответ")
+            context = _practice_context(
+                questions, index, score, selected, answered=True
+            )
     elif action == "next":
-        try:
-            selected = int(request.POST["selected"])
-        except (KeyError, ValueError):
-            return HttpResponseBadRequest("Сначала ответьте")
-        if not 0 <= selected < len(question["options"]):
-            return HttpResponseBadRequest("Некорректный ответ")
+        if mode == "context":
+            answer_state = request.session.get(PRACTICE_ANSWER_SESSION_KEY)
+            if (
+                not isinstance(answer_state, dict)
+                or answer_state.get("index") != index
+                or answer_state.get("word_id") != question["id"]
+                or not isinstance(answer_state.get("correct"), bool)
+            ):
+                return HttpResponseBadRequest("Сначала ответьте")
+            answer_correct = answer_state["correct"]
+            request.session.pop(PRACTICE_ANSWER_SESSION_KEY, None)
+        else:
+            try:
+                selected = int(request.POST["selected"])
+            except (KeyError, ValueError):
+                return HttpResponseBadRequest("Сначала ответьте")
+            if not 0 <= selected < len(question["options"]):
+                return HttpResponseBadRequest("Некорректный ответ")
+            answer_correct = selected == question["correct"]
         quality = request.POST.get("quality", "")
         if quality not in REVIEW_QUALITIES:
             return HttpResponseBadRequest("Оцените, насколько легко вспомнилось слово")
-        if selected != question["correct"]:
+        if not answer_correct:
             quality = "again"
         now = timezone.now()
         state = Sm2State(
@@ -218,11 +262,12 @@ def dictionary_practice_step(request: HttpRequest) -> HttpResponse:
             review,
             now.isoformat(),
         )
-        next_score = score + (selected == question["correct"])
+        next_score = score + answer_correct
         if index + 1 >= len(questions):
             request.session.pop(PRACTICE_WORD_IDS_SESSION_KEY, None)
             request.session.pop(PRACTICE_MODE_SESSION_KEY, None)
             request.session.pop(PRACTICE_SOURCE_SESSION_KEY, None)
+            request.session.pop(PRACTICE_ANSWER_SESSION_KEY, None)
             saved = save_lesson_completion(
                 request.supabase_access_token,
                 request.supabase_user.id,
@@ -357,9 +402,9 @@ def _practice_questions(
         and word["word"].strip()
         and word["translation"].strip()
     ]
-    answer_key = "word" if mode == "lemma" else "translation"
+    answer_key = "word" if mode in {"lemma", "context"} else "translation"
     answers = list(dict.fromkeys(word[answer_key] for word in usable))
-    if len(answers) < 4:
+    if mode != "context" and len(answers) < 4:
         return []
     if word_ids is None:
         chosen_words = [
@@ -375,23 +420,39 @@ def _practice_questions(
     questions = []
     for index, word in enumerate(chosen_words[:limit]):
         correct_answer = word[answer_key]
-        distractors = [item for item in answers if item != correct_answer][:3]
-        if len(distractors) < 3:
-            continue
-        options = distractors + [correct_answer]
-        correct = index % 4
-        options[correct], options[-1] = options[-1], options[correct]
+        options = []
+        correct = None
+        context_text = word.get("context") or ""
+        context_gap = _context_with_gap(context_text, word["word"])
+        if mode != "context":
+            distractors = [item for item in answers if item != correct_answer][:3]
+            if len(distractors) < 3:
+                continue
+            options = distractors + [correct_answer]
+            correct = index % 4
+            options[correct], options[-1] = options[-1], options[correct]
         questions.append(
             {
                 "id": str(word.get("id", "")),
                 "word": word["word"],
-                "prompt": word["translation"] if mode == "lemma" else word["word"],
+                "prompt": (
+                    context_gap
+                    if mode == "context" and context_gap
+                    else word["translation"] if mode in {"lemma", "context"}
+                    else word["word"]
+                ),
                 "instruction": (
-                    "Выбери польскую лемму"
+                    "Впиши польскую лемму в контекст"
+                    if mode == "context" and context_gap
+                    else "Впиши польскую лемму"
+                    if mode == "context"
+                    else "Выбери польскую лемму"
                     if mode == "lemma"
                     else "Выбери перевод"
                 ),
-                "context": word.get("context") or "",
+                "context": "" if context_gap and mode == "context" else context_text,
+                "context_missing": mode == "context" and not context_gap,
+                "typed": mode == "context",
                 "options": options,
                 "correct": correct,
                 "correct_answer": correct_answer,
@@ -424,13 +485,37 @@ def _is_due(value: object, today: date | None = None) -> bool:
         return True
 
 
+def _normalize_typed_answer(value: str) -> str:
+    """Normalize presentation differences while preserving Polish letters."""
+    return " ".join(unicodedata.normalize("NFC", value).strip().casefold().split())
+
+
+def _context_with_gap(context: object, lemma: str) -> str:
+    if not isinstance(context, str) or not context.strip():
+        return ""
+    pattern = re.compile(rf"(?<!\w){re.escape(lemma)}(?!\w)", re.IGNORECASE)
+    if not pattern.search(context):
+        return ""
+    return pattern.sub("_____", context.strip())
+
+
 def _practice_context(
-    questions: list[dict], index: int, score: int, selected: int | None
+    questions: list[dict],
+    index: int,
+    score: int,
+    selected: int | None,
+    *,
+    answered: bool = False,
+    answer_correct: bool | None = None,
+    submitted_answer: str = "",
 ) -> dict:
     return {
         "question": questions[index],
         "index": index,
         "score": score,
         "selected": selected,
+        "answered": answered,
+        "answer_correct": answer_correct,
+        "submitted_answer": submitted_answer,
         "total": len(questions),
     }
