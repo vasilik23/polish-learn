@@ -29,7 +29,7 @@ PRACTICE_MODE_SESSION_KEY = "dictionary_practice_mode"
 PRACTICE_SOURCE_SESSION_KEY = "dictionary_practice_source"
 PRACTICE_ANSWER_SESSION_KEY = "dictionary_practice_answer"
 PRACTICE_MODES = {"translation", "lemma", "context"}
-READING_LEVELS = ("A1", "A2", "B1", "B2", "C1")
+READING_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
 
 
 @require_browser_user

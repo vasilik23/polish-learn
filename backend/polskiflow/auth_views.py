@@ -30,7 +30,7 @@ from polskiflow.domain.password_policy import password_error
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
 
 
-PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1")
+PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
 WRITING_PROMPTS = {
     "B1": (
     {
@@ -317,7 +317,7 @@ def profile(request: HttpRequest) -> HttpResponse:
         elif len(profile_form["display_name"]) > 80:
             profile_error = "Имя должно быть не длиннее 80 символов"
         elif profile_form["level"] not in PROFILE_LEVELS:
-            profile_error = "Выберите уровень от A1 до C1"
+            profile_error = "Выберите уровень от A1 до C2"
         elif not profile_form["daily_goal_lessons"].isdigit() or not 1 <= int(profile_form["daily_goal_lessons"]) <= 10:
             profile_error = "Цель должна быть от 1 до 10 уроков в день"
         elif save_profile_settings(

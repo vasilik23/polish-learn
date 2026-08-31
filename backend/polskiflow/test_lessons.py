@@ -399,16 +399,30 @@ class LessonViewsTests(TestCase):
             "/profile/", {"display_name": " ", "level": "A2"}
         )
         invalid_level = self.client.post(
-            "/profile/", {"display_name": "Анна", "level": "C2"}
+            "/profile/", {"display_name": "Анна", "level": "C3"}
         )
         invalid_goal = self.client.post(
             "/profile/", {"display_name": "Анна", "level": "A2", "daily_goal_lessons": "11"}
         )
 
         self.assertContains(empty_name, "Укажите имя")
-        self.assertContains(invalid_level, "Выберите уровень от A1 до C1")
+        self.assertContains(invalid_level, "Выберите уровень от A1 до C2")
         self.assertContains(invalid_goal, "Цель должна быть от 1 до 10")
         mocked_save.assert_not_called()
+
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_offers_c2_and_profile_can_select_it(self, mocked_progress, _words):
+        mocked_progress.return_value = DashboardProgress(
+            "Learner", "C2", 0, frozenset(), True
+        )
+
+        course_response = self.client.get("/course/")
+        profile_response = self.client.get("/profile/")
+
+        self.assertContains(course_response, "Траектория A1 → C2")
+        self.assertContains(course_response, 'href="?level=C2"')
+        self.assertContains(profile_response, '<option value="C2" selected>')
 
     @patch("polskiflow.auth_views.save_profile_settings", return_value=False)
     @patch("polskiflow.auth_views.load_personal_words", return_value=[])
