@@ -281,6 +281,13 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, 'localStorage.setItem(theme.storageKey')
         self.assertContains(response, 'prefers-color-scheme: dark')
 
+    def test_base_template_has_no_render_blocking_external_font(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "fonts.googleapis.com")
+        self.assertNotContains(response, "fonts.gstatic.com")
+
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_profile_shows_identity_progress_and_settings(
