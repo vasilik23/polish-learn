@@ -200,9 +200,10 @@
 3. ✅ Два legacy-исключения A1 (`poranek-anny`, `zakupy-na-targu`) устранены:
    тексты и их comprehension-уроки принадлежат одной канонической теме,
    allowlist удалён из coverage-теста.
-4. Ввести измеримый release baseline: отсутствие новых runtime-ошибок,
-   успешные auth/progress/reading/listening smoke и контроль Core Web Vitals
-   LCP, INP и CLS на ключевых мобильных маршрутах.
+4. ✅ Измеримый lab release baseline введён: зафиксированы мобильные Lighthouse
+   budgets и production-медианы LCP, CLS, TBT и TTFB. Следующий шаг — добавить
+   field INP и остальные Core Web Vitals после накопления достаточного объёма
+   real-user данных; lab TBT не выдаётся за INP.
 5. Провести аудит основных сценариев по WCAG 2.2 AA, включая клавиатуру,
    видимый фокус, масштабирование, контраст и текстовую альтернативу аудио.
    Соответствие не заявлять до завершения и фиксации результатов аудита.
