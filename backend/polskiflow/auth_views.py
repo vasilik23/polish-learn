@@ -87,6 +87,12 @@ WRITING_PROMPTS = {
     ),
 }
 
+LISTENING_ITEMS = (
+    {"id": "tecza", "audio": "polskiflow/audio/tecza.ogg", "options": ("tęcza", "część", "ciężar"), "answer": "tęcza", "hint": "Слышны носовое ę и сочетание cz: tę-cza."},
+    {"id": "wrobel", "audio": "polskiflow/audio/wrobel.ogg", "options": ("wróbel", "wybór", "wrona"), "answer": "wróbel", "hint": "Начальное wr- и ó /u/ помогают узнать слово wróbel."},
+    {"id": "mysz", "audio": "polskiflow/audio/mysz.ogg", "options": ("my", "mysz", "miś"), "answer": "mysz", "hint": "Финальный шипящий sz отличает mysz от my и miś."},
+)
+
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
     """Prefer an explicit valid filter, otherwise use the learner's level."""
@@ -383,6 +389,24 @@ def writing_practice(request: HttpRequest) -> HttpResponse:
             "selected_writing_level": selected_level,
         },
     )
+
+
+@require_browser_user
+@require_http_methods(["GET", "POST"])
+def listening_practice(request: HttpRequest) -> HttpResponse:
+    """Small public-domain listening pilot; results stay in this response only."""
+    submitted = request.method == "POST"
+    answers = {item["id"]: request.POST.get(item["id"], "") for item in LISTENING_ITEMS}
+    display_items = tuple(
+        {
+            **item,
+            "selected": answers[item["id"]],
+            "is_correct": submitted and answers[item["id"]] == item["answer"],
+        }
+        for item in LISTENING_ITEMS
+    )
+    score = sum(item["is_correct"] for item in display_items) if submitted else None
+    return render(request, "listening.html", {"listening_items": display_items, "score": score, "submitted": submitted})
 
 
 def _daily_plan(request: HttpRequest):
