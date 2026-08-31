@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Аудирование · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header">
+    <div><p class="eyebrow">Пилот · A1</p><h1>Узнай слово на слух</h1><p class="muted">Прослушай каждую запись несколько раз и выбери услышанное слово. Результат не влияет на прогресс.</p></div>
+    <a class="compact-button" href="{% url 'course' %}?level=A1">К курсу →</a>
+  </header>
+  {% if submitted %}
+    <section class="card listening-result" aria-live="polite"><strong>{{ score }} / {{ listening_items|length }}</strong><span>{% if score == listening_items|length %}Все слова распознаны{% else %}Можно прослушать ещё раз и повторить{% endif %}</span></section>
+  {% endif %}
+  <form method="post" class="listening-list">
+    {% csrf_token %}
+    {% for item in listening_items %}
+      <fieldset class="card listening-card">
+        <legend>Запись {{ forloop.counter }}</legend>
+        <audio controls preload="metadata"><source src="{% static item.audio %}" type="audio/ogg">Браузер не поддерживает аудио OGG.</audio>
+        <div class="listening-options">
+          {% for option in item.options %}
+            <label><input type="radio" name="{{ item.id }}" value="{{ option }}" {% if item.selected == option %}checked{% endif %} required> <span lang="pl">{{ option }}</span></label>
+          {% endfor %}
+        </div>
+        {% if submitted %}
+          <p class="listening-feedback {% if item.is_correct %}is-correct{% else %}is-wrong{% endif %}">
+            {% if item.is_correct %}Верно.{% else %}Правильный ответ: <strong lang="pl">{{ item.answer }}</strong>.{% endif %} {{ item.hint }}
+          </p>
+        {% endif %}
+      </fieldset>
+    {% endfor %}
+    <button class="primary-button" type="submit">Проверить ответы</button>
+  </form>
+  <aside class="card audio-attribution" aria-labelledby="audio-sources-title">
+    <h2 id="audio-sources-title">Источники записей</h2>
+    <p>Произношения <a href="https://commons.wikimedia.org/wiki/File:Pl-t%C4%99cza.ogg" rel="external noopener">tęcza — Wyksztalcioch</a>, <a href="https://commons.wikimedia.org/wiki/File:Pl-wr%C3%B3bel.ogg" rel="external noopener">wróbel — tsca</a> и <a href="https://commons.wikimedia.org/wiki/File:Pl-mysz.ogg" rel="external noopener">mysz — Tsca</a>. Собственные записи авторов, переданы в public domain; локальные копии не изменены.</p>
+  </aside>
+{% endblock %}

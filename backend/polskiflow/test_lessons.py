@@ -96,6 +96,28 @@ class LessonViewsTests(TestCase):
         self.assertContains(tasks_page, "Powtórka")
         self.assertContains(tasks_page, "Quiz")
 
+    def test_listening_pilot_scores_public_domain_clips(self):
+        page = self.client.get("/listening/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Узнай слово на слух")
+        self.assertContains(page, "polskiflow/audio/tecza.ogg")
+        self.assertContains(page, "polskiflow/audio/wrobel.ogg")
+        self.assertContains(page, "polskiflow/audio/mysz.ogg")
+        self.assertContains(page, "public domain")
+
+        result = self.client.post(
+            "/listening/", {"tecza": "tęcza", "wrobel": "wybór", "mysz": "mysz"}
+        )
+        self.assertEqual(result.status_code, 200)
+        self.assertContains(result, "2 / 3")
+        self.assertContains(result, "Правильный ответ")
+        self.assertContains(result, "wróbel")
+
+    def test_course_links_to_listening_pilot(self):
+        page = self.client.get("/course/?level=A1")
+        self.assertContains(page, 'href="/listening/"')
+        self.assertContains(page, "Аудиопилот A1")
+
     def test_home_keeps_daily_plan_short_and_course_page_lists_topics(self):
         course = Course.objects.create(id="catalog-test", title="A1", level="A1")
         topic = Topic.objects.create(id="catalog-topic", course=course, title="Новая тема")
