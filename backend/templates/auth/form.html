@@ -26,8 +26,11 @@
         <button type="submit">{% if mode == "login" %}Войти в PolskiFlow{% else %}Создать аккаунт{% endif %}</button>
       </form>
       {% if mode == "login" %}
+        {% if request.GET.password_reset %}<p class="message" role="status">Пароль обновлён. Теперь войдите с новым паролем.</p>{% endif %}
+        <p class="auth-switch muted"><a href="{% url 'forgot-password' %}">Не помню пароль</a></p>
         <p class="auth-switch muted">Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></p>
       {% else %}
+        <p class="auth-switch muted"><a href="{% url 'resend-confirmation' %}">Отправить подтверждение ещё раз</a></p>
         <p class="auth-switch muted">Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
       {% endif %}
     </section>
