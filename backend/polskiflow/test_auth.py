@@ -12,7 +12,10 @@ from polskiflow.auth import (
     SupabaseSession,
     SupabaseUser,
     authenticate_access_token,
+    request_password_reset,
+    resend_signup_confirmation,
     sign_in,
+    update_password,
 )
 
 
@@ -34,6 +37,41 @@ class _Response(io.BytesIO):
     SUPABASE_AUTH_RETRY_BACKOFF=0.01,
 )
 class SupabaseAuthTests(SimpleTestCase):
+    @patch("polskiflow.auth.urlopen")
+    def test_password_recovery_uses_allowed_redirect(self, urlopen):
+        urlopen.return_value = _Response(b"{}")
+
+        request_password_reset(
+            "learner@example.com", "https://polish.example/reset-password/"
+        )
+
+        request = urlopen.call_args.args[0]
+        self.assertIn("/auth/v1/recover?redirect_to=https://polish.example/reset-password/", request.full_url)
+        self.assertEqual(json.loads(request.data), {"email": "learner@example.com"})
+
+    @patch("polskiflow.auth.urlopen")
+    def test_signup_confirmation_resend_does_not_create_user(self, urlopen):
+        urlopen.return_value = _Response(b"{}")
+
+        resend_signup_confirmation("learner@example.com", "https://polish.example/login/")
+
+        request = urlopen.call_args.args[0]
+        self.assertTrue(request.full_url.endswith("/auth/v1/resend"))
+        self.assertEqual(json.loads(request.data)["type"], "signup")
+        self.assertEqual(json.loads(request.data)["options"]["email_redirect_to"], "https://polish.example/login/")
+
+    @patch("polskiflow.auth.urlopen")
+    def test_recovery_token_updates_password_with_put(self, urlopen):
+        urlopen.return_value = _Response(b"{}")
+
+        update_password("recovery-access", "Bezpieczne2026")
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.method, "PUT")
+        self.assertTrue(request.full_url.endswith("/auth/v1/user"))
+        self.assertEqual(request.get_header("Authorization"), "Bearer recovery-access")
+        self.assertEqual(json.loads(request.data), {"password": "Bezpieczne2026"})
+
     @patch("polskiflow.auth.urlopen")
     def test_valid_token_populates_current_user(self, urlopen):
         urlopen.return_value = _Response(
@@ -155,6 +193,78 @@ class BrowserAuthTests(SimpleTestCase):
         self.assertContains(response, "Рады видеть!")
         self.assertContains(response, "Польский становится привычкой.")
         self.assertContains(response, "/static/polskiflow/app.css")
+        self.assertContains(response, 'href="/forgot-password/"')
+
+    @patch("polskiflow.auth_views.request_password_reset")
+    def test_password_recovery_request_is_generic_and_not_cached(self, recover):
+        response = self.client.post(
+            "/forgot-password/", {"email": "learner@example.com"}
+        )
+
+        self.assertContains(response, "Если аккаунт существует")
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+        recover.assert_called_once_with(
+            "learner@example.com", "http://testserver/reset-password/"
+        )
+
+    @patch("polskiflow.auth_views.request_password_reset", side_effect=SupabaseAuthError("User not found"))
+    def test_password_recovery_does_not_reveal_account_existence(self, _recover):
+        response = self.client.post(
+            "/forgot-password/", {"email": "unknown@example.com"}
+        )
+        self.assertContains(response, "Если аккаунт существует")
+        self.assertNotContains(response, "User not found")
+
+    def test_reset_page_extracts_fragment_token_in_browser(self):
+        response = self.client.get("/reset-password/")
+
+        self.assertContains(response, 'data-recovery-token')
+        self.assertContains(response, 'params.get("type") === "recovery"')
+        self.assertContains(response, "history.replaceState")
+        self.assertContains(response, 'disabled data-recovery-submit')
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    @patch("polskiflow.auth_views.update_password")
+    def test_password_reset_validates_and_updates_with_recovery_token(self, update):
+        response = self.client.post(
+            "/reset-password/",
+            {
+                "recovery_token": "one-time-token",
+                "password": "NoweBezpieczne2026",
+                "password_confirmation": "NoweBezpieczne2026",
+            },
+        )
+
+        update.assert_called_once_with("one-time-token", "NoweBezpieczne2026")
+        self.assertRedirects(response, "/login/?password_reset=1", fetch_redirect_response=False)
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+
+    @patch("polskiflow.auth_views.update_password")
+    def test_password_reset_rejects_missing_token_and_mismatch(self, update):
+        missing = self.client.post(
+            "/reset-password/",
+            {"password": "NoweBezpieczne2026", "password_confirmation": "NoweBezpieczne2026"},
+        )
+        mismatch = self.client.post(
+            "/reset-password/",
+            {"recovery_token": "token", "password": "NoweBezpieczne2026", "password_confirmation": "InneBezpieczne2026"},
+        )
+
+        self.assertContains(missing, "недействительна или устарела")
+        self.assertContains(mismatch, "Пароли не совпадают")
+        self.assertContains(mismatch, 'value="token"')
+        update.assert_not_called()
+
+    @patch("polskiflow.auth_views.resend_signup_confirmation")
+    def test_confirmation_resend_uses_generic_response(self, resend):
+        response = self.client.post(
+            "/resend-confirmation/", {"email": "learner@example.com"}
+        )
+
+        self.assertContains(response, "Если подтверждение ожидается")
+        resend.assert_called_once_with(
+            "learner@example.com", "http://testserver/login/"
+        )
 
     @patch("polskiflow.auth_views.sign_in")
     def test_login_sets_http_only_cookies_and_redirects(self, login):

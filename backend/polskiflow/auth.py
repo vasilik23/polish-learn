@@ -9,6 +9,7 @@ import time
 from dataclasses import dataclass
 from functools import wraps
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 import certifi
@@ -129,6 +130,39 @@ def sign_up(email: str, password: str) -> SupabaseSession | None:
     return _parse_session(payload)
 
 
+def request_password_reset(email: str, redirect_to: str) -> None:
+    """Send Supabase's one-time password recovery link."""
+
+    _auth_request(
+        f"/auth/v1/recover?redirect_to={quote(redirect_to, safe=':/')}",
+        {"email": email},
+    )
+
+
+def resend_signup_confirmation(email: str, redirect_to: str) -> None:
+    """Resend an existing signup confirmation without creating a new user."""
+
+    _auth_request(
+        "/auth/v1/resend",
+        {
+            "type": "signup",
+            "email": email,
+            "options": {"email_redirect_to": redirect_to},
+        },
+    )
+
+
+def update_password(access_token: str, password: str) -> None:
+    """Replace a password using the short-lived recovery access token."""
+
+    _auth_request(
+        "/auth/v1/user",
+        {"password": password},
+        access_token=access_token,
+        method="PUT",
+    )
+
+
 def refresh_session(refresh_token: str) -> SupabaseSession:
     payload = _auth_request(
         "/auth/v1/token?grant_type=refresh_token",
@@ -168,7 +202,10 @@ def clear_auth_cookies(response) -> None:
 
 
 def _auth_request(
-    path: str, payload: dict[str, str], access_token: str | None = None
+    path: str,
+    payload: dict[str, object],
+    access_token: str | None = None,
+    method: str = "POST",
 ) -> dict:
     if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
         raise SupabaseAuthError("Supabase не настроен")
@@ -186,7 +223,7 @@ def _auth_request(
             f"{settings.SUPABASE_URL.rstrip('/')}{path}",
             data=body,
             headers=headers,
-            method="POST",
+            method=method,
         )
         try:
             with urlopen(

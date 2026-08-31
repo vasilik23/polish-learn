@@ -18,6 +18,9 @@ from polskiflow.auth import (
     sign_in,
     sign_out,
     sign_up,
+    request_password_reset,
+    resend_signup_confirmation,
+    update_password,
 )
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
@@ -164,6 +167,67 @@ def register_view(request: HttpRequest) -> HttpResponse:
                     set_auth_cookies(response, session)
                     return response
     return render(request, "auth/form.html", context)
+
+
+@require_http_methods(["GET", "POST"])
+def forgot_password(request: HttpRequest) -> HttpResponse:
+    context = {"mode": "forgot"}
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        context["email"] = email
+        if not email:
+            context["error"] = "Укажите email"
+        else:
+            try:
+                request_password_reset(email, request.build_absolute_uri(reverse("reset-password")))
+            except SupabaseAuthError:
+                pass
+            context["message"] = "Если аккаунт существует, ссылка для сброса уже отправлена."
+    return _no_store(render(request, "auth/recovery.html", context))
+
+
+@require_http_methods(["GET", "POST"])
+def reset_password(request: HttpRequest) -> HttpResponse:
+    context = {"mode": "reset"}
+    if request.method == "POST":
+        token = request.POST.get("recovery_token", "")
+        context["recovery_token"] = token
+        password = request.POST.get("password", "")
+        confirmation = request.POST.get("password_confirmation", "")
+        if not token:
+            context["error"] = "Ссылка восстановления недействительна или устарела"
+        elif password != confirmation:
+            context["error"] = "Пароли не совпадают"
+        elif error := password_error(password):
+            context["error"] = error
+        else:
+            try:
+                update_password(token, password)
+            except SupabaseAuthError as error:
+                context["error"] = str(error)
+            else:
+                response = redirect(f"{reverse('login')}?password_reset=1")
+                clear_auth_cookies(response)
+                response["Cache-Control"] = "private, no-store"
+                return response
+    return _no_store(render(request, "auth/recovery.html", context))
+
+
+@require_http_methods(["GET", "POST"])
+def resend_confirmation(request: HttpRequest) -> HttpResponse:
+    context = {"mode": "resend"}
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip()
+        context["email"] = email
+        if not email:
+            context["error"] = "Укажите email"
+        else:
+            try:
+                resend_signup_confirmation(email, request.build_absolute_uri(reverse("login")))
+            except SupabaseAuthError:
+                pass
+            context["message"] = "Если подтверждение ожидается, новое письмо уже отправлено."
+    return _no_store(render(request, "auth/recovery.html", context))
 
 
 @require_POST
@@ -339,6 +403,11 @@ def _daily_plan(request: HttpRequest):
         round(completed_count / len(lesson_tasks) * 100) if lesson_tasks else 0
     )
     return dashboard, lesson_tasks, completed_count, progress_percent
+
+
+def _no_store(response: HttpResponse) -> HttpResponse:
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @require_browser_user
