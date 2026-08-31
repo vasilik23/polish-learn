@@ -13,22 +13,10 @@ class ReadingComprehensionCoverageTests(TestCase):
         "C2": 6,
     }
 
-    # Editorial debt: these early A1 texts share comprehension lessons with the
-    # introductions topic. Keep the exception explicit so no new mismatch passes.
-    legacy_topic_mismatches = {
-        "poranek-anny": "introductions",
-        "zakupy-na-targu": "introductions",
-    }
-
     def test_every_active_reading_has_an_active_comprehension_quiz(self):
         readings = ReadingText.objects.filter(is_active=True).select_related("topic")
 
         self.assertTrue(readings.exists(), "The active reading catalog is empty")
-        self.assertTrue(
-            self.legacy_topic_mismatches.keys()
-            <= set(readings.values_list("id", flat=True)),
-            "Remove stale entries from the legacy reading-topic allowlist",
-        )
         for reading in readings:
             with self.subTest(reading_id=reading.id, level=reading.level):
                 minimum_questions = self.minimum_questions_by_level.get(reading.level)
@@ -77,12 +65,9 @@ class ReadingComprehensionCoverageTests(TestCase):
                     f"{reading.id}: comprehension lesson must be a quiz",
                 )
 
-                expected_topic_id = self.legacy_topic_mismatches.get(
-                    reading.id, reading.topic_id
-                )
                 self.assertEqual(
                     lesson.topic_id,
-                    expected_topic_id,
+                    reading.topic_id,
                     f"{reading.id}: comprehension lesson belongs to another topic",
                 )
                 self.assertGreaterEqual(
