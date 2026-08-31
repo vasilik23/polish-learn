@@ -14,13 +14,15 @@ class C2ContentTests(TestCase):
         ("c2-professional-editing", "c24", 3, 60),
         ("c2-cross-genre", "c25", 4, 61),
         ("c2-cultural-interpretation", "c26", 5, 62),
+        ("c2-expert-mediation", "c27", 6, 63),
+        ("c2-research-synthesis", "c28", 7, 64),
     )
 
-    def test_course_is_a_curriculum_target_with_six_vertical_topics(self):
+    def test_course_is_a_curriculum_target_with_eight_vertical_topics(self):
         course = Course.objects.get(id="c2-mastery")
         self.assertEqual(course.level, "C2")
         self.assertIn("Целевая программа", course.description)
-        self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 6)
+        self.assertEqual(Topic.objects.filter(course=course, is_active=True).count(), 8)
         for topic_id, prefix, position, _reading_position in self.topic_expectations:
             with self.subTest(topic_id=topic_id):
                 topic = Topic.objects.get(id=topic_id)
@@ -69,7 +71,7 @@ class C2ReadingRoutesTests(TestCase):
         self.addCleanup(auth_patch.stop)
 
     def test_readings_link_to_their_comprehension_lessons(self):
-        for prefix in ("c21", "c22", "c23", "c24", "c25", "c26"):
+        for prefix in ("c21", "c22", "c23", "c24", "c25", "c26", "c27", "c28"):
             with self.subTest(prefix=prefix):
                 response = self.client.get(f"/reading/{prefix}-tekst/")
                 self.assertEqual(response.status_code, 200)
@@ -87,3 +89,5 @@ class C2ReadingRoutesTests(TestCase):
         self.assertContains(response, "Профессиональная редактура")
         self.assertContains(response, "Межжанровая трансформация")
         self.assertContains(response, "Интерпретация культуры")
+        self.assertContains(response, "Экспертная медиация")
+        self.assertContains(response, "Исследовательский синтез")

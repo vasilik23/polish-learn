@@ -82,6 +82,22 @@
     <p class="muted">Сравниваем сегодня и шесть предыдущих дней с предшествующими семью днями. В прошлый период: {{ dashboard.previous_week_completed_count }} уроков за {{ dashboard.previous_week_active_days }} активных дней.</p>
   </section>
 
+  <section aria-labelledby="goal-insight-title">
+    <div class="section-heading">
+      <div><p class="eyebrow">Текущая цель · 28 дней</p><h2 id="goal-insight-title">Насколько подходит нагрузка</h2></div>
+      <strong>{{ daily_goal_insight.success_rate }}%</strong>
+    </div>
+    <div class="card goal-insight" data-goal-status="{{ daily_goal_insight.status }}">
+      <div class="goal-insight-metrics">
+        <p><strong>{{ daily_goal_insight.successful_days }} / {{ daily_goal_insight.period_days }}</strong><span>дней с выполненной целью</span></p>
+        <p><strong>{{ daily_goal_insight.typical_active_day_lessons }}</strong><span>типичный темп в активный день</span></p>
+      </div>
+      <h3>{{ daily_goal_insight.status_label }}</h3>
+      <p>{{ daily_goal_insight.recommendation }}</p>
+    </div>
+    <p class="profile-note">Сравниваем историю завершений с текущей целью {{ dashboard.daily_goal_lessons }} в день. Изменения цели за прошлые дни не сохраняются, поэтому это ориентир, а не оценка.</p>
+  </section>
+
   <section class="profile-settings" aria-labelledby="settings-title">
     <div class="section-heading"><div><p class="eyebrow">Персонализация</p><h2 id="settings-title">Настройки</h2></div></div>
     <form class="card profile-form" method="post">
