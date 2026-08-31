@@ -26,6 +26,7 @@ from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.daily_plan import build_daily_plan
+from polskiflow.domain.daily_goal_insights import build_daily_goal_insight
 from polskiflow.domain.password_policy import password_error
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
 
@@ -336,6 +337,10 @@ def profile(request: HttpRequest) -> HttpResponse:
             profile_message = "Профиль сохранён"
         else:
             profile_error = "Не удалось сохранить профиль. Попробуйте ещё раз."
+    daily_goal_insight = build_daily_goal_insight(
+        dashboard.recent_daily_completion_counts,
+        dashboard.daily_goal_lessons,
+    )
     return render(
         request,
         "profile.html",
@@ -353,6 +358,7 @@ def profile(request: HttpRequest) -> HttpResponse:
             "profile_form": profile_form,
             "profile_message": profile_message,
             "profile_error": profile_error,
+            "daily_goal_insight": daily_goal_insight,
         },
     )
 

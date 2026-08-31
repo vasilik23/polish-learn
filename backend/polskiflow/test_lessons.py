@@ -276,6 +276,8 @@ class LessonViewsTests(TestCase):
             weekly_completed_count=6,
             previous_week_active_days=2,
             previous_week_completed_count=3,
+            daily_goal_lessons=2,
+            recent_daily_completion_counts=(2,) * 14 + (0,) * 14,
         )
         mocked_words.return_value = [{"word": "dom"}, {"word": "dzień"}]
 
@@ -287,6 +289,12 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "на 3 больше")
         self.assertContains(response, "на 2 больше")
         self.assertContains(response, "В прошлый период: 3 уроков за 2 активных дней")
+        self.assertContains(response, "Насколько подходит нагрузка")
+        self.assertContains(response, "14 / 28")
+        self.assertContains(response, "50%")
+        self.assertContains(response, "Нагрузка выглядит посильной")
+        self.assertContains(response, "это ориентир, а не оценка")
+        self.assertContains(response, 'data-goal-status="sustainable"')
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Василий")

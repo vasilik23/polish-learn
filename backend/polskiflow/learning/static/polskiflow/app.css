@@ -248,6 +248,14 @@ p { line-height: 1.65; }
 .weekly-compare { margin: .75rem 0 0; color: var(--muted); font-size: .75rem; font-weight: 700; }
 .weekly-compare.is-positive { color: var(--green); }
 .weekly-compare.is-negative { color: var(--red); }
+.goal-insight { display: grid; gap: .8rem; }
+.goal-insight-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.goal-insight-metrics p { margin: 0; padding: .8rem; border-radius: .8rem; background: var(--surface-soft); }
+.goal-insight-metrics strong, .goal-insight-metrics span { display: block; }
+.goal-insight-metrics strong { margin-bottom: .15rem; color: var(--primary-dark); font-size: 1.05rem; }
+.goal-insight-metrics span { color: var(--muted); font-size: .72rem; line-height: 1.4; }
+.goal-insight h3 { margin: 0; font-size: 1rem; }
+.goal-insight > p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.55; }
 .achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
 .achievement-card { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .75rem; opacity: .72; }
 .achievement-card.is-unlocked { opacity: 1; border-color: color-mix(in srgb, var(--green) 35%, var(--line)); }
