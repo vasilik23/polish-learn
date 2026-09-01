@@ -29,17 +29,18 @@
 
 | Критерий | Метод | Статус |
 | --- | --- | --- |
-| 1.4.3 Contrast (Minimum) | Lighthouse + обе темы | повторить после deploy |
-| 1.4.10 Reflow | 320 CSS px и 200% zoom, без горизонтального scroll | повторить после deploy |
+| 1.4.3 Contrast (Minimum) | Lighthouse + обе темы | Preview 100/100; action contrast 6,0:1 light и 4,85:1 dark |
+| 1.4.10 Reflow | 320 CSS px и эквивалент 200% zoom | Preview: ключевые маршруты без горизонтального scroll |
 | 1.2.1 Audio-only | текстовая альтернатива для каждой записи | реализовано |
-| 2.1.1 Keyboard | Tab/Shift+Tab/Enter/Space на ключевых сценариях | повторить после deploy |
-| 2.4.1 Bypass Blocks | skip-link переводит фокус к `main` | реализовано |
-| 2.4.7 Focus Visible | контрастный focus ring | реализовано |
-| 3.3.2 Labels or Instructions | labels, hints и названия controls | проверить |
-| 4.1.2 Name, Role, Value | semantic snapshot и automated audit | проверить |
+| 2.1.1 Keyboard | Tab/Shift+Tab/Enter/Space на ключевых сценариях | Preview: native controls и основные маршруты доступны |
+| 2.4.1 Bypass Blocks | skip-link переводит фокус к `main` | Preview: первый Tab, Enter фокусирует `main` |
+| 2.4.7 Focus Visible | контрастный focus ring | Preview: outline 3 px виден на 320 px |
+| 3.3.2 Labels or Instructions | labels, hints и названия controls | Preview: unnamed controls не найдены |
+| 4.1.2 Name, Role, Value | semantic snapshot и automated audit | Preview: 1 `h1`, без duplicate IDs, controls имеют names |
 
-После deploy нужно заполнить статусы фактическими результатами desktop/mobile,
-сохранить известные ограничения и не заявлять WCAG AA, пока вся матрица не
-закрыта.
+После deploy нужно повторить короткий production smoke и сохранить известные
+ограничения. Полное соответствие WCAG 2.2 AA не заявляется: автоматические
+инструменты и выборочная ручная проверка не заменяют аудит с ассистивными
+технологиями и пользователями.
 
 Основание: [WCAG 2.2](https://www.w3.org/TR/WCAG22/).
