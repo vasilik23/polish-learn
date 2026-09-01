@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Взаимодействие и медиация · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header interaction-header">
+    <div><p class="eyebrow">Практика B1–B2</p><h1>Взаимодействие и медиация</h1><p class="muted">Выбирай реплику, которая помогает договориться, сохраняет смысл и учитывает адресата.</p></div>
+    <a class="compact-button" href="{% url 'course' %}?level=B1">К курсу →</a>
+  </header>
+
+  <div class="card interaction-note" role="note">
+    <strong>Как работает тренажёр</strong>
+    <p>Здесь проверяется выбор ответа в конкретной ситуации. Это практика с прозрачными объяснениями, а не экзамен, сертификат или полная оценка языкового уровня.</p>
+  </div>
+
+  {% if error %}<div class="card interaction-error" role="alert"><strong>Ответ не проверен</strong><p>{{ error }}</p></div>{% endif %}
+
+  <div class="interaction-list">
+    {% for scenario in scenarios %}
+      <article class="card interaction-card" id="scenario-{{ scenario.id }}">
+        <header><span>{{ scenario.level }}</span><span>{{ scenario.mode }}</span></header>
+        <h2>{{ scenario.title }}</h2>
+        <p>{{ scenario.situation }}</p>
+        <form method="post" action="{% url 'interaction-practice' %}#scenario-{{ scenario.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+          <fieldset>
+            <legend>{{ scenario.prompt }}</legend>
+            <div class="interaction-options">
+              {% for option in scenario.options %}
+                <label><input type="radio" name="option_id" value="{{ option.id }}" required> <span lang="pl">{{ option.text }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <button class="compact-button" type="submit">Проверить ответ</button>
+        </form>
+        {% if result and result.scenario.id == scenario.id %}
+          <div class="interaction-result {% if result.is_correct %}correct{% else %}wrong{% endif %}" role="status" tabindex="-1">
+            <strong>{% if result.is_correct %}Подходящий ответ{% else %}Есть более подходящий ответ{% endif %}</strong>
+            {% if not result.is_correct %}<p><span class="muted">Лучший вариант:</span> <span lang="pl">{{ result.correct_option.text }}</span></p>{% endif %}
+            <p>{{ scenario.explanation }}</p>
+          </div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+{% endblock %}

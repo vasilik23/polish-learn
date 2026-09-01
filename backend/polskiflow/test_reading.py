@@ -87,6 +87,7 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "Тестовый рассказ")
         self.assertNotContains(response, "Свежие новости</h2>")
         self.assertContains(response, 'href="/news/">Свежие новости →</a>')
+        self.assertNotContains(response, 'href="/dictionary/">Мой словарь →</a>')
         self.assertContains(response, 'aria-label="Уровень учебных текстов"')
         self.assertContains(response, 'href="?level=A1#texts-title" aria-current="page"')
 
@@ -159,7 +160,8 @@ class ReadingViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.news_mock.assert_called_with(category="sport")
         self.assertContains(response, 'href="?category=sport#news-title" aria-current="page"')
-        self.assertContains(response, 'href="/reading/">Учебные тексты →</a>')
+        self.assertContains(response, 'href="/dictionary/">Мой словарь →</a>')
+        self.assertNotContains(response, 'href="/reading/">Учебные тексты →</a>')
 
         self.client.get("/news/?category=not-a-category")
         self.news_mock.assert_called_with(category=None)
