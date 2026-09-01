@@ -3,13 +3,22 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
-from polskiflow.learning.models import ReadingText
+from polskiflow.learning.models import Course, ReadingText, Topic
 from polskiflow.progress_store import DashboardProgress
 
 
 class ReadingViewsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        course = Course.objects.create(
+            id="test-reading-course", title="Тестовое чтение", level="A1"
+        )
+        short_topic = Topic.objects.create(
+            id="test-reading-life", course=course, title="Повседневная жизнь"
+        )
+        long_topic = Topic.objects.create(
+            id="test-reading-travel", course=course, title="Путешествия", position=1
+        )
         ReadingText.objects.create(
             id="test-story",
             title="Krótka historia",
@@ -30,6 +39,18 @@ class ReadingViewsTests(TestCase):
                 },
                 "mleko": "молоко",
             },
+            topic=short_topic,
+        )
+        ReadingText.objects.create(
+            id="test-long-story",
+            title="Długa podróż",
+            description="Opowieść kolejowa",
+            level="A1",
+            minutes=12,
+            paragraphs=["Pociąg jedzie daleko."],
+            glossary={},
+            topic=long_topic,
+            position=3,
         )
         ReadingText.objects.create(
             id="test-story-a2", title="Historia A2", description="Уровень A2",
@@ -140,6 +161,51 @@ class ReadingViewsTests(TestCase):
 
         self.client.get("/reading/?category=not-a-category")
         self.news_mock.assert_called_with(category=None)
+
+    def test_library_searches_local_text_titles_and_descriptions(self):
+        response = self.client.get("/reading/?level=A1&q=KOLEJOWA")
+
+        self.assertContains(response, "Długa podróż")
+        self.assertNotContains(response, "Krótka historia")
+        self.assertContains(response, "Найдено учебных текстов: <strong>1</strong>")
+        self.news_mock.assert_called_with(category=None)
+
+    def test_library_filters_by_topic_and_duration(self):
+        response = self.client.get(
+            "/reading/?level=A1&topic=test-reading-life&duration=short"
+        )
+
+        self.assertContains(response, "Krótka historia")
+        self.assertNotContains(response, "Długa podróż")
+        self.assertContains(response, '<option value="test-reading-life" selected>')
+        self.assertContains(response, '<option value="short" selected>')
+
+    def test_library_keeps_search_separate_from_news_and_navigation(self):
+        response = self.client.get(
+            "/reading/?level=A1&q=historia&topic=test-reading-life"
+            "&duration=short&category=sport"
+        )
+
+        self.news_mock.assert_called_with(category="sport")
+        self.assertContains(response, "Krótka historia")
+        self.assertContains(response, "Свежие новости")
+        self.assertContains(
+            response,
+            'href="?level=A2&amp;q=historia&amp;topic=test-reading-life&amp;duration=short&amp;category=sport#texts-title"',
+        )
+        self.assertContains(
+            response,
+            'href="?level=A1&amp;q=historia&amp;topic=test-reading-life&amp;duration=short#news-title"',
+        )
+
+    def test_library_ignores_unknown_reading_filters(self):
+        response = self.client.get(
+            "/reading/?level=A1&topic=unknown&duration=week"
+        )
+
+        self.assertContains(response, "Krótka historia")
+        self.assertContains(response, "Długa podróż")
+        self.assertNotContains(response, "Подходящих текстов не найдено")
 
     def test_reader_marks_only_glossary_words_as_interactive(self):
         response = self.client.get("/reading/test-story/")

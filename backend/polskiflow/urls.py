@@ -4,6 +4,7 @@ from django.contrib import admin
 
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, register_view, resend_confirmation, reset_password, sources, writing_practice
+from polskiflow.diagnostic_views import diagnostic
 from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.reading_views import (
     add_dictionary_word,
@@ -32,6 +33,7 @@ urlpatterns = [
     path("", home, name="home"),
     path("tasks/", daily_tasks, name="daily-tasks"),
     path("course/", course, name="course"),
+    path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
     path("writing/", writing_practice, name="writing-practice"),
     path("listening/", listening_practice, name="listening-practice"),

@@ -12,6 +12,35 @@
         <a href="{{ level.href }}"{% if selected_reading_level == level.id %} aria-current="page"{% endif %}>{{ level.id }}</a>
       {% endfor %}
     </nav>
+    <form class="card catalog-filters reading-filters" method="get" action="{% url 'reading-library' %}" role="search">
+      <input type="hidden" name="level" value="{{ selected_reading_level }}">
+      {% if selected_news_category %}<input type="hidden" name="category" value="{{ selected_news_category }}">{% endif %}
+      <div class="catalog-search-field">
+        <label for="reading-search">Поиск по текстам</label>
+        <input id="reading-search" type="search" name="q" value="{{ reading_filters.q }}" placeholder="Название или описание">
+      </div>
+      <div class="reading-filter-grid">
+        <label>Тема
+          <select name="topic">
+            <option value="">Все темы</option>
+            {% for topic_id, topic_title in reading_topic_options %}<option value="{{ topic_id }}"{% if reading_filters.topic == topic_id %} selected{% endif %}>{{ topic_title }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Длительность
+          <select name="duration">
+            <option value="">Любая</option>
+            <option value="short"{% if reading_filters.duration == "short" %} selected{% endif %}>До 5 минут</option>
+            <option value="medium"{% if reading_filters.duration == "medium" %} selected{% endif %}>6–10 минут</option>
+            <option value="long"{% if reading_filters.duration == "long" %} selected{% endif %}>Больше 10 минут</option>
+          </select>
+        </label>
+      </div>
+      <div class="catalog-filter-actions">
+        <button class="compact-button" type="submit">Найти</button>
+        {% if reading_filters_active %}<a href="?level={{ selected_reading_level }}{% if selected_news_category %}&amp;category={{ selected_news_category }}{% endif %}#texts-title">Сбросить</a>{% endif %}
+      </div>
+    </form>
+    <p class="reading-result-summary" aria-live="polite">Найдено учебных текстов: <strong>{{ reading_result_count }}</strong></p>
     <div class="reading-grid" aria-live="polite">
     {% for text in texts %}
       <a class="reading-card" href="{% url 'reader' text.id %}">
@@ -19,7 +48,7 @@
         <span class="reading-card-copy"><span class="level-badge">{{ text.level }}</span><strong>{{ text.title }}</strong><small>{{ text.description }}</small><span>◷ {{ text.minutes }} мин · Читать →</span></span>
       </a>
     {% empty %}
-      <div class="card empty-state"><span>📚</span><h3>Для уровня {{ selected_reading_level }} тексты скоро появятся</h3><p class="muted">Выбери другой уровень или загляни позже.</p></div>
+      <div class="card empty-state"><span>📚</span><h3>{% if reading_filters_active %}Подходящих текстов не найдено{% else %}Для уровня {{ selected_reading_level }} тексты скоро появятся{% endif %}</h3><p class="muted">{% if reading_filters_active %}Измени запрос или сбрось фильтры.{% else %}Выбери другой уровень или загляни позже.{% endif %}</p></div>
     {% endfor %}
     </div>
   </section>
@@ -27,7 +56,7 @@
   <section class="news-section" aria-labelledby="news-title">
     <div class="section-heading"><div><p class="eyebrow">Живой польский</p><h2 id="news-title">Свежие новости</h2></div><span>Польские RSS</span></div>
     <nav class="news-filters" aria-label="Темы новостей">
-      <a href="?level={{ selected_reading_level }}#news-title"{% if not selected_news_category %} aria-current="page"{% endif %}>Все темы</a>
+      <a href="{{ news_all_href }}"{% if not selected_news_category %} aria-current="page"{% endif %}>Все темы</a>
       {% for category in news_categories %}
         <a href="{{ category.href }}"{% if selected_news_category == category.id %} aria-current="page"{% endif %}>{{ category.label }}</a>
       {% endfor %}

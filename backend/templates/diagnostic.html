@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Предварительная диагностика · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header diagnostic-header">
+    <div>
+      <p class="eyebrow">Карта навыков</p>
+      <h1>Предварительная диагностика</h1>
+      <p class="muted">Оцени, что обычно можешь делать на польском. Это самооценка для выбора старта, а не тест уровня, экзамен или сертификат.</p>
+    </div>
+    <a class="compact-button secondary-link" href="{% url 'course' %}">К курсу</a>
+  </header>
+
+  {% if result %}
+    <section class="card diagnostic-result" aria-labelledby="diagnostic-result-title" aria-live="polite">
+      <p class="eyebrow">Предварительная рекомендация</p>
+      <h2 id="diagnostic-result-title">Начни с {{ result.level }}</h2>
+      <p>Удели больше внимания режимам: <strong>{{ result.focus_modes|join:", " }}</strong>.</p>
+      <p class="muted">{{ result.calculation }}</p>
+      <div class="diagnostic-summary" aria-label="Твоя карта навыков">
+        {% for title, level, description in result.answers %}
+          <div><strong>{{ title }}</strong><span>{{ level }}</span><small>{{ description }}</small></div>
+        {% endfor %}
+      </div>
+      <div class="header-actions">
+        <a class="compact-button" href="{% url 'course' %}?level={{ result.level }}">Открыть курс {{ result.level }}</a>
+        <a class="compact-button secondary-link" href="{% url 'diagnostic' %}">Пройти заново</a>
+      </div>
+      <p class="diagnostic-disclaimer">Результат основан только на твоих ответах, нигде не сохраняется и не подтверждает владение уровнем CEFR.</p>
+    </section>
+  {% else %}
+    <form class="diagnostic-form" method="post" action="{% url 'diagnostic' %}">
+      {% csrf_token %}
+      {% if error %}<p class="error" role="alert"><strong>Проверь ответы.</strong> {{ error }}</p>{% endif %}
+      <p class="diagnostic-instruction" id="diagnostic-instruction">Для каждого режима выбери самое высокое описание, которое уверенно подходит в большинстве ситуаций.</p>
+      {% for mode in mode_fields %}
+        <div class="card diagnostic-mode">
+          <label for="diagnostic-{{ mode.key }}"><strong>{{ mode.title }}</strong><small>{{ mode.description }}</small></label>
+          <select id="diagnostic-{{ mode.key }}" name="{{ mode.key }}" required aria-describedby="diagnostic-instruction">
+            <option value="">Выбери описание</option>
+            {% for value, label in mode.options %}
+              <option value="{{ value }}"{% if mode.selected == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+      <button class="diagnostic-submit" type="submit">Получить предварительную рекомендацию</button>
+      <p class="diagnostic-disclaimer">Ответы обрабатываются только для этого результата и не записываются в профиль или базу данных.</p>
+    </form>
+  {% endif %}
+{% endblock %}
