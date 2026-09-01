@@ -38,9 +38,9 @@
 | 3.3.2 Labels or Instructions | labels, hints и названия controls | Preview: unnamed controls не найдены |
 | 4.1.2 Name, Role, Value | semantic snapshot и automated audit | Preview: 1 `h1`, без duplicate IDs, controls имеют names |
 
-После deploy нужно повторить короткий production smoke и сохранить известные
-ограничения. Полное соответствие WCAG 2.2 AA не заявляется: автоматические
-инструменты и выборочная ручная проверка не заменяют аудит с ассистивными
-технологиями и пользователями.
+Production smoke после deploy: login получил Lighthouse accessibility 100/100,
+новых runtime-ошибок Vercel нет. Полное соответствие WCAG 2.2 AA не заявляется:
+автоматические инструменты и выборочная ручная проверка не заменяют аудит с
+ассистивными технологиями и пользователями.
 
 Основание: [WCAG 2.2](https://www.w3.org/TR/WCAG22/).
