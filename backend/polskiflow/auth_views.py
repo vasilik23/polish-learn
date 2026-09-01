@@ -107,6 +107,33 @@ LISTENING_ITEMS = (
     {"id": "mysz", "audio": "polskiflow/audio/mysz.ogg", "options": ("my", "mysz", "miś"), "answer": "mysz", "hint": "Финальный шипящий sz отличает mysz от my и miś."},
 )
 
+LISTENING_DIALOGUE = {
+    "title": "Встреча перед поездкой",
+    "level": "A1–A2",
+    "lines": (
+        "Cześć, Aniu! O której jedziemy jutro do Krakowa?",
+        "Pociąg odjeżdża o ósmej piętnaście. Spotkajmy się o ósmej przed kasą numer trzy.",
+        "Dobrze. Kupię bilety przez internet i przyniosę kawę.",
+        "Świetnie, a ja wezmę kanapki. Do zobaczenia rano!",
+    ),
+    "questions": (
+        {
+            "id": "dialogue_main",
+            "prompt": "О чём договорились собеседники?",
+            "options": ("Встретиться перед поездкой в Краков", "Купить продукты вечером", "Посетить кассу после работы"),
+            "answer": "Встретиться перед поездкой в Краков",
+            "explanation": "Они уточняют поезд, время и место встречи перед поездкой в Краков.",
+        },
+        {
+            "id": "dialogue_detail",
+            "prompt": "Где они встретятся?",
+            "options": ("В поезде", "Перед кассой номер три", "В кафе на вокзале"),
+            "answer": "Перед кассой номер три",
+            "explanation": "Аня говорит: «Spotkajmy się o ósmej przed kasą numer trzy».",
+        },
+    ),
+}
+
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
     """Prefer an explicit valid filter, otherwise use the learner's level."""
@@ -402,7 +429,7 @@ def writing_practice(request: HttpRequest) -> HttpResponse:
 @require_browser_user
 @require_http_methods(["GET", "POST"])
 def listening_practice(request: HttpRequest) -> HttpResponse:
-    """Small public-domain listening pilot; results stay in this response only."""
+    """Small listening pilot; results stay in this response only."""
     submitted = request.method == "POST"
     answers = {item["id"]: request.POST.get(item["id"], "") for item in LISTENING_ITEMS}
     display_items = tuple(
@@ -414,7 +441,38 @@ def listening_practice(request: HttpRequest) -> HttpResponse:
         for item in LISTENING_ITEMS
     )
     score = sum(item["is_correct"] for item in display_items) if submitted else None
-    return render(request, "listening.html", {"listening_items": display_items, "score": score, "submitted": submitted})
+    dialogue_answers = {
+        question["id"]: request.POST.get(question["id"], "")
+        for question in LISTENING_DIALOGUE["questions"]
+    }
+    dialogue_questions = tuple(
+        {
+            **question,
+            "selected": dialogue_answers[question["id"]],
+            "is_correct": submitted
+            and dialogue_answers[question["id"]] == question["answer"],
+        }
+        for question in LISTENING_DIALOGUE["questions"]
+    )
+    dialogue_submitted = submitted and any(dialogue_answers.values())
+    dialogue_score = (
+        sum(question["is_correct"] for question in dialogue_questions)
+        if dialogue_submitted
+        else None
+    )
+    dialogue = {**LISTENING_DIALOGUE, "questions": dialogue_questions}
+    return render(
+        request,
+        "listening.html",
+        {
+            "listening_items": display_items,
+            "score": score,
+            "submitted": submitted,
+            "dialogue": dialogue,
+            "dialogue_submitted": dialogue_submitted,
+            "dialogue_score": dialogue_score,
+        },
+    )
 
 
 def _daily_plan(request: HttpRequest):

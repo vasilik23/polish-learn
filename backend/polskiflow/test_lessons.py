@@ -120,6 +120,30 @@ class LessonViewsTests(TestCase):
         self.assertContains(result, "Правильный ответ")
         self.assertContains(result, "wróbel")
 
+    def test_listening_pilot_includes_original_dialogue_with_accessible_controls(self):
+        page = self.client.get("/listening/")
+
+        self.assertContains(page, "Встреча перед поездкой")
+        self.assertContains(page, "Cześć, Aniu!")
+        self.assertContains(page, "текстовую альтернативу")
+        self.assertContains(page, "data-dialogue-rate")
+        self.assertContains(page, "data-dialogue-repeat")
+        self.assertContains(page, "системный польский голос браузера")
+
+        result = self.client.post(
+            "/listening/",
+            {
+                "tecza": "tęcza",
+                "wrobel": "wróbel",
+                "mysz": "mysz",
+                "dialogue_main": "Встретиться перед поездкой в Краков",
+                "dialogue_detail": "В поезде",
+            },
+        )
+        self.assertContains(result, "1 / 2")
+        self.assertContains(result, "Перед кассой номер три")
+        self.assertContains(result, "Они уточняют поезд, время и место встречи")
+
     def test_course_links_to_listening_pilot(self):
         page = self.client.get("/course/?level=A1")
         self.assertContains(page, 'href="/listening/"')
