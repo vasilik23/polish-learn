@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from polskiflow.learning.models import Lesson, ReadingText, Topic
+from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
 
 
 class EditorialSampleCoverageTests(TestCase):
@@ -50,3 +50,12 @@ class EditorialSampleCoverageTests(TestCase):
         legacy_topic = Topic.objects.get(id="first-steps")
         self.assertFalse(legacy_topic.is_active)
         self.assertFalse(Lesson.objects.filter(topic=legacy_topic, is_active=True).exists())
+
+    def test_sampled_c1_c2_cards_use_context_instead_of_seed_templates(self):
+        cards = Flashcard.objects.filter(id__regex=r"^c(11|21)-")
+        self.assertEqual(cards.count(), 30)
+        for card in cards:
+            with self.subTest(card_id=card.id):
+                self.assertNotIn("W tej wypowiedzi ważne", card.example)
+                self.assertNotIn("W analizie świadomie stosujemy", card.example)
+                self.assertGreaterEqual(len(card.example.split()), 7)
