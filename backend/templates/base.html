@@ -39,6 +39,7 @@
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
   </head>
   <body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <a class="skip-link" href="#main-content">К основному содержимому</a>
     {% if request.supabase_user %}
       <nav class="app-nav" aria-label="Основная навигация">
         <a class="brand" href="{% url 'home' %}" aria-label="PolskiFlow — на главную">
@@ -91,7 +92,7 @@
         </select>
       </label>
     {% endif %}
-    <main class="page-shell {% if request.supabase_user %}with-nav{% endif %}">
+    <main id="main-content" class="page-shell {% if request.supabase_user %}with-nav{% endif %}" tabindex="-1">
       {% block content %}{% endblock %}
     </main>
     {% block scripts %}{% endblock %}

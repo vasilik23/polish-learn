@@ -104,6 +104,8 @@ class LessonViewsTests(TestCase):
         self.assertContains(page, "polskiflow/audio/wrobel.ogg")
         self.assertContains(page, "polskiflow/audio/mysz.ogg")
         self.assertContains(page, "public domain")
+        self.assertContains(page, "Текстовая альтернатива записи 1")
+        self.assertContains(page, '<span lang="pl">tęcza</span>')
 
         result = self.client.post(
             "/listening/", {"tecza": "tęcza", "wrobel": "wybór", "mysz": "mysz"}
@@ -287,6 +289,13 @@ class LessonViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "fonts.googleapis.com")
         self.assertNotContains(response, "fonts.gstatic.com")
+
+    def test_base_template_has_keyboard_skip_link_and_main_target(self):
+        response = self.client.get("/")
+
+        self.assertContains(response, 'class="skip-link" href="#main-content"')
+        self.assertContains(response, 'id="main-content"')
+        self.assertContains(response, 'tabindex="-1"')
 
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")

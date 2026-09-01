@@ -15,6 +15,10 @@
       <fieldset class="card listening-card">
         <legend>Запись {{ forloop.counter }}</legend>
         <audio controls preload="metadata"><source src="{% static item.audio %}" type="audio/ogg">Браузер не поддерживает аудио OGG.</audio>
+        <details class="audio-transcript">
+          <summary>Текстовая альтернатива записи {{ forloop.counter }}</summary>
+          <p><span lang="pl">{{ item.answer }}</span>. {{ item.hint }}</p>
+        </details>
         <div class="listening-options">
           {% for option in item.options %}
             <label><input type="radio" name="{{ item.id }}" value="{{ option }}" {% if item.selected == option %}checked{% endif %} required> <span lang="pl">{{ option }}</span></label>
