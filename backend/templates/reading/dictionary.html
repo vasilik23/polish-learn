@@ -9,15 +9,37 @@
     </div>
   </header>
   {% if not available %}<p class="data-notice">Словарь временно недоступен. Попробуйте обновить страницу.</p>{% endif %}
-  <section class="dictionary-list">
+  {% if available and word_count %}
+    <form class="card catalog-filters dictionary-filters" method="get" action="{% url 'dictionary' %}" role="search">
+      <div class="catalog-search-field">
+        <label for="dictionary-search">Поиск по словарю</label>
+        <input id="dictionary-search" type="search" name="q" value="{{ dictionary_query }}" maxlength="80" placeholder="Слово, перевод или контекст">
+      </div>
+      <div class="dictionary-filter-grid">
+        <label for="dictionary-review">Повторение
+          <select id="dictionary-review" name="review">
+            <option value="">Все слова</option>
+            <option value="due"{% if review_filter == "due" %} selected{% endif %}>К повторению</option>
+            <option value="upcoming"{% if review_filter == "upcoming" %} selected{% endif %}>Позже</option>
+          </select>
+        </label>
+      </div>
+      <div class="catalog-filter-actions">
+        <button class="compact-button" type="submit">Найти</button>
+        {% if filters_active %}<a href="{% url 'dictionary' %}">Сбросить</a>{% endif %}
+      </div>
+    </form>
+    <p class="reading-result-summary" aria-live="polite">Найдено слов: <strong>{{ result_count }}</strong> из {{ word_count }}</p>
+  {% endif %}
+  <section class="dictionary-list" aria-live="polite">
     {% for word in words %}
       <article class="dictionary-word" id="word-{{ word.id }}">
         <div><strong>{{ word.word }}</strong><span>{{ word.translation }}</span>{% if word.context %}<small>“{{ word.context|truncatechars:150 }}”</small>{% endif %}</div>
         <form method="post" action="{% url 'remove-dictionary-word' word.id %}" hx-post="{% url 'remove-dictionary-word' word.id %}" hx-target="#word-{{ word.id }}" hx-swap="outerHTML">{% csrf_token %}<button class="word-delete" type="submit" aria-label="Удалить {{ word.word }}">×</button></form>
       </article>
     {% empty %}
-      <div class="card empty-state"><span>✨</span><h2>Словарь пока пуст</h2><p class="muted">Открой текст, нажми на незнакомое слово и сохрани перевод.</p><a class="button" href="{% url 'reading-library' %}">Выбрать текст</a></div>
+      <div class="card empty-state"><span>✨</span><h2>{% if filters_active %}Ничего не найдено{% else %}Словарь пока пуст{% endif %}</h2><p class="muted">{% if filters_active %}Измени запрос или сбрось фильтры.{% else %}Открой текст, нажми на незнакомое слово и сохрани перевод.{% endif %}</p>{% if filters_active %}<a class="button" href="{% url 'dictionary' %}">Сбросить фильтры</a>{% else %}<a class="button" href="{% url 'reading-library' %}">Выбрать текст</a>{% endif %}</div>
     {% endfor %}
   </section>
-  {% if words and not can_practice %}<p class="practice-hint">Сохрани ещё {{ needed_words }} слова, чтобы открыть тренировку.</p>{% endif %}
+  {% if word_count and not can_practice %}<p class="practice-hint">Сохрани ещё {{ needed_words }} слова, чтобы открыть тренировку.</p>{% endif %}
 {% endblock %}

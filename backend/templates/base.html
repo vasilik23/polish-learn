@@ -49,9 +49,6 @@
           <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">⌂</span><span>Сегодня</span>
           </a>
-          <a href="{% url 'daily-tasks' %}" class="nav-link {% if request.resolver_match.url_name == 'daily-tasks' %}active{% endif %}">
-            <span class="nav-icon" aria-hidden="true">✓</span><span>Задания</span>
-          </a>
           <a href="{% url 'course' %}" class="nav-link {% if request.resolver_match.url_name == 'course' or request.resolver_match.url_name == 'lesson' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">◫</span><span>Курс</span>
           </a>

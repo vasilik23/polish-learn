@@ -300,6 +300,86 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "mleko")
         self.assertContains(response, "молоко")
 
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_dictionary_searches_lemma_translation_and_context(self, load_words):
+        load_words.return_value = [
+            {
+                "id": "11111111-1111-1111-1111-111111111111",
+                "word": "pociąg",
+                "translation": "поезд",
+                "context": "Pociąg jedzie do Gdańska.",
+                "next_review_date": "2999-01-01",
+            },
+            {
+                "id": "22222222-2222-2222-2222-222222222222",
+                "word": "dom",
+                "translation": "дом",
+                "context": "Wracam wieczorem.",
+                "next_review_date": "2999-01-01",
+            },
+        ]
+
+        for query in ("POCIĄG", "поезд", "gdańska"):
+            with self.subTest(query=query):
+                response = self.client.get("/dictionary/", {"q": query})
+                self.assertContains(response, "pociąg")
+                self.assertNotContains(response, ">dom<")
+                self.assertContains(response, "Найдено слов:")
+                self.assertContains(response, "<strong>1</strong>", html=True)
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_dictionary_filters_words_by_sm2_due_status(self, load_words):
+        load_words.return_value = [
+            {
+                "id": "11111111-1111-1111-1111-111111111111",
+                "word": "dziś",
+                "translation": "сегодня",
+                "context": "",
+                "next_review_date": "2000-01-01",
+            },
+            {
+                "id": "22222222-2222-2222-2222-222222222222",
+                "word": "jutro",
+                "translation": "завтра",
+                "context": "",
+                "next_review_date": "2999-01-01",
+            },
+        ]
+
+        due = self.client.get("/dictionary/?review=due")
+        self.assertContains(due, "dziś")
+        self.assertNotContains(due, ">jutro<")
+        upcoming = self.client.get("/dictionary/?review=upcoming")
+        self.assertContains(upcoming, "jutro")
+        self.assertNotContains(upcoming, ">dziś<")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_dictionary_validates_filters_and_caps_query(self, load_words):
+        load_words.return_value = []
+
+        response = self.client.get("/dictionary/", {"q": "x" * 100, "review": "other"})
+
+        self.assertEqual(response.context["dictionary_query"], "x" * 80)
+        self.assertEqual(response.context["review_filter"], "")
+
+    @patch("polskiflow.reading_views.load_personal_words")
+    def test_dictionary_has_filtered_empty_state_without_hiding_practice(self, load_words):
+        load_words.return_value = [
+            {
+                "id": f"00000000-0000-0000-0000-{index:012d}",
+                "word": f"word-{index}",
+                "translation": "перевод",
+                "context": "",
+            }
+            for index in range(4)
+        ]
+
+        response = self.client.get("/dictionary/?q=missing")
+
+        self.assertContains(response, "Ничего не найдено")
+        self.assertContains(response, "▶ Тренировать")
+        self.assertNotContains(response, "Словарь пока пуст")
+
     def test_unknown_text_returns_404(self):
         self.assertEqual(self.client.get("/reading/no-story/").status_code, 404)
 

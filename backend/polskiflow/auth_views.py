@@ -273,17 +273,11 @@ def home(request: HttpRequest) -> HttpResponse:
 
 @require_browser_user
 def daily_tasks(request: HttpRequest) -> HttpResponse:
-    dashboard, lesson_tasks, completed_count, progress_percent = _daily_plan(request)
-    return render(
-        request,
-        "daily_tasks.html",
-        {
-            "dashboard": dashboard,
-            "tasks": lesson_tasks,
-            "completed_count": completed_count,
-            "progress_percent": progress_percent,
-        },
-    )
+    query = request.GET.urlencode()
+    target = reverse("home")
+    if query:
+        target = f"{target}?{query}"
+    return redirect(f"{target}#daily-tasks")
 
 
 @require_browser_user
