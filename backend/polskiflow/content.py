@@ -122,11 +122,17 @@ def _questions(lesson: Lesson) -> list[dict]:
 
 
 def reading_texts() -> list[dict]:
-    return list(
-        ReadingText.objects.filter(is_active=True).values(
-            "id", "title", "description", "level", "minutes", "emoji"
-        )
+    rows = ReadingText.objects.filter(is_active=True).values(
+        "id", "title", "description", "level", "minutes", "emoji",
+        "topic_id", "topic__title",
     )
+    return [
+        {
+            **{key: value for key, value in row.items() if key != "topic__title"},
+            "topic_title": row["topic__title"] or "Без темы",
+        }
+        for row in rows
+    ]
 
 
 def reading_text(text_id: str) -> ReadingText | None:

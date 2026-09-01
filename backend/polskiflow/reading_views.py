@@ -19,6 +19,10 @@ from polskiflow.dictionary_store import (
     save_personal_word_review,
 )
 from polskiflow.domain.sm2 import DEFAULT_SM2_STATE, Sm2State, sm2_next
+from polskiflow.domain.reading_catalog import (
+    READING_DURATION_FILTERS,
+    filter_reading_texts,
+)
 from polskiflow.progress_store import load_dashboard_progress, save_lesson_completion
 from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 
@@ -48,17 +52,44 @@ def reading_library(request: HttpRequest) -> HttpResponse:
     for text in texts:
         if text.get("level") not in READING_LEVELS:
             text["level"] = "A1"
+    level_texts = [text for text in texts if text["level"] == selected_level]
+    topic_options = sorted(
+        {
+            (text["topic_id"], text["topic_title"])
+            for text in level_texts
+            if text.get("topic_id")
+        },
+        key=lambda item: item[1].casefold(),
+    )
+    filters = {
+        "q": request.GET.get("q", "").strip()[:120],
+        "topic": request.GET.get("topic", ""),
+        "duration": request.GET.get("duration", ""),
+    }
+    if filters["topic"] not in {item[0] for item in topic_options}:
+        filters["topic"] = ""
+    if filters["duration"] not in READING_DURATION_FILTERS:
+        filters["duration"] = ""
+    filtered_texts = filter_reading_texts(
+        level_texts,
+        query=filters["q"],
+        topic_id=filters["topic"],
+        duration=filters["duration"],
+    )
+    preserved_filters = {
+        key: value for key, value in filters.items() if value
+    }
     level_tabs = [
         {
             "id": level,
-            "href": f"?{urlencode({'level': level, **({'category': selected_category} if selected_category else {})})}#texts-title",
+            "href": f"?{urlencode({'level': level, **preserved_filters, **({'category': selected_category} if selected_category else {})})}#texts-title",
         }
         for level in READING_LEVELS
     ]
     news_categories = [
         {
             **category,
-            "href": f"?{urlencode({'level': selected_level, 'category': category['id']})}#news-title",
+            "href": f"?{urlencode({'level': selected_level, **preserved_filters, 'category': category['id']})}#news-title",
         }
         for category in CATEGORIES
     ]
@@ -66,9 +97,14 @@ def reading_library(request: HttpRequest) -> HttpResponse:
         request,
         "reading/library.html",
         {
-            "texts": [text for text in texts if text["level"] == selected_level],
+            "texts": filtered_texts,
             "reading_levels": level_tabs,
             "selected_reading_level": selected_level,
+            "reading_filters": filters,
+            "reading_topic_options": topic_options,
+            "reading_result_count": len(filtered_texts),
+            "reading_filters_active": any(filters.values()),
+            "news_all_href": f"?{urlencode({'level': selected_level, **preserved_filters})}#news-title",
             "news": latest_official_news(category=selected_category or None),
             "news_categories": news_categories,
             "selected_news_category": selected_category,

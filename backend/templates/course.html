@@ -58,6 +58,11 @@
     <div><p class="eyebrow">Аудиопилот A1</p><h2 id="listening-callout-title">Узнай три слова на слух</h2><p class="muted">Короткие записи носителей, мгновенная проверка и прозрачная лицензия.</p></div>
     <a class="compact-button" href="{% url 'listening-practice' %}">Слушать →</a>
   </aside>
+  <aside class="card diagnostic-callout" aria-labelledby="diagnostic-callout-title">
+    <span class="writing-callout-icon" aria-hidden="true">◎</span>
+    <div><p class="eyebrow">Не знаешь, откуда начать?</p><h2 id="diagnostic-callout-title">Составь предварительную карту навыков</h2><p class="muted">Короткая самооценка восприятия, продукции, взаимодействия и медиации — без записи результата в профиль.</p></div>
+    <a class="compact-button" href="{% url 'diagnostic' %}">Оценить навыки →</a>
+  </aside>
   <div class="section-heading course-level-heading">
     <div><p class="eyebrow">Уровень {{ selected_level }}</p><h2>Темы и уроки</h2></div>
     <span>{{ catalog_result_topic_label }} · {{ catalog_result_lesson_label }}</span>
