@@ -47,7 +47,7 @@ def course_topics() -> list[dict]:
 def _load_course_topics() -> list[dict]:
     active_lessons = (
         Lesson.objects.filter(is_active=True)
-        .only("id", "topic_id", "title", "description", "minutes", "emoji", "position")
+        .only("id", "topic_id", "kind", "title", "description", "minutes", "emoji", "position")
         .order_by("position", "id")
     )
     topics = (
@@ -69,6 +69,7 @@ def _load_course_topics() -> list[dict]:
             "lessons": [
                 {
                     "id": lesson.id,
+                    "kind": lesson.kind,
                     "title": lesson.title,
                     "description": lesson.description,
                     "minutes": lesson.minutes,

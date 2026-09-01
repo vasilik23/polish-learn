@@ -168,6 +168,56 @@ class LessonViewsTests(TestCase):
         response = self.client.get("/course/?level=Z9")
         self.assertContains(response, 'href="?level=A1" aria-current="page"')
 
+    def test_course_catalog_searches_topics_and_lessons(self):
+        by_topic = self.client.get("/course/?level=A1&q=основы")
+        self.assertContains(by_topic, "Słówka dnia")
+        self.assertContains(by_topic, "1 тема · 4 урока")
+
+        by_lesson = self.client.get("/course/?level=A1&q=Gramatyka")
+        self.assertContains(by_lesson, "Gramatyka")
+        self.assertNotContains(by_lesson, "Słówka dnia")
+        self.assertContains(by_lesson, "1 тема · 1 урок")
+
+        missing = self.client.get("/course/?level=A1&q=несуществующее")
+        self.assertContains(missing, "Ничего не найдено")
+        self.assertContains(missing, 'href="?level=A1">Сбросить фильтры</a>')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_course_catalog_filters_kind_duration_and_completion(self, mocked_progress):
+        Lesson.objects.filter(id="grammar").update(minutes=15)
+        mocked_progress.return_value = DashboardProgress(
+            display_name="Василий",
+            level="A1",
+            streak_days=0,
+            completed_lesson_ids=frozenset(),
+            available=True,
+            all_completed_lesson_ids=frozenset({"grammar"}),
+        )
+
+        response = self.client.get(
+            "/course/?level=A1&kind=grammar&duration=medium&completion=completed"
+        )
+
+        self.assertContains(response, "Gramatyka")
+        self.assertNotContains(response, "Słówka dnia")
+        self.assertContains(response, 'option value="grammar" selected')
+        self.assertContains(response, 'option value="medium" selected')
+        self.assertContains(response, 'option value="completed" selected')
+
+        not_started = self.client.get("/course/?level=A1&completion=not-started")
+        self.assertNotContains(not_started, "Gramatyka")
+        self.assertContains(not_started, "Słówka dnia")
+
+    def test_course_catalog_ignores_invalid_filter_values(self):
+        response = self.client.get(
+            "/course/?level=A1&topic=missing&kind=video&duration=week&completion=maybe"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Słówka dnia")
+        self.assertEqual(response.context["catalog_filters"]["topic"], "")
+        self.assertEqual(response.context["catalog_filters"]["kind"], "")
+
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_course_catalog_defaults_to_profile_level(self, mocked_progress):
         mocked_progress.return_value = DashboardProgress(

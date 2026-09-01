@@ -28,6 +28,12 @@ from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.daily_goal_insights import build_daily_goal_insight
 from polskiflow.domain.password_policy import password_error
+from polskiflow.domain.course_catalog import (
+    COMPLETION_FILTERS,
+    DURATION_FILTERS,
+    LESSON_KINDS,
+    filter_course_topics,
+)
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
 
 
@@ -455,18 +461,16 @@ def course(request: HttpRequest) -> HttpResponse:
         level: sum(topic["level"] == level for topic in all_topics) for level in levels
     }
 
-    def topic_count_label(count: int) -> str:
-        if count == 0:
-            return "Скоро"
+    def count_label(count: int, forms: tuple[str, str, str]) -> str:
         if count % 10 == 1 and count % 100 != 11:
-            suffix = "тема"
+            suffix = forms[0]
         elif count % 10 in (2, 3, 4) and count % 100 not in (12, 13, 14):
-            suffix = "темы"
+            suffix = forms[1]
         else:
-            suffix = "тем"
+            suffix = forms[2]
         return f"{count} {suffix}"
-    topics = [topic for topic in all_topics if topic["level"] == selected_level]
-    for topic in topics:
+    level_topics = [topic for topic in all_topics if topic["level"] == selected_level]
+    for topic in level_topics:
         completed_count = 0
         next_lesson = None
         for lesson in topic["lessons"]:
@@ -481,6 +485,31 @@ def course(request: HttpRequest) -> HttpResponse:
         topic["progress_percent"] = round(completed_count / lesson_count * 100)
         topic["next_lesson"] = next_lesson
         topic["completed"] = completed_count == lesson_count
+    filters = {
+        "q": request.GET.get("q", "").strip()[:120],
+        "topic": request.GET.get("topic", ""),
+        "kind": request.GET.get("kind", ""),
+        "duration": request.GET.get("duration", ""),
+        "completion": request.GET.get("completion", ""),
+    }
+    valid_topic_ids = {topic["id"] for topic in level_topics}
+    if filters["topic"] not in valid_topic_ids:
+        filters["topic"] = ""
+    if filters["kind"] not in LESSON_KINDS:
+        filters["kind"] = ""
+    if filters["duration"] not in DURATION_FILTERS:
+        filters["duration"] = ""
+    if filters["completion"] not in COMPLETION_FILTERS:
+        filters["completion"] = ""
+    topics = filter_course_topics(
+        level_topics,
+        query=filters["q"],
+        topic_id=filters["topic"],
+        kind=filters["kind"],
+        duration=filters["duration"],
+        completion=filters["completion"],
+    )
+    result_lesson_count = sum(len(topic["lessons"]) for topic in topics)
     return render(
         request,
         "course.html",
@@ -491,11 +520,24 @@ def course(request: HttpRequest) -> HttpResponse:
                 {
                     "name": level,
                     "topic_count": level_counts[level],
-                    "topic_count_label": topic_count_label(level_counts[level]),
+                    "topic_count_label": (
+                        count_label(level_counts[level], ("тема", "темы", "тем"))
+                        if level_counts[level]
+                        else "Скоро"
+                    ),
                 }
                 for level in levels
             ],
             "selected_level": selected_level,
+            "catalog_filters": filters,
+            "catalog_topic_options": level_topics,
+            "catalog_kind_options": LESSON_KINDS.items(),
+            "catalog_result_topic_label": count_label(
+                len(topics), ("тема", "темы", "тем")
+            ),
+            "catalog_result_lesson_label": count_label(
+                result_lesson_count, ("урок", "урока", "уроков")
+            ),
         },
     )
 
