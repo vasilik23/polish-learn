@@ -68,6 +68,11 @@
     <span>{{ catalog_result_topic_label }} · {{ catalog_result_lesson_label }}</span>
   </div>
   {% if selected_level == "B1" or selected_level == "B2" %}
+    <aside class="card writing-callout" aria-labelledby="interaction-callout-title">
+      <span class="writing-callout-icon" aria-hidden="true">↔</span>
+      <div><p class="eyebrow">Сценарии {{ selected_level }}</p><h2 id="interaction-callout-title">Договорись и передай смысл</h2><p class="muted">Короткие ситуации на взаимодействие, медиацию и выбор подходящего регистра.</p></div>
+      <a class="compact-button" href="{% url 'interaction-practice' %}">Открыть сценарии →</a>
+    </aside>
     <aside class="card writing-callout" aria-labelledby="writing-callout-title">
       <span class="writing-callout-icon" aria-hidden="true">✎</span>
       <div><p class="eyebrow">Письменная практика {{ selected_level }}</p><h2 id="writing-callout-title">Сформулируй ответ своими словами</h2><p class="muted">Четыре задания, локальный черновик и критерии для самостоятельной проверки.</p></div>

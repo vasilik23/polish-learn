@@ -105,3 +105,29 @@ class EditorialSampleCoverageTests(TestCase):
         self.assertIn("nieobecny fakt", omission.explanation)
         reading_method = questions.get(lesson_id="c13-reading-check", position=4)
         self.assertIn("przykłady, źródła i ramę tekstu", reading_method.explanation)
+
+    def test_c1_mediation_uses_contextual_examples_and_teaching_explanations(self):
+        cards = Flashcard.objects.filter(id__regex=r"^c14-")
+        self.assertEqual(cards.count(), 15)
+        for card in cards:
+            with self.subTest(card_id=card.id):
+                self.assertNotIn("W tej wypowiedzi ważne", card.example)
+                self.assertGreaterEqual(len(card.example.split()), 10)
+
+        questions = Question.objects.filter(lesson__topic_id="c1-mediation")
+        self.assertEqual(questions.count(), 22)
+        weak_templates = (
+            "oznacza:",
+            "Ответ прямо следует из текста.",
+            "Первый вариант точно передаёт содержание абзаца.",
+        )
+        for question in questions:
+            with self.subTest(lesson_id=question.lesson_id, position=question.position):
+                self.assertGreaterEqual(len(question.explanation.split()), 12)
+                for template in weak_templates:
+                    self.assertNotIn(template, question.explanation)
+
+        faithful_summary = questions.get(lesson_id="c14-grammar", position=5)
+        self.assertIn("zakres prawdziwości", faithful_summary.explanation)
+        analogy = questions.get(lesson_id="c14-reading-check", position=0)
+        self.assertIn("granicę analogii", analogy.explanation)
