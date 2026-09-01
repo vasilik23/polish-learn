@@ -205,6 +205,23 @@ p { line-height: 1.65; }
 .diagnostic-summary strong, .diagnostic-summary span, .diagnostic-summary small { display: block; }
 .diagnostic-summary span { margin: .25rem 0; color: var(--primary-dark); font-size: 1.25rem; font-weight: 800; }
 .diagnostic-summary small { color: var(--muted); line-height: 1.4; }
+.diagnostic-checks { display: grid; min-width: 0; gap: .8rem; }
+.diagnostic-checks h2, .diagnostic-checks p { margin: 0; }
+.diagnostic-check { display: grid; min-width: 0; gap: .65rem; margin: 0; }
+.diagnostic-check legend { width: 100%; margin-bottom: .55rem; font-weight: 700; line-height: 1.45; }
+.diagnostic-check legend span { display: block; margin-bottom: .2rem; color: var(--primary-dark); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.diagnostic-check label { display: flex; align-items: flex-start; gap: .55rem; margin: 0; padding: .55rem .65rem; border-radius: .65rem; cursor: pointer; }
+.diagnostic-check label span { min-width: 0; overflow-wrap: anywhere; }
+.diagnostic-check label:hover { background: var(--surface-soft); }
+.diagnostic-check input { flex: 0 0 auto; margin-top: .2rem; }
+.diagnostic-checked-summary { display: grid; gap: .6rem; padding-top: .4rem; border-top: 1px solid var(--line); }
+.diagnostic-checked-summary h3 { margin: 0; }
+.diagnostic-answer-review { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.diagnostic-answer-review li { display: grid; gap: .2rem; padding: .7rem; border-left: .25rem solid var(--line); border-radius: .5rem; background: var(--surface-soft); }
+.diagnostic-answer-review li.is-correct { border-left-color: var(--green); }
+.diagnostic-answer-review li.is-missing { border-left-color: var(--amber); }
+.diagnostic-answer-review span, .diagnostic-answer-review small { line-height: 1.4; }
+.diagnostic-answer-review small { color: var(--muted); }
 .listening-list { display: grid; gap: 1rem; }
 .listening-card { min-width: 0; }
 .listening-card legend { padding: 0 .35rem; font-weight: 800; }

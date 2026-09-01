@@ -1,4 +1,4 @@
-"""Deterministic self-assessment recommendations for the diagnostic route."""
+"""Deterministic, non-persistent recommendations for the diagnostic route."""
 
 from __future__ import annotations
 
@@ -47,12 +47,88 @@ MODE_OPTIONS = {
     ),
 }
 
+CHECK_TASKS = (
+    {
+        "key": "check_1",
+        "mode": "Восприятие",
+        "prompt": "Przeczytaj: «Sklep jest dziś otwarty do osiemnastej». Do której działa sklep?",
+        "options": (("a", "Do 8:00"), ("b", "Do 18:00"), ("c", "Od 18:00")),
+        "answer": "b",
+        "explanation": "«Do osiemnastej» означает «до 18:00».",
+    },
+    {
+        "key": "check_2",
+        "mode": "Языковая форма",
+        "prompt": "Выбери естественное завершение: «Codziennie rano ___ kawę».",
+        "options": (("a", "piję"), ("b", "piłem"), ("c", "wypiję")),
+        "answer": "a",
+        "explanation": "Регулярное действие с «codziennie» выражено настоящим временем: «piję».",
+    },
+    {
+        "key": "check_3",
+        "mode": "Взаимодействие",
+        "prompt": "Кто-то говорит: «Przepraszam, czy to miejsce jest wolne?». Как ответить, если место свободно?",
+        "options": (("a", "Tak, proszę usiąść."), ("b", "Nie wiem, gdzie mieszkasz."), ("c", "Poproszę rachunek.")),
+        "answer": "a",
+        "explanation": "«Tak, proszę usiąść» прямо и вежливо приглашает занять свободное место.",
+    },
+    {
+        "key": "check_4",
+        "mode": "Медиация",
+        "prompt": "Сообщение: «Spotkanie przeniesiono z wtorku na czwartek, godzina bez zmian». Что важно передать коллеге?",
+        "options": (("a", "Встречу отменили."), ("b", "Встреча в четверг в прежнее время."), ("c", "Время встречи изменили.")),
+        "answer": "b",
+        "explanation": "Изменился день — со вторника на четверг, а время осталось прежним.",
+    },
+    {
+        "key": "check_5",
+        "mode": "Восприятие",
+        "prompt": "«Mimo opóźnienia pociągu zdążyliśmy na przesiadkę». Что произошло?",
+        "options": (("a", "Из-за опоздания пересадка не состоялась."), ("b", "Поезд не опоздал."), ("c", "Несмотря на опоздание, на пересадку успели.")),
+        "answer": "c",
+        "explanation": "Конструкция «mimo» вводит препятствие, которое не помешало результату.",
+    },
+    {
+        "key": "check_6",
+        "mode": "Языковая форма",
+        "prompt": "Выбери вариант: «Gdybym wcześniej o tym wiedział, ___ ci pomóc».",
+        "options": (("a", "mogę"), ("b", "mógłbym"), ("c", "będę mógł")),
+        "answer": "b",
+        "explanation": "Нереальное условие «gdybym wiedział» требует условной формы «mógłbym».",
+    },
+    {
+        "key": "check_7",
+        "mode": "Взаимодействие",
+        "prompt": "Как вежливо не согласиться на рабочей встрече и оставить пространство для обсуждения?",
+        "options": (("a", "To nie ma sensu."), ("b", "Nie masz racji."), ("c", "Rozumiem ten argument, jednak proponuję rozważyć też inne rozwiązanie.")),
+        "answer": "c",
+        "explanation": "Ответ признаёт аргумент собеседника, обозначает несогласие и предлагает альтернативу.",
+    },
+    {
+        "key": "check_8",
+        "mode": "Медиация",
+        "prompt": "В отчёте сказано: «Wyniki są obiecujące, choć mała próba nie pozwala na uogólnienia». Как точнее пересказать вывод?",
+        "options": (("a", "Результат окончательно доказан."), ("b", "Результаты перспективны, но из-за малой выборки вывод ограничен."), ("c", "Исследование не дало результатов.")),
+        "answer": "b",
+        "explanation": "Точный пересказ сохраняет и позитивный результат, и ограничение исследования.",
+    },
+)
+
 
 @dataclass(frozen=True)
 class DiagnosticResult:
     level: str
     focus_modes: tuple[str, ...]
     answers: tuple[tuple[str, str, str], ...]
+    calculation: str
+
+
+@dataclass(frozen=True)
+class CheckedDiagnosticResult:
+    level: str
+    correct: int
+    total: int
+    answers: tuple[tuple[str, str, bool, str], ...]
     calculation: str
 
 
@@ -99,3 +175,41 @@ def score_diagnostic(raw_answers: dict[str, str]) -> DiagnosticResult:
         answers=answers,
         calculation=calculation,
     )
+
+
+def score_checked_tasks(raw_answers: dict[str, str]) -> CheckedDiagnosticResult:
+    """Score the short observable sample; it deliberately cannot confirm CEFR."""
+
+    keys = tuple(task["key"] for task in CHECK_TASKS)
+    if set(raw_answers) != set(keys) or any(not raw_answers[key] for key in keys):
+        raise ValueError("Нужно выполнить все восемь коротких заданий.")
+    for task in CHECK_TASKS:
+        allowed = {value for value, _label in task["options"]}
+        if raw_answers[task["key"]] not in allowed:
+            raise ValueError("Выберите один из предложенных вариантов ответа.")
+
+    details = tuple(
+        (
+            task["mode"],
+            task["prompt"],
+            raw_answers[task["key"]] == task["answer"],
+            task["explanation"],
+        )
+        for task in CHECK_TASKS
+    )
+    correct = sum(item[2] for item in details)
+    # A short multiple-choice sample is deliberately capped at B2.
+    if correct <= 2:
+        level = "A1"
+    elif correct <= 4:
+        level = "A2"
+    elif correct <= 6:
+        level = "B1"
+    else:
+        level = "B2"
+    calculation = (
+        f"Верных ответов: {correct} из {len(CHECK_TASKS)}. Шкала старта: "
+        "0–2 → A1, 3–4 → A2, 5–6 → B1, 7–8 → B2. "
+        "Короткая проба не рекомендует уровень выше B2."
+    )
+    return CheckedDiagnosticResult(level, correct, len(CHECK_TASKS), details, calculation)

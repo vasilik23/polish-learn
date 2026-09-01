@@ -13,7 +13,8 @@
   {% if result %}
     <section class="card diagnostic-result" aria-labelledby="diagnostic-result-title" aria-live="polite">
       <p class="eyebrow">Предварительная рекомендация</p>
-      <h2 id="diagnostic-result-title">Начни с {{ result.level }}</h2>
+      <h2 id="diagnostic-result-title">Начни с {{ recommended_level }}</h2>
+      <p>Рекомендация берёт более низкий из двух независимых ориентиров: самооценка <strong>{{ result.level }}</strong> и короткая проверяемая проба <strong>{{ checked_result.level }}</strong>.</p>
       <p>Удели больше внимания режимам: <strong>{{ result.focus_modes|join:", " }}</strong>.</p>
       <p class="muted">{{ result.calculation }}</p>
       <div class="diagnostic-summary" aria-label="Твоя карта навыков">
@@ -21,11 +22,23 @@
           <div><strong>{{ title }}</strong><span>{{ level }}</span><small>{{ description }}</small></div>
         {% endfor %}
       </div>
+      <div class="diagnostic-checked-summary">
+        <h3>Короткая проверяемая проба: {{ checked_result.correct }} из {{ checked_result.total }}</h3>
+        <p class="muted">{{ checked_result.calculation }}</p>
+        <ol class="diagnostic-answer-review">
+          {% for mode, prompt, is_correct, explanation in checked_result.answers %}
+            <li class="{% if is_correct %}is-correct{% else %}is-missing{% endif %}">
+              <strong>{{ mode }} · {% if is_correct %}верно{% else %}нужно повторить{% endif %}</strong>
+              <span>{{ prompt }}</span><small>{{ explanation }}</small>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
       <div class="header-actions">
-        <a class="compact-button" href="{% url 'course' %}?level={{ result.level }}">Открыть курс {{ result.level }}</a>
+        <a class="compact-button" href="{% url 'course' %}?level={{ recommended_level }}">Открыть курс {{ recommended_level }}</a>
         <a class="compact-button secondary-link" href="{% url 'diagnostic' %}">Пройти заново</a>
       </div>
-      <p class="diagnostic-disclaimer">Результат основан только на твоих ответах, нигде не сохраняется и не подтверждает владение уровнем CEFR.</p>
+      <p class="diagnostic-disclaimer">Результат основан на самооценке и восьми ответах, нигде не сохраняется и не подтверждает владение уровнем CEFR.</p>
     </section>
   {% else %}
     <form class="diagnostic-form" method="post" action="{% url 'diagnostic' %}">
@@ -43,6 +56,19 @@
           </select>
         </div>
       {% endfor %}
+      <section class="diagnostic-checks" aria-labelledby="diagnostic-checks-title">
+        <p class="eyebrow">Короткая проверяемая проба</p>
+        <h2 id="diagnostic-checks-title">Ответь на 8 вопросов</h2>
+        <p class="diagnostic-instruction">Здесь есть однозначно проверяемые ответы по нескольким режимам. Они оцениваются отдельно от самооценки.</p>
+        {% for task in check_tasks %}
+          <fieldset class="card diagnostic-check">
+            <legend><span>{{ forloop.counter }}. {{ task.mode }}</span>{{ task.prompt }}</legend>
+            {% for value, label in task.options %}
+              <label><input type="radio" name="{{ task.key }}" value="{{ value }}"{% if task.selected == value %} checked{% endif %} required> <span>{{ label }}</span></label>
+            {% endfor %}
+          </fieldset>
+        {% endfor %}
+      </section>
       <button class="diagnostic-submit" type="submit">Получить предварительную рекомендацию</button>
       <p class="diagnostic-disclaimer">Ответы обрабатываются только для этого результата и не записываются в профиль или базу данных.</p>
     </form>
