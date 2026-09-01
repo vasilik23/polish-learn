@@ -85,9 +85,8 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "Historia bez poziomu")
         self.assertNotContains(response, "Historia A2")
         self.assertContains(response, "Тестовый рассказ")
-        self.assertContains(response, "Политика")
-        self.assertContains(response, "Спорт")
-        self.assertContains(response, "Культура и медиа")
+        self.assertNotContains(response, "Свежие новости</h2>")
+        self.assertContains(response, 'href="/news/">Свежие новости →</a>')
         self.assertContains(response, 'aria-label="Уровень учебных текстов"')
         self.assertContains(response, 'href="?level=A1#texts-title" aria-current="page"')
 
@@ -148,18 +147,21 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "Historia A2")
         self.assertContains(response, 'href="?level=A2#texts-title" aria-current="page"')
 
-    def test_library_filters_news_by_allowlisted_category(self):
+    def test_legacy_reading_news_category_redirects_to_news_tab(self):
         response = self.client.get("/reading/?category=sport")
+
+        self.assertRedirects(response, "/news/?category=sport", fetch_redirect_response=False)
+        self.news_mock.assert_not_called()
+
+    def test_news_tab_filters_by_allowlisted_category(self):
+        response = self.client.get("/news/?category=sport")
 
         self.assertEqual(response.status_code, 200)
         self.news_mock.assert_called_with(category="sport")
-        self.assertContains(response, 'href="?level=A1&amp;category=sport#news-title" aria-current="page"')
+        self.assertContains(response, 'href="?category=sport#news-title" aria-current="page"')
+        self.assertContains(response, 'href="/reading/">Учебные тексты →</a>')
 
-        response = self.client.get("/reading/?level=A2&category=sport")
-        self.assertContains(response, 'href="?level=A1&amp;category=sport#texts-title"')
-        self.assertContains(response, 'href="?level=A2&amp;category=sport#news-title" aria-current="page"')
-
-        self.client.get("/reading/?category=not-a-category")
+        self.client.get("/news/?category=not-a-category")
         self.news_mock.assert_called_with(category=None)
 
     def test_library_searches_local_text_titles_and_descriptions(self):
@@ -168,7 +170,7 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, "Długa podróż")
         self.assertNotContains(response, "Krótka historia")
         self.assertContains(response, "Найдено учебных текстов: <strong>1</strong>")
-        self.news_mock.assert_called_with(category=None)
+        self.news_mock.assert_not_called()
 
     def test_library_filters_by_topic_and_duration(self):
         response = self.client.get(
@@ -180,23 +182,42 @@ class ReadingViewsTests(TestCase):
         self.assertContains(response, '<option value="test-reading-life" selected>')
         self.assertContains(response, '<option value="short" selected>')
 
-    def test_library_keeps_search_separate_from_news_and_navigation(self):
+    def test_library_keeps_search_filters_in_level_navigation(self):
         response = self.client.get(
             "/reading/?level=A1&q=historia&topic=test-reading-life"
-            "&duration=short&category=sport"
+            "&duration=short"
         )
 
-        self.news_mock.assert_called_with(category="sport")
+        self.news_mock.assert_not_called()
         self.assertContains(response, "Krótka historia")
-        self.assertContains(response, "Свежие новости")
         self.assertContains(
             response,
-            'href="?level=A2&amp;q=historia&amp;topic=test-reading-life&amp;duration=short&amp;category=sport#texts-title"',
+            'href="?level=A2&amp;q=historia&amp;topic=test-reading-life&amp;duration=short#texts-title"',
         )
-        self.assertContains(
-            response,
-            'href="?level=A1&amp;q=historia&amp;topic=test-reading-life&amp;duration=short#news-title"',
-        )
+
+    def test_news_tab_has_navigation_state_and_source_attribution(self):
+        self.news_mock.return_value = [{
+            "title": "Wiadomość dnia",
+            "url": "https://example.com/news",
+            "source": "Przykład",
+            "published": "1 września",
+            "category": "politics",
+            "category_label": "Политика",
+        }]
+
+        response = self.client.get("/news/")
+
+        self.assertContains(response, "Новости на польском")
+        self.assertContains(response, "Wiadomość dnia")
+        self.assertContains(response, "Przykład")
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"')
+        self.assertContains(response, 'href="/news/" class="nav-link active"')
+
+    def test_news_tab_preserves_unavailable_feed_behavior(self):
+        response = self.client.get("/news/")
+
+        self.assertContains(response, "Лента временно недоступна")
+        self.assertContains(response, "Читать учебные тексты")
 
     def test_library_ignores_unknown_reading_filters(self):
         response = self.client.get(

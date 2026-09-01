@@ -55,6 +55,9 @@
           <a href="{% url 'reading-library' %}" class="nav-link {% if request.resolver_match.url_name == 'reading-library' or request.resolver_match.url_name == 'reader' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">▤</span><span>Читать</span>
           </a>
+          <a href="{% url 'news-library' %}" class="nav-link {% if request.resolver_match.url_name == 'news-library' %}active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">▧</span><span>Новости</span>
+          </a>
           <a href="{% url 'dictionary' %}" class="nav-link {% if request.resolver_match.url_name == 'dictionary' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">◇</span><span>Словарь</span>
           </a>
