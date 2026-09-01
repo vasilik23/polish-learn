@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
+from polskiflow.learning.models import Flashcard, Lesson, Question, ReadingText, Topic
 
 
 class EditorialSampleCoverageTests(TestCase):
@@ -59,3 +59,23 @@ class EditorialSampleCoverageTests(TestCase):
                 self.assertNotIn("W tej wypowiedzi ważne", card.example)
                 self.assertNotIn("W analizie świadomie stosujemy", card.example)
                 self.assertGreaterEqual(len(card.example.split()), 7)
+
+    def test_sampled_c1_explanations_teach_instead_of_repeating_answers(self):
+        questions = Question.objects.filter(lesson__topic_id="c1-style-register")
+        self.assertEqual(questions.count(), 22)
+
+        weak_templates = (
+            "oznacza:",
+            "Ответ прямо следует из текста.",
+            "Первый вариант точно передаёт содержание абзаца.",
+        )
+        for question in questions:
+            with self.subTest(lesson_id=question.lesson_id, position=question.position):
+                self.assertGreaterEqual(len(question.explanation.split()), 10)
+                for template in weak_templates:
+                    self.assertNotIn(template, question.explanation)
+
+        register = questions.get(lesson_id="c11-grammar", position=0)
+        self.assertIn("ситуации, цели и отношений", register.explanation)
+        conclusion = questions.get(lesson_id="c11-reading-check", position=5)
+        self.assertIn("соответствием адресату", conclusion.explanation)

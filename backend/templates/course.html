@@ -13,6 +13,46 @@
       </a>
     {% endfor %}
   </nav>
+  <form class="card catalog-filters" method="get" action="{% url 'course' %}" role="search">
+    <input type="hidden" name="level" value="{{ selected_level }}">
+    <div class="catalog-search-field">
+      <label for="catalog-search">Поиск по курсу</label>
+      <input id="catalog-search" type="search" name="q" value="{{ catalog_filters.q }}" placeholder="Например, путешествия или грамматика">
+    </div>
+    <div class="catalog-filter-grid">
+      <label>Тема
+        <select name="topic">
+          <option value="">Все темы</option>
+          {% for topic in catalog_topic_options %}<option value="{{ topic.id }}"{% if catalog_filters.topic == topic.id %} selected{% endif %}>{{ topic.title }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Тип урока
+        <select name="kind">
+          <option value="">Все типы</option>
+          {% for value, label in catalog_kind_options %}<option value="{{ value }}"{% if catalog_filters.kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Длительность
+        <select name="duration">
+          <option value="">Любая</option>
+          <option value="short"{% if catalog_filters.duration == "short" %} selected{% endif %}>До 10 минут</option>
+          <option value="medium"{% if catalog_filters.duration == "medium" %} selected{% endif %}>11–20 минут</option>
+          <option value="long"{% if catalog_filters.duration == "long" %} selected{% endif %}>Больше 20 минут</option>
+        </select>
+      </label>
+      <label>Статус
+        <select name="completion">
+          <option value="">Любой</option>
+          <option value="not-started"{% if catalog_filters.completion == "not-started" %} selected{% endif %}>Не пройден</option>
+          <option value="completed"{% if catalog_filters.completion == "completed" %} selected{% endif %}>Пройден</option>
+        </select>
+      </label>
+    </div>
+    <div class="catalog-filter-actions">
+      <button class="compact-button" type="submit">Показать</button>
+      {% if catalog_filters.q or catalog_filters.topic or catalog_filters.kind or catalog_filters.duration or catalog_filters.completion %}<a href="?level={{ selected_level }}">Сбросить</a>{% endif %}
+    </div>
+  </form>
   <aside class="card listening-callout" aria-labelledby="listening-callout-title">
     <span class="writing-callout-icon" aria-hidden="true">🎧</span>
     <div><p class="eyebrow">Аудиопилот A1</p><h2 id="listening-callout-title">Узнай три слова на слух</h2><p class="muted">Короткие записи носителей, мгновенная проверка и прозрачная лицензия.</p></div>
@@ -20,7 +60,7 @@
   </aside>
   <div class="section-heading course-level-heading">
     <div><p class="eyebrow">Уровень {{ selected_level }}</p><h2>Темы и уроки</h2></div>
-    {% if course_topics %}<span>{{ course_topics|length }} тем</span>{% endif %}
+    <span>{{ catalog_result_topic_label }} · {{ catalog_result_lesson_label }}</span>
   </div>
   {% if selected_level == "B1" or selected_level == "B2" %}
     <aside class="card writing-callout" aria-labelledby="writing-callout-title">
@@ -59,7 +99,7 @@
         {% endif %}
       </section>
     {% empty %}
-      <div class="card empty-state"><span>🧭</span><h2>{{ selected_level }} уже в плане</h2><p>Сначала завершим предыдущий уровень, затем здесь появятся новые темы и уроки.</p></div>
+      <div class="card empty-state"><span>🔎</span><h2>Ничего не найдено</h2><p>Попробуй изменить запрос или сбросить фильтры.</p><a class="compact-button" href="?level={{ selected_level }}">Сбросить фильтры</a></div>
     {% endfor %}
   </div>
 {% endblock %}

@@ -167,6 +167,13 @@ p { line-height: 1.65; }
 .course-levels strong, .course-levels small { display: block; }
 .course-levels small { color: var(--muted); font-size: .66rem; }
 .course-levels a[aria-current="page"] small { color: #e8e2ff; }
+.catalog-filters { display: grid; gap: .85rem; margin: .75rem 0 1.2rem; }
+.catalog-filters label { display: grid; gap: .35rem; color: var(--muted); font-size: .72rem; font-weight: 800; }
+.catalog-filters :where(input, select) { width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); color: var(--text); font: inherit; font-size: .82rem; }
+.catalog-filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+.catalog-filter-actions { display: flex; align-items: center; gap: .85rem; }
+.catalog-filter-actions .compact-button { width: auto; border: 0; cursor: pointer; }
+.catalog-filter-actions a { color: var(--primary); font-size: .8rem; font-weight: 800; }
 .course-level-heading { align-items: end; margin-top: 1.35rem; }
 .course-level-heading .eyebrow { margin-bottom: .25rem; }
 .writing-callout, .listening-callout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .8rem 1rem; margin-bottom: 1.2rem; }
@@ -460,6 +467,9 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .auth-switch { margin: 1.2rem 0 0; font-size: .85rem; text-align: center; }
 
 @media (min-width: 700px) {
+  .catalog-filters { grid-template-columns: minmax(14rem, 1fr) auto; align-items: end; }
+  .catalog-filter-grid { grid-column: 1 / -1; grid-row: 2; grid-template-columns: repeat(4, minmax(7rem, 1fr)); }
+  .catalog-filter-actions { grid-column: 2; grid-row: 1; }
   .dashboard-grid { grid-template-columns: minmax(17rem, .85fr) 1.45fr; align-items: start; }
   .home-goal-grid { width: 100%; margin-left: 0; margin-right: auto; grid-template-columns: minmax(0, 42rem); }
   .daily-card { position: sticky; top: 1.5rem; grid-row: span 2; }
