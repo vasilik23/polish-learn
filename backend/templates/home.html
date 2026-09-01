@@ -13,7 +13,7 @@
     </div>
   </section>
 
-  <div class="dashboard-grid home-goal-grid">
+  <div class="dashboard-grid home-plan-grid">
     <section class="card daily-card" id="daily-plan">
       <div class="progress-ring" style="--value: {{ progress_percent }}" role="progressbar" aria-label="Выполнение цели на сегодня" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
       <div class="daily-copy">
@@ -22,7 +22,27 @@
         <p class="muted">Небольшой шаг каждый день — большой результат.</p>
       </div>
       {% if not dashboard.available %}<p class="data-notice">Прогресс временно недоступен. Уроки по-прежнему можно проходить.</p>{% endif %}
-      <a class="compact-button daily-action" href="{% url 'daily-tasks' %}">{% if completed_count == tasks|length %}Повторить задания{% elif completed_count %}Продолжить занятия{% else %}Начать занятия{% endif %}</a>
+      <a class="compact-button daily-action" href="#daily-tasks">{% if completed_count == tasks|length %}Повторить задания{% elif completed_count %}Продолжить занятия{% else %}Начать занятия{% endif %}</a>
+    </section>
+    <section class="daily-tasks-panel" id="daily-tasks" aria-labelledby="daily-tasks-title">
+      <div class="section-heading daily-tasks-heading">
+        <div>
+          <p class="eyebrow">План на день</p>
+          <h2 id="daily-tasks-title">Задания на сегодня</h2>
+        </div>
+        <span>{{ completed_count }} из {{ tasks|length }} выполнено</span>
+      </div>
+      <div class="task-list daily-task-list">
+        {% for task in tasks %}
+          <a class="task-card" href="{% if task.kind == 'dictionary-review' %}{% url 'dictionary-practice' %}{% else %}{% url 'lesson' task.id %}{% endif %}">
+            <span class="task-icon">{{ task.emoji }}</span>
+            <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
+            <span class="task-arrow" aria-hidden="true">→</span>
+          </a>
+        {% empty %}
+          <section class="card empty-state"><span>✓</span><h2>На сегодня всё</h2><p class="muted">Новые задания появятся в вашем плане.</p></section>
+        {% endfor %}
+      </div>
     </section>
   </div>
 {% endblock %}

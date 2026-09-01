@@ -78,7 +78,7 @@ class LessonViewsTests(TestCase):
         self.auth_patch.start()
         self.addCleanup(self.auth_patch.stop)
 
-    def test_daily_tasks_lists_all_lessons_and_home_only_shows_goal(self):
+    def test_home_combines_daily_goal_and_all_tasks(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Цель на сегодня")
@@ -86,15 +86,20 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, 'role="progressbar"')
         self.assertContains(response, 'aria-label="Выполнение цели на сегодня"')
         self.assertContains(response, 'aria-valuenow="0"')
-        self.assertNotContains(response, "Słówka dnia")
-        self.assertNotContains(response, "Задания на сегодня")
+        self.assertContains(response, "Задания на сегодня")
+        self.assertContains(response, "Słówka dnia")
+        self.assertContains(response, "Gramatyka")
+        self.assertContains(response, "Powtórka")
+        self.assertContains(response, "Quiz")
 
-        tasks_page = self.client.get("/tasks/")
-        self.assertEqual(tasks_page.status_code, 200)
-        self.assertContains(tasks_page, "Słówka dnia")
-        self.assertContains(tasks_page, "Gramatyka")
-        self.assertContains(tasks_page, "Powtórka")
-        self.assertContains(tasks_page, "Quiz")
+    def test_legacy_tasks_url_redirects_to_home_plan(self):
+        response = self.client.get("/tasks/?source=bookmark")
+
+        self.assertRedirects(
+            response,
+            "/?source=bookmark#daily-tasks",
+            fetch_redirect_response=False,
+        )
 
     def test_listening_pilot_scores_public_domain_clips(self):
         page = self.client.get("/listening/")
@@ -120,7 +125,7 @@ class LessonViewsTests(TestCase):
         self.assertContains(page, 'href="/listening/"')
         self.assertContains(page, "Аудиопилот A1")
 
-    def test_home_keeps_daily_plan_short_and_course_page_lists_topics(self):
+    def test_home_keeps_daily_plan_focused_and_course_page_lists_topics(self):
         course = Course.objects.create(id="catalog-test", title="A1", level="A1")
         topic = Topic.objects.create(id="catalog-topic", course=course, title="Новая тема")
         extra = Lesson.objects.create(id="extra-lesson", topic=topic, title="Extra", plan_title="Extra", subtitle="A1", description="Каталог", position=5)
@@ -129,7 +134,7 @@ class LessonViewsTests(TestCase):
 
         self.assertContains(response, "0 из 4")
         self.assertNotContains(response, "Новая тема")
-        self.assertNotContains(response, "Задания на сегодня")
+        self.assertContains(response, "Задания на сегодня")
 
         course_page = self.client.get("/course/")
         self.assertContains(course_page, "Новая тема")
@@ -576,12 +581,11 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "4 дн. подряд")
         self.assertContains(response, "2 из 4")
 
-        tasks_page = self.client.get("/tasks/")
-        self.assertContains(tasks_page, 'class="task-complete"', count=2)
+        self.assertContains(response, 'class="task-complete"', count=2)
 
     @patch("polskiflow.auth_views.load_personal_words", return_value=[])
     @patch("polskiflow.auth_views.load_dashboard_progress")
-    def test_today_and_tasks_keep_a_newly_completed_lesson_in_daily_progress(
+    def test_home_keeps_a_newly_completed_lesson_in_daily_progress(
         self, mocked_progress, _mocked_words
     ):
         mocked_progress.return_value = DashboardProgress(
@@ -594,12 +598,10 @@ class LessonViewsTests(TestCase):
         )
 
         home = self.client.get("/")
-        tasks_page = self.client.get("/tasks/")
-
         self.assertContains(home, "1 из 4")
         self.assertContains(home, "25%")
-        self.assertContains(tasks_page, "1 из 4 выполнено")
-        self.assertContains(tasks_page, 'class="task-complete"', count=1)
+        self.assertContains(home, "1 из 4 выполнено")
+        self.assertContains(home, 'class="task-complete"', count=1)
 
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")
@@ -623,7 +625,7 @@ class LessonViewsTests(TestCase):
             for index in range(4)
         ]
 
-        response = self.client.get("/tasks/")
+        response = self.client.get("/")
 
         self.assertContains(response, "Повторение словаря")
         self.assertContains(response, "1 слово по расписанию SM-2")

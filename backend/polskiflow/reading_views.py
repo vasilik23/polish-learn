@@ -34,6 +34,8 @@ PRACTICE_SOURCE_SESSION_KEY = "dictionary_practice_source"
 PRACTICE_ANSWER_SESSION_KEY = "dictionary_practice_answer"
 PRACTICE_MODES = {"translation", "lemma", "context"}
 READING_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
+DICTIONARY_QUERY_MAX_LENGTH = 80
+DICTIONARY_REVIEW_FILTERS = {"", "due", "upcoming"}
 
 
 @require_browser_user
@@ -140,14 +142,27 @@ def dictionary(request: HttpRequest) -> HttpResponse:
     words = load_personal_words(
         request.supabase_access_token, request.supabase_user.id
     )
+    all_words = words or []
+    query = request.GET.get("q", "").strip()[:DICTIONARY_QUERY_MAX_LENGTH]
+    review_filter = request.GET.get("review", "")
+    if review_filter not in DICTIONARY_REVIEW_FILTERS:
+        review_filter = ""
+    filtered_words = _filter_dictionary_words(
+        all_words, query=query, review_filter=review_filter
+    )
     return render(
         request,
         "reading/dictionary.html",
         {
-            "words": words or [],
+            "words": filtered_words,
             "available": words is not None,
-            "can_practice": len(words or []) >= 4,
-            "needed_words": max(0, 4 - len(words or [])),
+            "can_practice": len(all_words) >= 4,
+            "needed_words": max(0, 4 - len(all_words)),
+            "word_count": len(all_words),
+            "result_count": len(filtered_words),
+            "dictionary_query": query,
+            "review_filter": review_filter,
+            "filters_active": bool(query or review_filter),
         },
     )
 
@@ -519,6 +534,30 @@ def _is_due(value: object, today: date | None = None) -> bool:
         return date.fromisoformat(value) <= (today or timezone.now().date())
     except ValueError:
         return True
+
+
+def _filter_dictionary_words(
+    words: list[dict], *, query: str = "", review_filter: str = ""
+) -> list[dict]:
+    """Filter only the already owner-scoped dictionary rows loaded by the store."""
+
+    normalized_query = _normalize_typed_answer(query)
+    filtered = []
+    for word in words:
+        if normalized_query:
+            searchable = " ".join(
+                str(word.get(field) or "")
+                for field in ("word", "translation", "context")
+            )
+            if normalized_query not in _normalize_typed_answer(searchable):
+                continue
+        due = _is_due(word.get("next_review_date"))
+        if review_filter == "due" and not due:
+            continue
+        if review_filter == "upcoming" and due:
+            continue
+        filtered.append(word)
+    return filtered
 
 
 def _normalize_typed_answer(value: str) -> str:
