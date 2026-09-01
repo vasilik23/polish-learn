@@ -2,7 +2,7 @@
 {% block title %}Письменная практика {{ selected_writing_level }} · PolskiFlow{% endblock %}
 {% block content %}
   <header class="content-header writing-header">
-    <div><p class="eyebrow">Практика {{ selected_writing_level }}</p><h1>Письменные ответы</h1><p class="muted">Напиши черновик и оцени его по понятным критериям. Здесь нет автоматической проверки: решение о готовности принимаешь ты.</p></div>
+    <div><p class="eyebrow">Практика {{ selected_writing_level }}</p><h1>Письменные ответы</h1><p class="muted">Напиши черновик и проверь наблюдаемые признаки текста. Подсказка не оценивает грамотность, уровень или качество ответа.</p></div>
     <a class="compact-button" href="{% url 'course' %}?level={{ selected_writing_level }}">К темам {{ selected_writing_level }} →</a>
   </header>
 
@@ -17,7 +17,7 @@
     </select>
 
     {% for prompt in writing_prompts %}
-      <div class="writing-prompt" data-writing-prompt="{{ prompt.id }}"{% if not forloop.first %} hidden{% endif %}>
+      <div class="writing-prompt" data-writing-prompt="{{ prompt.id }}" data-min-words="{{ prompt.min_words }}" data-min-paragraphs="{{ prompt.min_paragraphs }}" data-markers="{{ prompt.markers|join:'|' }}"{% if not forloop.first %} hidden{% endif %}>
         <p class="eyebrow">Задание {{ forloop.counter }}</p>
         <h2>{{ prompt.title }}</h2>
         <p>{{ prompt.task }}</p>
@@ -35,7 +35,11 @@
           <label><input type="checkbox"> Я проверил окончания, согласование и формы глаголов.</label>
           <label><input type="checkbox"> Регистр и приветствие соответствуют ситуации.</label>
         </fieldset>
-        <button class="secondary writing-reset" type="button" data-reset-draft>Удалить этот черновик</button>
+        <div class="writing-feedback-actions">
+          <button type="button" data-check-draft>Проверить по критериям</button>
+          <button class="secondary writing-reset" type="button" data-reset-draft>Удалить этот черновик</button>
+        </div>
+        <div class="writing-feedback" data-writing-feedback role="status" aria-live="polite" hidden></div>
       </div>
     {% endfor %}
   </section>
@@ -56,6 +60,28 @@
         panel.querySelector("[data-word-count]").textContent = words(value) + " слов";
       }
 
+      function paragraphs(value) {
+        return value.trim() ? value.trim().split(/\n\s*\n/u).filter(Boolean).length : 0;
+      }
+
+      function checkDraft(panel, value) {
+        const normalized = value.toLocaleLowerCase("pl-PL");
+        const minimumWords = Number(panel.dataset.minWords);
+        const minimumParagraphs = Number(panel.dataset.minParagraphs);
+        const markers = panel.dataset.markers.split("|").filter(Boolean);
+        const foundMarkers = markers.filter(function (marker) { return normalized.includes(marker.toLocaleLowerCase("pl-PL")); });
+        const checks = [
+          { passed: words(value) >= minimumWords, text: "Минимум " + minimumWords + " слов" },
+          { passed: paragraphs(value) >= minimumParagraphs, text: "Минимум " + minimumParagraphs + " абзаца" },
+          { passed: foundMarkers.length === markers.length, text: "Маркеры задания: " + markers.join(", ") }
+        ];
+        const result = panel.querySelector("[data-writing-feedback]");
+        result.innerHTML = "<strong>Проверка видимых признаков</strong><ul>" + checks.map(function (check) {
+          return "<li class=\"" + (check.passed ? "passed" : "missing") + "\">" + (check.passed ? "✓ " : "Нужно проверить: ") + check.text + "</li>";
+        }).join("") + "</ul><p>Это техническая подсказка, а не оценка преподавателя: перечитай текст и отдельно проверь грамматику, смысл и стиль.</p>";
+        result.hidden = false;
+      }
+
       function showPrompt(id) {
         panels.forEach(function (panel) { panel.hidden = panel.dataset.writingPrompt !== id; });
       }
@@ -71,12 +97,14 @@
           try { localStorage.setItem(key, textarea.value); status.textContent = "Черновик сохранён в этом браузере"; }
           catch (error) { status.textContent = "Не удалось сохранить черновик локально"; }
         });
+        panel.querySelector("[data-check-draft]").addEventListener("click", function () { checkDraft(panel, textarea.value); });
         panel.querySelector("[data-reset-draft]").addEventListener("click", function () {
           if (!window.confirm("Удалить черновик этого задания? Восстановить его не получится.")) return;
           textarea.value = "";
           panel.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) { checkbox.checked = false; });
           try { localStorage.removeItem(key); } catch (error) { /* Поле всё равно очищено. */ }
           updateCount(panel, "");
+          panel.querySelector("[data-writing-feedback]").hidden = true;
           status.textContent = "Черновик удалён";
           textarea.focus();
         });

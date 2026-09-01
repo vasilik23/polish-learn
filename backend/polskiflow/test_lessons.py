@@ -436,11 +436,16 @@ class LessonViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Письменные ответы")
-        self.assertContains(response, "нет автоматической проверки")
+        self.assertContains(response, "не оценивает грамотность, уровень или качество ответа")
         self.assertContains(response, 'data-writing-draft="formal-request"')
         self.assertContains(response, "Самопроверка перед завершением", count=4)
         self.assertContains(response, 'localStorage.setItem(key, textarea.value)')
         self.assertContains(response, 'window.confirm("Удалить черновик этого задания?')
+        self.assertContains(response, "Проверить по критериям", count=4)
+        self.assertContains(response, 'data-min-words="80"')
+        self.assertContains(response, 'data-min-paragraphs="2"')
+        self.assertContains(response, 'data-markers="proszę|termin"')
+        self.assertContains(response, "Это техническая подсказка, а не оценка преподавателя")
 
     def test_writing_practice_supports_b2_and_separates_local_storage(self):
         response = self.client.get("/writing/?level=B2")

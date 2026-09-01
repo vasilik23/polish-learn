@@ -41,8 +41,8 @@ DICTIONARY_REVIEW_FILTERS = {"", "due", "upcoming"}
 @require_browser_user
 def reading_library(request: HttpRequest) -> HttpResponse:
     selected_category = request.GET.get("category", "")
-    if selected_category not in CATEGORY_IDS:
-        selected_category = ""
+    if selected_category in CATEGORY_IDS:
+        return redirect(f"/news/?{urlencode({'category': selected_category})}")
     fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
     dashboard = load_dashboard_progress(
         request.supabase_access_token,
@@ -84,16 +84,9 @@ def reading_library(request: HttpRequest) -> HttpResponse:
     level_tabs = [
         {
             "id": level,
-            "href": f"?{urlencode({'level': level, **preserved_filters, **({'category': selected_category} if selected_category else {})})}#texts-title",
+            "href": f"?{urlencode({'level': level, **preserved_filters})}#texts-title",
         }
         for level in READING_LEVELS
-    ]
-    news_categories = [
-        {
-            **category,
-            "href": f"?{urlencode({'level': selected_level, **preserved_filters, 'category': category['id']})}#news-title",
-        }
-        for category in CATEGORIES
     ]
     return render(
         request,
@@ -106,9 +99,29 @@ def reading_library(request: HttpRequest) -> HttpResponse:
             "reading_topic_options": topic_options,
             "reading_result_count": len(filtered_texts),
             "reading_filters_active": any(filters.values()),
-            "news_all_href": f"?{urlencode({'level': selected_level, **preserved_filters})}#news-title",
+        },
+    )
+
+
+@require_browser_user
+def news_library(request: HttpRequest) -> HttpResponse:
+    selected_category = request.GET.get("category", "")
+    if selected_category not in CATEGORY_IDS:
+        selected_category = ""
+    categories = [
+        {
+            **category,
+            "href": f"?{urlencode({'category': category['id']})}#news-title",
+        }
+        for category in CATEGORIES
+    ]
+    return render(
+        request,
+        "reading/news.html",
+        {
+            "news_all_href": "?#news-title",
             "news": latest_official_news(category=selected_category or None),
-            "news_categories": news_categories,
+            "news_categories": categories,
             "selected_news_category": selected_category,
         },
     )
