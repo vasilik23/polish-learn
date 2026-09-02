@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 from django.conf import settings
 
 from polskiflow.domain.progress import current_streak
+from polskiflow.domain.lesson_results import LessonResult
 
 
 @dataclass(frozen=True)
@@ -170,6 +171,42 @@ def save_lesson_completion(
             return response.status in (200, 201, 204)
     except (HTTPError, URLError, TimeoutError):
         return False
+
+
+def record_lesson_result_event(
+    access_token: str | None, result: LessonResult
+) -> dict | None:
+    """Atomically record an immutable event and update its completion projection."""
+    if not _configured(access_token):
+        return None
+    payload = {
+        "p_event_id": result.event_id,
+        "p_lesson_id": result.lesson_id,
+        "p_plan_date": result.plan_date,
+        "p_completed_at": result.completed_at,
+        "p_cards_total": result.cards_total,
+        "p_cards_known": result.cards_known,
+        "p_contract_version": result.contract_version,
+        "p_client_instance_id": result.client_instance_id,
+        "p_payload_hash": result.payload_hash,
+    }
+    request = Request(
+        f"{settings.SUPABASE_URL.rstrip('/')}/rest/v1/rpc/record_lesson_result",
+        data=json.dumps(payload).encode(),
+        method="POST",
+        headers={
+            "apikey": settings.SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+            stored = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+    return stored if isinstance(stored, dict) else None
 
 
 def save_profile_settings(

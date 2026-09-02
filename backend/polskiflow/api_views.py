@@ -1,16 +1,24 @@
-"""Versioned read-only API contracts for separate clients."""
+"""Versioned API contracts for separate clients."""
 
 from datetime import date
 
+import json
+
 from django.http import JsonResponse
 from django.utils import timezone
-from django.views.decorators.http import require_safe
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_safe
 
 from polskiflow.auth import require_supabase_user
 from polskiflow.content import public_course_catalog
 from polskiflow.dictionary_store import load_personal_words
-from polskiflow.learning.models import Level
-from polskiflow.progress_store import load_dashboard_progress
+from polskiflow.domain.lesson_results import (
+    MAX_REQUEST_BYTES,
+    LessonResultValidationError,
+    validate_lesson_result,
+)
+from polskiflow.learning.models import Lesson, Level
+from polskiflow.progress_store import load_dashboard_progress, record_lesson_result_event
 
 
 API_VERSION = "v1"
@@ -103,6 +111,54 @@ def learner_sm2_v1(request):
     )
 
 
+@csrf_exempt
+@require_POST
+@require_supabase_user
+def lesson_results_v1(request):
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, bearer_token = authorization.partition(" ")
+    if (
+        scheme.lower() != "bearer"
+        or separator != " "
+        or not bearer_token
+        or bearer_token != request.supabase_access_token
+    ):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > MAX_REQUEST_BYTES:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    try:
+        result = validate_lesson_result(payload)
+    except LessonResultValidationError as error:
+        return _error_response("validation_error", str(error), 400)
+    if not Lesson.objects.filter(id=result.lesson_id, is_active=True).exists():
+        return _error_response("lesson_not_found", "Active lesson was not found", 404)
+    stored = record_lesson_result_event(request.supabase_access_token, result)
+    if stored is None:
+        return _error_response("upstream_unavailable", "Result could not be stored", 503)
+    status = stored.get("status")
+    if status == "conflict":
+        return _error_response("idempotency_conflict", "event_id already has different data", 409)
+    if status not in {"created", "duplicate"}:
+        return _error_response("upstream_unavailable", "Unexpected storage response", 503)
+    response = JsonResponse(
+        {
+            "api_version": API_VERSION,
+            "meta": {"contract": "lesson-result", "contract_version": "1.0"},
+            "data": {"event_id": result.event_id, "status": status},
+        },
+        status=201 if status == "created" else 200,
+    )
+    response["Cache-Control"] = "private, no-store"
+    response["Vary"] = "Authorization, Cookie"
+    return response
+
+
 def _serialize_review(word: dict, today: date) -> dict:
     next_review_date = word.get("next_review_date")
     try:
@@ -157,6 +213,16 @@ def _unavailable_response(contract: str) -> JsonResponse:
             },
         },
         status=503,
+    )
+    response["Cache-Control"] = "private, no-store"
+    response["Vary"] = "Authorization, Cookie"
+    return response
+
+
+def _error_response(code: str, detail: str, status: int) -> JsonResponse:
+    response = JsonResponse(
+        {"api_version": API_VERSION, "error": {"code": code, "detail": detail}},
+        status=status,
     )
     response["Cache-Control"] = "private, no-store"
     response["Vary"] = "Authorization, Cookie"

@@ -6,12 +6,49 @@ from django.test import SimpleTestCase, override_settings
 
 from polskiflow.progress_store import (
     load_dashboard_progress,
+    record_lesson_result_event,
     save_lesson_completion,
     save_profile_settings,
 )
+from polskiflow.domain.lesson_results import validate_lesson_result
 
 
 class ProgressStoreTests(SimpleTestCase):
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+        SUPABASE_AUTH_TIMEOUT=2,
+    )
+    @patch("polskiflow.progress_store.urlopen")
+    def test_result_event_rpc_uses_user_token_without_user_id_payload(self, mocked_urlopen):
+        response = MagicMock()
+        response.read.return_value = b'{"status":"created"}'
+        mocked_urlopen.return_value.__enter__.return_value = response
+        result = validate_lesson_result(
+            {
+                "event_id": "d576c21f-69d1-4dd7-89b6-d804f34611f1",
+                "lesson_id": "lesson-one",
+                "plan_date": "2026-09-02",
+                "completed_at": "2026-09-02T08:00:00Z",
+                "cards_total": 5,
+                "cards_known": 4,
+                "contract_version": "1.0",
+            },
+            today=date(2026, 9, 2),
+        )
+
+        stored = record_lesson_result_event("access", result)
+
+        self.assertEqual(stored, {"status": "created"})
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(request.method, "POST")
+        self.assertEqual(request.headers["Authorization"], "Bearer access")
+        self.assertTrue(request.full_url.endswith("/rest/v1/rpc/record_lesson_result"))
+        payload = json.loads(request.data)
+        self.assertNotIn("user_id", payload)
+        self.assertNotIn("p_user_id", payload)
+        self.assertEqual(payload["p_event_id"], result.event_id)
+
     def test_unconfigured_profile_store_does_not_attempt_a_write(self):
         self.assertFalse(save_profile_settings("token", "user", "Anna", "A2"))
 
