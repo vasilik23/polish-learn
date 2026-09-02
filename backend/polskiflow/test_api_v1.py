@@ -1,5 +1,8 @@
 from unittest.mock import patch
 from datetime import date
+from datetime import datetime, timezone
+import json
+import uuid
 
 from django.test import TestCase, override_settings
 
@@ -233,3 +236,128 @@ class LearnerApiV1Tests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response["Cache-Control"], "private, no-store")
         self.assertEqual(response.json()["error"]["code"], "upstream_unavailable")
+
+
+@override_settings(SUPABASE_URL="https://example.supabase.co", SUPABASE_ANON_KEY="anon")
+class LessonResultApiV1Tests(TestCase):
+    def setUp(self):
+        course = Course.objects.create(
+            id="result-a1", title="A1", description="", level="A1", position=20
+        )
+        topic = Topic.objects.create(
+            id="result-topic", course=course, title="Result", position=20
+        )
+        self.lesson = Lesson.objects.create(
+            id="result-lesson",
+            topic=topic,
+            title="Result lesson",
+            plan_title="Result",
+            subtitle="A1",
+            description="",
+            position=20,
+        )
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        self.payload = {
+            "event_id": str(uuid.uuid4()),
+            "lesson_id": self.lesson.id,
+            "plan_date": now.date().isoformat(),
+            "completed_at": now.isoformat().replace("+00:00", "Z"),
+            "cards_total": 5,
+            "cards_known": 4,
+            "contract_version": "1.0",
+            "client_instance_id": "ios.device-1",
+        }
+
+    def _auth(self):
+        return patch(
+            "polskiflow.auth.authenticate_access_token",
+            return_value=SupabaseUser(id="owner-123", email="owner@example.com"),
+        )
+
+    def _post(self, payload=None, **extra):
+        headers = {"HTTP_AUTHORIZATION": "Bearer owner-token", **extra}
+        return self.client.post(
+            "/api/v1/me/lesson-results/",
+            data=json.dumps(self.payload if payload is None else payload),
+            content_type="application/json",
+            **headers,
+        )
+
+    def test_write_requires_explicit_bearer_even_with_valid_cookie(self):
+        self.client.cookies["polskiflow_access_token"] = "cookie-token"
+        with self._auth(), patch("polskiflow.api_views.record_lesson_result_event") as store:
+            response = self.client.post(
+                "/api/v1/me/lesson-results/",
+                data=json.dumps(self.payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "bearer_required")
+        store.assert_not_called()
+
+    def test_first_result_and_idempotent_retry_have_explicit_status(self):
+        for stored, expected_status in (("created", 201), ("duplicate", 200)):
+            with self.subTest(stored=stored), self._auth(), patch(
+                "polskiflow.api_views.record_lesson_result_event",
+                return_value={"status": stored},
+            ) as store:
+                response = self._post()
+
+            self.assertEqual(response.status_code, expected_status)
+            self.assertEqual(response["Cache-Control"], "private, no-store")
+            self.assertEqual(response.json()["data"]["event_id"], self.payload["event_id"])
+            result = store.call_args.args[1]
+            self.assertEqual(result.lesson_id, self.lesson.id)
+            self.assertEqual(len(result.payload_hash), 64)
+
+    def test_changed_payload_for_same_event_is_reported_as_conflict(self):
+        with self._auth(), patch(
+            "polskiflow.api_views.record_lesson_result_event",
+            return_value={"status": "conflict"},
+        ):
+            response = self._post()
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()["error"]["code"], "idempotency_conflict")
+
+    def test_user_id_and_unknown_fields_are_rejected_before_storage(self):
+        payload = {**self.payload, "user_id": "another-user"}
+        with self._auth(), patch("polskiflow.api_views.record_lesson_result_event") as store:
+            response = self._post(payload)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "validation_error")
+        store.assert_not_called()
+
+    def test_inactive_or_unknown_lesson_is_rejected(self):
+        self.lesson.is_active = False
+        self.lesson.save(update_fields=("is_active",))
+        with self._auth(), patch("polskiflow.api_views.record_lesson_result_event") as store:
+            response = self._post()
+
+        self.assertEqual(response.status_code, 404)
+        store.assert_not_called()
+
+    def test_content_type_body_limit_and_upstream_failure_are_explicit(self):
+        with self._auth():
+            wrong_type = self.client.post(
+                "/api/v1/me/lesson-results/",
+                data="{}",
+                content_type="text/plain",
+                HTTP_AUTHORIZATION="Bearer owner-token",
+            )
+            too_large = self.client.post(
+                "/api/v1/me/lesson-results/",
+                data=b"x" * 8193,
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer owner-token",
+            )
+        with self._auth(), patch(
+            "polskiflow.api_views.record_lesson_result_event", return_value=None
+        ):
+            unavailable = self._post()
+
+        self.assertEqual(wrong_type.status_code, 415)
+        self.assertEqual(too_large.status_code, 413)
+        self.assertEqual(unavailable.status_code, 503)

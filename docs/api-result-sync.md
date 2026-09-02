@@ -1,11 +1,12 @@
 # Проектирование отправки результатов и offline-синхронизации
 
 Документ фиксирует следующий контракт для отдельного мобильного/PWA-клиента.
-Это проектирование, а не уже опубликованный endpoint или обещание offline-режима.
+Online endpoint и серверное событие реализованы; управляемая клиентская
+offline-очередь пока остаётся проектом, а не обещанием offline-режима.
 
 ## Граница контракта
 
-Планируемый `POST /api/v1/me/lesson-results/` принимает Supabase bearer token и
+`POST /api/v1/me/lesson-results/` принимает Supabase bearer token и
 результат только текущего пользователя. `user_id` не передаётся в теле: Django
 получает его из проверенной сессии, а запись в Supabase выполняется с тем же
 access token через owner-scoped RLS.
@@ -48,12 +49,15 @@ completion за тот же урок и дату.
 Очередь показывает количество ожидающих результатов и позволяет отказаться от
 неотправленных данных.
 
-## Перед реализацией
+## Реализовано и следующий этап
 
-1. Добавить совместимую event-таблицу парными Django/Supabase миграциями.
-2. Включить RLS и grants только для `authenticated`; `SELECT` и `INSERT`
-   ограничить `(select auth.uid()) = user_id`, не принимать владельца из body.
-3. Закрепить duplicate/retry/conflict, BOLA и размер payload тестами.
-4. Проверить security/performance advisors и production smoke до включения
-   offline-очереди.
-5. Оставить существующий online-путь рабочим до отдельного управляемого rollout.
+1. ✅ Совместимая immutable event-таблица описана парными Django/Supabase
+   миграциями; существующая completion-запись обновляется в той же транзакции.
+2. ✅ RLS и grants ограничены `authenticated SELECT/INSERT`, владелец берётся
+   только из `(select auth.uid())`, RPC работает как `security invoker`.
+3. ✅ Duplicate/retry/conflict, BOLA, bearer-only и размер payload закреплены
+   regression-тестами.
+4. Проверить security/performance advisors и production smoke перед включением
+   клиентской offline-очереди.
+5. Реализовать очередь отдельным управляемым rollout, сохранив текущий online-
+   путь и видимый контроль неотправленных данных.

@@ -266,3 +266,25 @@ class PersonalWord(models.Model):
                 name="personal_word_minimum_ease",
             ),
         ]
+
+
+class LessonResultEvent(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()
+    event_id = models.UUIDField()
+    payload_hash = models.CharField(max_length=64)
+    lesson_id = models.CharField(max_length=32)
+    plan_date = models.DateField()
+    completed_at = models.DateTimeField()
+    cards_total = models.PositiveIntegerField()
+    cards_known = models.PositiveIntegerField()
+    contract_version = models.CharField(max_length=16)
+    client_instance_id = models.CharField(max_length=128, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "lesson_result_events"
+        managed = False
+        indexes = [
+            models.Index(fields=("lesson_id",), name="result_events_lesson_idx")
+        ]

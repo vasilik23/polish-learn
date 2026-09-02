@@ -66,3 +66,18 @@ boundary. The API never accepts a user ID from the client and never exposes
 access or refresh tokens. These contracts are intentionally read-only: result
 submission and offline synchronization need separate idempotency and conflict
 rules before they can become public API operations.
+
+## Lesson-result write contract
+
+`POST /api/v1/me/lesson-results/` implements the first idempotent write
+contract. Unlike read endpoints, it requires an explicit Supabase
+`Authorization: Bearer` token; cookie-only requests are rejected even though
+the view is CSRF-exempt for native clients. The JSON body is capped at 8 KiB
+and follows [the result-sync design](api-result-sync.md).
+
+The server rejects client-supplied ownership fields, validates the active
+lesson and canonicalizes the payload before hashing it. The first event returns
+`201 created`, an exact retry returns `200 duplicate`, and reuse of an
+`event_id` for different data returns `409 idempotency_conflict`. Event storage
+and the existing daily completion projection are updated atomically by a
+`security invoker` Supabase function operating under the caller's RLS context.
