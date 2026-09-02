@@ -19,6 +19,8 @@ LEVELS = {"A1", "A2", "B1", "B2", "C1", "C2"}
 STATUSES = {"draft", "review", "approved"}
 ORIGINS = {"original", "external"}
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CHECKSUM_RE = re.compile(r"^[0-9a-f]{64}$")
+APPROVAL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$")
 
 
 class ManifestError(ValueError):
@@ -235,3 +237,104 @@ def build_publish_plan(result: ValidationResult, approval_id: str) -> dict[str, 
             "note": "Do not edit an applied migration or delete production rows manually.",
         },
     }
+
+
+def require_publish_approval(
+    result: ValidationResult, approval_id: str, expected_checksum: str
+) -> str:
+    """Verify the human approval boundary against the exact reviewed payload."""
+    build_publish_plan(result, approval_id)
+    if not APPROVAL_ID_RE.fullmatch(approval_id.strip()):
+        raise ManifestError(
+            "approval_id: используйте 1–100 букв, цифр или символов . _ : / -."
+        )
+    checksum = expected_checksum.strip().lower()
+    if not CHECKSUM_RE.fullmatch(checksum):
+        raise ManifestError("expected_checksum: ожидается полный SHA-256 из 64 символов.")
+    if checksum != result.checksum:
+        raise ManifestError(
+            "expected_checksum: manifest изменился после проверки; запросите новое одобрение."
+        )
+    return approval_id.strip()
+
+
+def build_migration_scaffold(
+    result: ValidationResult, approval_id: str, expected_checksum: str
+) -> dict[str, str]:
+    """Build deterministic, deliberately non-executable migration review artifacts."""
+    approval_id = require_publish_approval(result, approval_id, expected_checksum)
+    manifest = result.manifest
+    metadata = {
+        "artifact_type": "polskiflow-content-migration-scaffold",
+        "schema_version": 1,
+        "draft_id": manifest["id"],
+        "manifest_checksum": result.checksum,
+        "approval_id": approval_id,
+        "counts": result.counts,
+        "files": {
+            "payload": "approved-manifest.json",
+            "django": "django-data-migration.scaffold.py",
+            "supabase": "supabase-migration.scaffold.sql",
+        },
+        "writes_performed": False,
+        "boundary": (
+            "Review-only scaffold. It is not an ordered migration and contains no database "
+            "operations. A developer must map the exact payload to current models/schema, "
+            "review IDs, reverse/forward behavior, RLS and grants."
+        ),
+    }
+    payload = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    django = (
+        '"""REVIEW SCAFFOLD ONLY — do not copy into migrations without completing TODOs.\n\n'
+        f"Manifest: {result.checksum}\nApproval: {approval_id}\n"
+        'This file intentionally performs no ORM or database operations.\n"""\n\n'
+        f'MANIFEST_CHECKSUM = "{result.checksum}"\n'
+        f"APPROVAL_ID = {approval_id!r}\n"
+        f"DRAFT_ID = {manifest['id']!r}\n"
+        'PAYLOAD_FILE = "approved-manifest.json"\n\n'
+        "# TODO: choose the next ordered Django migration and its exact dependency.\n"
+        "# TODO: map every payload object to current models using stable, reviewed IDs.\n"
+        "# TODO: implement deterministic forwards and a safe forward-only correction plan.\n"
+        "# TODO: add count, metadata, ordering, glossary and route regression tests.\n"
+    )
+    sql = (
+        "-- REVIEW SCAFFOLD ONLY — contains no executable SQL.\n"
+        f"-- Manifest: {result.checksum}\n"
+        f"-- Approval: {approval_id}\n"
+        f"-- Draft: {manifest['id']}\n"
+        "-- Payload: approved-manifest.json\n\n"
+        "-- TODO: choose the matching ordered Supabase migration filename.\n"
+        "-- TODO: map stable IDs to the reviewed schema; use rerunnable operations where safe.\n"
+        "-- TODO: review conflicts, rollback/correction behavior, RLS and grants.\n"
+        "-- TODO: assert expected row counts before applying the reviewed migration.\n"
+    )
+    return {
+        "scaffold.json": metadata_json,
+        "approved-manifest.json": payload,
+        "django-data-migration.scaffold.py": django,
+        "supabase-migration.scaffold.sql": sql,
+    }
+
+
+def write_migration_scaffold(
+    artifacts: dict[str, str], output_directory: str | Path, forbidden_directories: tuple[Path, ...]
+) -> Path:
+    """Write artifacts only to a new or empty directory outside real migration trees."""
+    output = Path(output_directory).expanduser().resolve()
+    forbidden = tuple(path.resolve() for path in forbidden_directories)
+    if any(output == path or path in output.parents for path in forbidden):
+        raise ManifestError("output_directory: нельзя писать scaffold в реальный каталог миграций.")
+    if output.exists():
+        if not output.is_dir():
+            raise ManifestError("output_directory: ожидается каталог, а не файл.")
+        if any(output.iterdir()):
+            raise ManifestError("output_directory: каталог должен быть новым или пустым.")
+    else:
+        output.mkdir(parents=True)
+    for filename, body in artifacts.items():
+        target = (output / filename).resolve()
+        if target.parent != output:
+            raise ManifestError("Недопустимое имя scaffold-артефакта.")
+        target.write_text(body, encoding="utf-8", newline="\n")
+    return output

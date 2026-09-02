@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.db import connection
 from django.db.models import Prefetch
 
-from polskiflow.learning.models import Flashcard, Lesson, ReadingText, Topic
+from polskiflow.learning.models import Course, Flashcard, Lesson, ReadingText, Topic
 
 
 def tasks() -> list[dict]:
@@ -42,6 +42,89 @@ def course_topics() -> list[dict]:
     if str(connection.settings_dict.get("NAME", "")).startswith("file:memorydb"):
         return _load_course_topics()
     return deepcopy(cache.get_or_set("course-topics:v2", _load_course_topics, 300))
+
+
+def public_course_catalog() -> list[dict]:
+    """Return active public catalog metadata without any learner-owned data."""
+    if str(connection.settings_dict.get("NAME", "")).startswith("file:memorydb"):
+        return _load_public_course_catalog()
+    return deepcopy(
+        cache.get_or_set("public-course-catalog:v1", _load_public_course_catalog, 300)
+    )
+
+
+def _load_public_course_catalog() -> list[dict]:
+    active_lessons = (
+        Lesson.objects.filter(is_active=True)
+        .only(
+            "id",
+            "topic_id",
+            "kind",
+            "title",
+            "description",
+            "minutes",
+            "emoji",
+            "position",
+        )
+        .order_by("position", "id")
+    )
+    active_topics = (
+        Topic.objects.filter(is_active=True)
+        .only(
+            "id",
+            "course_id",
+            "title",
+            "description",
+            "emoji",
+            "position",
+        )
+        .prefetch_related(
+            Prefetch("lessons", queryset=active_lessons, to_attr="active_lessons")
+        )
+        .order_by("position", "id")
+    )
+    courses = (
+        Course.objects.filter(is_active=True)
+        .only("id", "title", "description", "level", "position")
+        .prefetch_related(
+            Prefetch("topics", queryset=active_topics, to_attr="active_topics")
+        )
+        .order_by("position", "id")
+    )
+    return [
+        {
+            "id": course.id,
+            "title": course.title,
+            "description": course.description,
+            "level": course.level,
+            "position": course.position,
+            "topics": [
+                {
+                    "id": topic.id,
+                    "title": topic.title,
+                    "description": topic.description,
+                    "emoji": topic.emoji,
+                    "position": topic.position,
+                    "lessons": [
+                        {
+                            "id": lesson.id,
+                            "title": lesson.title,
+                            "description": lesson.description,
+                            "kind": lesson.kind,
+                            "minutes": lesson.minutes,
+                            "emoji": lesson.emoji,
+                            "position": lesson.position,
+                        }
+                        for lesson in topic.active_lessons
+                    ],
+                }
+                for topic in course.active_topics
+                if topic.active_lessons
+            ],
+        }
+        for course in courses
+        if any(topic.active_lessons for topic in course.active_topics)
+    ]
 
 
 def _load_course_topics() -> list[dict]:
