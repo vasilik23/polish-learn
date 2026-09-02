@@ -35,6 +35,7 @@
     </script>
     <title>{% block title %}PolskiFlow{% endblock %}</title>
     <link rel="icon" href="{% static 'polskiflow/favicon.svg' %}" type="image/svg+xml">
+    <link rel="manifest" href="{% url 'web-app-manifest' %}">
     <link rel="stylesheet" href="{% static 'polskiflow/app.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
   </head>
@@ -119,6 +120,15 @@
           if (theme.storedTheme() === "system") theme.applyTheme("system");
         });
       }());
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("{% url 'service-worker' %}").catch(function () {
+            // PWA support is optional; the online application remains unchanged.
+          });
+        });
+      }
     </script>
   </body>
 </html>

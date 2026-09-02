@@ -22,6 +22,7 @@
         <form method="post" action="{% url 'interaction-practice' %}#scenario-{{ scenario.id }}">
           {% csrf_token %}
           <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+          <input type="hidden" name="task_type" value="choice">
           <fieldset>
             <legend>{{ scenario.prompt }}</legend>
             <div class="interaction-options">
@@ -36,6 +37,49 @@
           <div class="interaction-result {% if result.is_correct %}correct{% else %}wrong{% endif %}" role="status" tabindex="-1">
             <strong>{% if result.is_correct %}Подходящий ответ{% else %}Есть более подходящий ответ{% endif %}</strong>
             {% if not result.is_correct %}<p><span class="muted">Лучший вариант:</span> <span lang="pl">{{ result.correct_option.text }}</span></p>{% endif %}
+            <p>{{ scenario.explanation }}</p>
+          </div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+
+  <header class="section-heading interaction-sequence-heading">
+    <div><p class="eyebrow">Новый формат</p><h2>Собери ответ по смысловым шагам</h2></div>
+    <p class="muted">Каждый блок нужен один раз. Выбери, что будет первым, вторым и третьим.</p>
+  </header>
+  <div class="interaction-list">
+    {% for scenario in sequence_scenarios %}
+      <article class="card interaction-card" id="scenario-{{ scenario.id }}">
+        <header><span>{{ scenario.level }}</span><span>{{ scenario.mode }}</span><span>Последовательность</span></header>
+        <h2>{{ scenario.title }}</h2>
+        <p>{{ scenario.situation }}</p>
+        <form method="post" action="{% url 'interaction-practice' %}#scenario-{{ scenario.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="scenario_id" value="{{ scenario.id }}">
+          <input type="hidden" name="task_type" value="sequence">
+          <fieldset>
+            <legend>{{ scenario.prompt }}</legend>
+            <div class="interaction-sequence-fields">
+              {% for position in "123" %}
+                <label><span>{{ position }} шаг</span>
+                  <select name="block_id" required>
+                    <option value="">Выбери блок</option>
+                    {% for block in scenario.blocks %}<option value="{{ block.id }}" lang="pl">{{ block.text }}</option>{% endfor %}
+                  </select>
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+          <button class="compact-button" type="submit">Проверить порядок</button>
+        </form>
+        {% if result and result.scenario.id == scenario.id %}
+          <div class="interaction-result {% if result.is_correct %}correct{% else %}wrong{% endif %}" role="status" tabindex="-1">
+            <strong>{% if result.is_correct %}Логичная последовательность{% else %}Порядок стоит изменить{% endif %}</strong>
+            {% if not result.is_correct %}
+              <p class="muted">Подходящий порядок:</p>
+              <ol>{% for block in result.correct_blocks %}<li lang="pl">{{ block.text }}</li>{% endfor %}</ol>
+            {% endif %}
             <p>{{ scenario.explanation }}</p>
           </div>
         {% endif %}
