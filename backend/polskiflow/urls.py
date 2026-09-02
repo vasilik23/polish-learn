@@ -7,6 +7,7 @@ from polskiflow.auth_views import course, daily_tasks, forgot_password, home, li
 from polskiflow.diagnostic_views import diagnostic
 from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.interaction_views import interaction_practice
+from polskiflow.pwa_views import offline_shell, service_worker, web_app_manifest
 from polskiflow.reading_views import (
     add_dictionary_word,
     dictionary,
@@ -32,6 +33,9 @@ def current_user(request):
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("manifest.webmanifest", web_app_manifest, name="web-app-manifest"),
+    path("service-worker.js", service_worker, name="service-worker"),
+    path("offline/", offline_shell, name="offline-shell"),
     path("", home, name="home"),
     path("tasks/", daily_tasks, name="daily-tasks"),
     path("course/", course, name="course"),

@@ -22,6 +22,25 @@ class InteractionScenario:
     explanation: str
 
 
+@dataclass(frozen=True)
+class SequenceBlock:
+    id: str
+    text: str
+
+
+@dataclass(frozen=True)
+class SequenceScenario:
+    id: str
+    level: str
+    mode: str
+    title: str
+    situation: str
+    prompt: str
+    blocks: tuple[SequenceBlock, ...]
+    correct_order: tuple[str, ...]
+    explanation: str
+
+
 SCENARIOS = (
     InteractionScenario(
         id="weekend-plan",
@@ -104,6 +123,60 @@ SCENARIOS = (
 SCENARIOS_BY_ID = {scenario.id: scenario for scenario in SCENARIOS}
 
 
+SEQUENCE_SCENARIOS = (
+    SequenceScenario(
+        id="library-request",
+        level="B1",
+        mode="Взаимодействие",
+        title="Собрать вежливую просьбу",
+        situation="В библиотеке нужная книга выдана. Ты хочешь узнать о возврате и попросить забронировать её.",
+        prompt="Расставь смысловые блоки в естественном порядке.",
+        blocks=(
+            SequenceBlock("request", "Czy mogłaby pani zarezerwować ją dla mnie?"),
+            SequenceBlock("context", "Widzę, że książka jest teraz wypożyczona."),
+            SequenceBlock("question", "Czy wiadomo, kiedy zostanie zwrócona?"),
+        ),
+        correct_order=("context", "question", "request"),
+        explanation="Сначала обозначаем общую ситуацию, затем уточняем факт и только после этого формулируем просьбу. Так сотруднику понятно, к чему относится бронирование.",
+    ),
+    SequenceScenario(
+        id="delay-mediation",
+        level="B2",
+        mode="Медиация",
+        title="Передать сообщение о задержке",
+        situation="Коллега не видел письма: поставщик задерживает доставку на два дня, поэтому монтаж начнётся позже, но итоговый срок пока не меняется.",
+        prompt="Собери нейтральное и логичное резюме.",
+        blocks=(
+            SequenceBlock("effect", "W rezultacie montaż zacznie się później."),
+            SequenceBlock("reservation", "Na razie nie zmienia to jednak końcowego terminu projektu."),
+            SequenceBlock("cause", "Dostawca poinformował o dwudniowym opóźnieniu dostawy."),
+        ),
+        correct_order=("cause", "effect", "reservation"),
+        explanation="Последовательность «причина → последствие → важная оговорка» передаёт все факты и не создаёт ложного впечатления, что конечный срок уже перенесён.",
+    ),
+    SequenceScenario(
+        id="neighbour-compromise",
+        level="B2",
+        mode="Взаимодействие",
+        title="Предложить соседям компромисс",
+        situation="Одни жильцы хотят тишины во дворе, другие просят оставить место для вечерних встреч.",
+        prompt="Выстрой ответ, который ведёт к проверяемому решению.",
+        blocks=(
+            SequenceBlock("proposal", "Możemy wyznaczyć miejsce spotkań i ustalić ciszę po godzinie 21."),
+            SequenceBlock("check", "Po miesiącu sprawdźmy, czy takie rozwiązanie działa dla obu stron."),
+            SequenceBlock("positions", "Jedni potrzebują spokojnego odpoczynku, a drudzy miejsca do spotkań."),
+        ),
+        correct_order=("positions", "proposal", "check"),
+        explanation="Ответ сначала признаёт обе потребности, затем предлагает конкретное правило и срок проверки. Компромисс можно оценить и при необходимости изменить.",
+    ),
+)
+
+
+SEQUENCE_SCENARIOS_BY_ID = {
+    scenario.id: scenario for scenario in SEQUENCE_SCENARIOS
+}
+
+
 def validate_answer(scenario_id: str, option_id: str) -> tuple[InteractionScenario, bool]:
     """Validate identifiers and return the selected scenario and result."""
     scenario = SCENARIOS_BY_ID.get(scenario_id)
@@ -113,3 +186,16 @@ def validate_answer(scenario_id: str, option_id: str) -> tuple[InteractionScenar
     if option_id not in allowed_options:
         raise ValueError("Выберите один из предложенных ответов.")
     return scenario, option_id == scenario.correct_option_id
+
+
+def validate_sequence_answer(
+    scenario_id: str, block_ids: tuple[str, ...]
+) -> tuple[SequenceScenario, bool]:
+    """Validate a complete permutation of blocks and compare it with the answer."""
+    scenario = SEQUENCE_SCENARIOS_BY_ID.get(scenario_id)
+    if scenario is None:
+        raise ValueError("Неизвестное задание на последовательность.")
+    allowed_ids = {block.id for block in scenario.blocks}
+    if len(block_ids) != len(scenario.blocks) or set(block_ids) != allowed_ids:
+        raise ValueError("Используйте каждый предложенный блок ровно один раз.")
+    return scenario, block_ids == scenario.correct_order

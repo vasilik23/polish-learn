@@ -411,6 +411,13 @@ p { line-height: 1.65; }
 .interaction-result p + p { margin-top: .55rem; }
 .interaction-result.correct { border-color: var(--green); background: var(--green-soft); color: #176b47; }
 .interaction-result.wrong { border-color: var(--red); background: var(--red-soft); color: #8d283d; }
+.interaction-sequence-heading { margin: 2rem 0 1rem; }
+.interaction-sequence-heading > :where(div, p) { min-width: 0; }
+.interaction-sequence-fields { display: grid; gap: .7rem; }
+.interaction-sequence-fields label { display: grid; gap: .35rem; color: var(--muted); font-size: .8rem; font-weight: 800; }
+.interaction-sequence-fields select { width: 100%; min-width: 0; padding: .7rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); color: var(--text); font: inherit; }
+.interaction-result ol { margin: .45rem 0 0; padding-left: 1.3rem; }
+.interaction-result li + li { margin-top: .3rem; }
 .compact-empty { padding: 1.2rem; }
 .level-badge { display: inline-grid; place-items: center; min-width: 2.2rem; padding: .28rem .48rem; border-radius: .55rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .7rem; font-weight: 800; }
 .empty-state { grid-column: 1 / -1; justify-items: center; padding: 3rem 1.5rem; text-align: center; }

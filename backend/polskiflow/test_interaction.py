@@ -3,7 +3,12 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
-from polskiflow.domain.interaction_scenarios import SCENARIOS, validate_answer
+from polskiflow.domain.interaction_scenarios import (
+    SCENARIOS,
+    SEQUENCE_SCENARIOS,
+    validate_answer,
+    validate_sequence_answer,
+)
 
 
 class InteractionScenarioTests(TestCase):
@@ -25,7 +30,15 @@ class InteractionScenarioTests(TestCase):
         self.assertContains(response, "Договориться о плане")
         self.assertContains(response, "Выбрать подходящий регистр")
         self.assertContains(response, "не экзамен, сертификат")
-        self.assertContains(response, 'name="scenario_id"', count=5)
+        self.assertContains(response, 'name="scenario_id"', count=8)
+
+    def test_page_shows_sequence_tasks_beyond_multiple_choice(self):
+        response = self.client.get("/interaction/")
+
+        self.assertEqual(len(SEQUENCE_SCENARIOS), 3)
+        self.assertContains(response, "Собери ответ по смысловым шагам")
+        self.assertContains(response, "Собрать вежливую просьбу")
+        self.assertContains(response, 'name="block_id"', count=9)
 
     def test_correct_answer_has_transparent_explanation(self):
         response = self.client.post(
@@ -69,6 +82,54 @@ class InteractionScenarioTests(TestCase):
     def test_domain_validation_rejects_option_from_another_scenario(self):
         with self.assertRaisesRegex(ValueError, "Выберите один"):
             validate_answer("weekend-plan", "unknown")
+
+    def test_sequence_answer_is_checked_and_explained(self):
+        correct = self.client.post(
+            "/interaction/",
+            {
+                "task_type": "sequence",
+                "scenario_id": "delay-mediation",
+                "block_id": ["cause", "effect", "reservation"],
+            },
+        )
+        wrong = self.client.post(
+            "/interaction/",
+            {
+                "task_type": "sequence",
+                "scenario_id": "delay-mediation",
+                "block_id": ["reservation", "effect", "cause"],
+            },
+        )
+
+        self.assertContains(correct, "Логичная последовательность")
+        self.assertContains(correct, "причина → последствие")
+        self.assertContains(wrong, "Порядок стоит изменить")
+        self.assertContains(wrong, "Dostawca poinformował")
+
+    def test_sequence_payload_must_be_exact_permutation(self):
+        duplicate = self.client.post(
+            "/interaction/",
+            {
+                "task_type": "sequence",
+                "scenario_id": "library-request",
+                "block_id": ["context", "context", "request"],
+            },
+        )
+        injected = self.client.post(
+            "/interaction/",
+            {
+                "task_type": "sequence",
+                "scenario_id": "library-request",
+                "block_id": ["context", "question", "other"],
+            },
+        )
+
+        self.assertContains(duplicate, "каждый предложенный блок", status_code=400)
+        self.assertContains(injected, "каждый предложенный блок", status_code=400)
+        with self.assertRaisesRegex(ValueError, "ровно один раз"):
+            validate_sequence_answer(
+                "library-request", ("context", "context", "request")
+            )
 
     def test_route_requires_authentication(self):
         self.auth_patch.stop()
