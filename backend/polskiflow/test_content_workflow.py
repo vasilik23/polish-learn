@@ -8,9 +8,11 @@ from django.test import SimpleTestCase
 
 from polskiflow.domain.content_workflow import (
     ManifestError,
+    build_migration_scaffold,
     build_preview,
     build_publish_plan,
     validate_manifest,
+    write_migration_scaffold,
 )
 
 
@@ -112,6 +114,46 @@ class ContentWorkflowDomainTests(SimpleTestCase):
         self.assertEqual(plan["approval_id"], "ED-101")
         self.assertEqual(plan["rollback_plan"]["strategy"], "forward-only corrective migration")
 
+    def test_scaffold_requires_exact_checksum_and_keeps_database_todos_explicit(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor",
+            "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+
+        with self.assertRaisesRegex(ManifestError, "manifest изменился"):
+            build_migration_scaffold(result, "ED-102", "0" * 64)
+        with self.assertRaisesRegex(ManifestError, "approval_id"):
+            build_migration_scaffold(result, "ED-102\nDROP", result.checksum)
+
+        artifacts = build_migration_scaffold(result, "ED-102", result.checksum)
+        self.assertEqual(
+            set(artifacts),
+            {
+                "scaffold.json",
+                "approved-manifest.json",
+                "django-data-migration.scaffold.py",
+                "supabase-migration.scaffold.sql",
+            },
+        )
+        self.assertIn("performs no ORM", artifacts["django-data-migration.scaffold.py"])
+        self.assertIn("contains no executable SQL", artifacts["supabase-migration.scaffold.sql"])
+
+    def test_scaffold_writer_rejects_nonempty_and_forbidden_directories(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            nonempty = root / "occupied"
+            nonempty.mkdir()
+            (nonempty / "keep.txt").write_text("keep", encoding="utf-8")
+            with self.assertRaisesRegex(ManifestError, "новым или пустым"):
+                write_migration_scaffold({"safe.txt": "ok"}, nonempty, ())
+
+            forbidden = root / "migrations"
+            with self.assertRaisesRegex(ManifestError, "реальный каталог"):
+                write_migration_scaffold({"safe.txt": "ok"}, forbidden / "draft", (forbidden,))
+
 
 class ContentWorkflowCommandTests(SimpleTestCase):
     def test_command_writes_preview_artifact_without_database(self):
@@ -146,3 +188,38 @@ class ContentWorkflowCommandTests(SimpleTestCase):
                     prepare_publish=True,
                     approval_id="ED-101",
                 )
+
+    def test_generate_scaffold_writes_only_review_artifacts_to_explicit_empty_directory(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = sample_manifest(status="approved")
+            manifest["review"] = {
+                "language_reviewer": "language-editor",
+                "license_reviewer": "rights-editor",
+                "reviewed_at": "2026-09-01",
+            }
+            manifest_path = root / "approved.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            checksum = validate_manifest(manifest).checksum
+            output = root / "scaffold"
+
+            call_command(
+                "content_workflow",
+                str(manifest_path),
+                generate_scaffold=True,
+                approval_id="ED-102",
+                expected_checksum=checksum,
+                output_directory=str(output),
+            )
+
+            metadata = json.loads((output / "scaffold.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["manifest_checksum"], checksum)
+            self.assertFalse(metadata["writes_performed"])
+            self.assertEqual(len(list(output.iterdir())), 4)
+
+    def test_generate_scaffold_requires_explicit_output_and_checksum(self):
+        with TemporaryDirectory() as directory:
+            manifest_path = Path(directory) / "approved.json"
+            manifest_path.write_text(json.dumps(sample_manifest(status="approved")), encoding="utf-8")
+            with self.assertRaisesRegex(CommandError, "требует"):
+                call_command("content_workflow", str(manifest_path), generate_scaffold=True)
