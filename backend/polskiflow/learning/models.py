@@ -285,3 +285,6 @@ class LessonResultEvent(models.Model):
     class Meta:
         db_table = "lesson_result_events"
         managed = False
+        indexes = [
+            models.Index(fields=("lesson_id",), name="result_events_lesson_idx")
+        ]
