@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.contrib import admin
 
-from polskiflow.api_views import catalog_v1
+from polskiflow.api_views import catalog_v1, learner_progress_v1, learner_sm2_v1
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, register_view, resend_confirmation, reset_password, sources, writing_practice
 from polskiflow.diagnostic_views import diagnostic
@@ -65,4 +65,6 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/auth/me/", current_user, name="current-user"),
     path("api/v1/catalog/", catalog_v1, name="api-v1-catalog"),
+    path("api/v1/me/progress/", learner_progress_v1, name="api-v1-learner-progress"),
+    path("api/v1/me/sm2/", learner_sm2_v1, name="api-v1-learner-sm2"),
 ]
