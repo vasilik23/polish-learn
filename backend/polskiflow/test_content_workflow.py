@@ -119,6 +119,17 @@ class ContentWorkflowDomainTests(SimpleTestCase):
         with self.assertRaisesRegex(ManifestError, "ровно на один вариант"):
             validate_manifest(manifest)
 
+    def test_reading_and_glossary_require_explicit_supported_fields(self):
+        manifest = sample_manifest()
+        manifest["content"]["reading"]["paragraphs"][0] = " "
+        with self.assertRaisesRegex(ManifestError, "paragraphs"):
+            validate_manifest(manifest)
+
+        manifest = sample_manifest()
+        manifest["content"]["reading"]["glossary"]["akapit"]["note"] = "unknown"
+        with self.assertRaisesRegex(ManifestError, "неизвестные поля: note"):
+            validate_manifest(manifest)
+
     def test_publish_plan_requires_editorial_review_and_approval_id(self):
         manifest = sample_manifest(status="approved")
         result = validate_manifest(manifest)
