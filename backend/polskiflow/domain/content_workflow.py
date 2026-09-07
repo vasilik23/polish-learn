@@ -59,6 +59,43 @@ def _require_list(container: dict[str, Any], key: str, location: str) -> list[An
     return value
 
 
+def _reject_unknown_keys(container: dict[str, Any], allowed: set[str], location: str) -> None:
+    unknown = sorted(set(container) - allowed)
+    if unknown:
+        raise ManifestError(f"{location}: неизвестные поля: {', '.join(unknown)}.")
+
+
+def _validate_identified_items(items: list[Any], location: str, ids: set[str]) -> None:
+    for index, item in enumerate(items):
+        item_location = f"{location}[{index}]"
+        if not isinstance(item, dict):
+            raise ManifestError(f"{item_location}: требуется объект со стабильным id.")
+        item_id = _require_text(item, "id", item_location)
+        if not SLUG_RE.fullmatch(item_id):
+            raise ManifestError(f"{item_location}.id: используйте lowercase kebab-case.")
+        if item_id in ids:
+            raise ManifestError(f"{item_location}.id: дублирующийся id {item_id!r}.")
+        ids.add(item_id)
+
+
+def _validate_questions(items: list[Any], location: str, ids: set[str]) -> None:
+    _validate_identified_items(items, location, ids)
+    for index, item in enumerate(items):
+        item_location = f"{location}[{index}]"
+        _reject_unknown_keys(item, {"id", "prompt", "options", "answer", "explanation"}, item_location)
+        _require_text(item, "prompt", item_location)
+        _require_text(item, "explanation", item_location)
+        options = _require_list(item, "options", item_location)
+        if len(options) < 2 or any(not isinstance(option, str) or not option.strip() for option in options):
+            raise ManifestError(f"{item_location}.options: требуется минимум две непустые строки.")
+        normalized = [option.strip() for option in options]
+        if len(set(normalized)) != len(normalized):
+            raise ManifestError(f"{item_location}.options: варианты должны быть уникальны.")
+        answer = _require_text(item, "answer", item_location)
+        if normalized.count(answer) != 1:
+            raise ManifestError(f"{item_location}.answer: ответ должен ссылаться ровно на один вариант.")
+
+
 def _valid_iso_date(value: str) -> bool:
     try:
         date.fromisoformat(value)
@@ -68,6 +105,11 @@ def _valid_iso_date(value: str) -> bool:
 
 
 def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
+    _reject_unknown_keys(
+        manifest,
+        {"schema_version", "id", "title", "level", "language", "status", "source", "content", "expected_counts", "review"},
+        "manifest",
+    )
     if manifest.get("schema_version") != 1:
         raise ManifestError("schema_version: поддерживается только версия 1.")
 
@@ -115,6 +157,11 @@ def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
     content = manifest.get("content")
     if not isinstance(content, dict):
         raise ManifestError("manifest.content: требуется объект содержимого темы.")
+    _reject_unknown_keys(
+        content,
+        {"active_units", "card_sets", "grammar", "exercises", "reading", "final_quiz"},
+        "content",
+    )
     units = _require_list(content, "active_units", "content")
     card_sets = _require_list(content, "card_sets", "content")
     exercises = _require_list(content, "exercises", "content")
@@ -131,6 +178,18 @@ def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
         raise ManifestError("content.reading.glossary: требуется непустой glossary.")
     if any(not isinstance(item, list) for item in card_sets):
         raise ManifestError("content.card_sets: каждый набор должен быть списком карточек.")
+
+    stable_ids: set[str] = set()
+    _validate_identified_items(units, "content.active_units", stable_ids)
+    for index, card_set in enumerate(card_sets):
+        _validate_identified_items(card_set, f"content.card_sets[{index}]", stable_ids)
+        for card_index, card in enumerate(card_set):
+            location = f"content.card_sets[{index}][{card_index}]"
+            _reject_unknown_keys(card, {"id", "polish", "translation", "example"}, location)
+            for key in ("polish", "translation", "example"):
+                _require_text(card, key, location)
+    _validate_questions(exercises, "content.exercises", stable_ids)
+    _validate_questions(final_quiz, "content.final_quiz", stable_ids)
 
     counts = {
         "active_units": len(units),

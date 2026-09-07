@@ -18,8 +18,8 @@ from polskiflow.domain.content_workflow import (
 
 def sample_manifest(*, status="draft", origin="original"):
     card_sets = [
-        [{"id": f"card-a-{index}", "polish": f"wyraz {index}"} for index in range(5)],
-        [{"id": f"card-b-{index}", "polish": f"zwrot {index}"} for index in range(5)],
+        [{"id": f"card-a-{index}", "polish": f"wyraz {index}", "translation": f"слово {index}", "example": f"To jest wyraz {index}."} for index in range(5)],
+        [{"id": f"card-b-{index}", "polish": f"zwrot {index}", "translation": f"фраза {index}", "example": f"To jest zwrot {index}."} for index in range(5)],
     ]
     source = {
         "origin": origin,
@@ -51,15 +51,15 @@ def sample_manifest(*, status="draft", origin="original"):
         "status": status,
         "source": source,
         "content": {
-            "active_units": [f"jednostka {index}" for index in range(12)],
+            "active_units": [{"id": f"unit-{index}"} for index in range(12)],
             "card_sets": card_sets,
             "grammar": {"summary": "Krótkie i sprawdzalne wyjaśnienie."},
-            "exercises": [{"prompt": f"Pytanie {index}"} for index in range(5)],
+            "exercises": [{"id": f"exercise-{index}", "prompt": f"Pytanie {index}", "options": ["Tak", "Nie"], "answer": "Tak", "explanation": "Odpowiedź wynika z reguły."} for index in range(5)],
             "reading": {
                 "paragraphs": ["Pierwszy akapit.", "Drugi akapit."],
                 "glossary": {"akapit": {"lemma": "akapit", "translation": "абзац"}},
             },
-            "final_quiz": [{"prompt": f"Quiz {index}"} for index in range(8)],
+            "final_quiz": [{"id": f"quiz-{index}", "prompt": f"Quiz {index}", "options": ["A", "B"], "answer": "A", "explanation": "Wariant A spełnia warunek."} for index in range(8)],
         },
         "expected_counts": {
             "active_units": 12,
@@ -95,6 +95,28 @@ class ContentWorkflowDomainTests(SimpleTestCase):
         manifest["source"]["status"] = "review"
 
         with self.assertRaisesRegex(ManifestError, "status.*approved"):
+            validate_manifest(manifest)
+
+    def test_rejects_duplicate_ids_and_unknown_fields(self):
+        manifest = sample_manifest()
+        manifest["content"]["card_sets"][1][0]["id"] = "card-a-0"
+        with self.assertRaisesRegex(ManifestError, "дублирующийся id"):
+            validate_manifest(manifest)
+
+        manifest = sample_manifest()
+        manifest["content"]["surprise"] = True
+        with self.assertRaisesRegex(ManifestError, "неизвестные поля: surprise"):
+            validate_manifest(manifest)
+
+    def test_questions_require_unique_options_and_exact_referenced_answer(self):
+        manifest = sample_manifest()
+        manifest["content"]["final_quiz"][0]["options"] = ["A", "A"]
+        with self.assertRaisesRegex(ManifestError, "варианты должны быть уникальны"):
+            validate_manifest(manifest)
+
+        manifest = sample_manifest()
+        manifest["content"]["exercises"][0]["answer"] = "Brak"
+        with self.assertRaisesRegex(ManifestError, "ровно на один вариант"):
             validate_manifest(manifest)
 
     def test_publish_plan_requires_editorial_review_and_approval_id(self):
