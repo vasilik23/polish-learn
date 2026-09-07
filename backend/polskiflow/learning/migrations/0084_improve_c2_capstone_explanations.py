@@ -1,0 +1,19 @@
+from django.db import migrations
+E={
+0:"Projekt wielogatunkowy przedstawia wspólny problem w kilku formach, których funkcje się uzupełniają, zamiast mechanicznie powtarzać tę samą treść.",
+1:"Brief komunikacyjny określa cel, odbiorcę, przekaz, ograniczenia i oczekiwany rezultat, dzięki czemu decyzje autorów można później świadomie ocenić.",
+2:"Kryterium sukcesu musi być obserwowalne i związane z celem projektu; sama liczba publikacji nie dowodzi, że odbiorca zrozumiał przekaz.",
+3:"Łańcuch argumentacji pokazuje przejście od przesłanek przez uzasadnienie do wniosku, ujawniając miejsca wymagające dodatkowego dowodu lub zastrzeżenia.",
+4:"Wersja dla odbiorcy dostosowuje terminologię, szczegółowość i rejestr do jego potrzeb, zachowując fakty oraz stopień pewności materiału źródłowego.",
+5:"Nota metodologiczna wyjaśnia pochodzenie danych, sposób ich wyboru i ograniczenia, aby odbiorca mógł właściwie ocenić siłę prezentowanych wniosków.",
+6:"Arkusz samooceny prowadzi autora przez jawne kryteria jakości i wymaga wskazania konkretnych dowodów, nie tylko ogólnego wrażenia z pracy.",
+7:"Informacja zwrotna jest użyteczna, gdy nazywa obserwowalny element, jego wpływ na odbiorcę oraz możliwy kierunek poprawy bez pisania za autora.",
+8:"Zdefiniować zakres znaczy określić pytania, odbiorców i granice projektu, aby ambicja nie zastąpiła możliwej do sprawdzenia tezy.",
+9:"Uzasadnić wybór gatunku to połączyć jego możliwości z celem i sytuacją odbiorcy, zamiast powoływać się wyłącznie na atrakcyjność formy.",
+}
+def f(apps,schema_editor):
+ Q=apps.get_model('learning','Question')
+ for p,e in E.items():Q.objects.filter(lesson_id='c210-quiz',position=p).update(explanation=e)
+class Migration(migrations.Migration):
+ dependencies=[('learning','0083_improve_c2_authorial_voice_explanations')]
+ operations=[migrations.RunPython(f,migrations.RunPython.noop)]
