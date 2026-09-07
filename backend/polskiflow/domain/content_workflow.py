@@ -170,17 +170,30 @@ def validate_manifest(manifest: dict[str, Any]) -> ValidationResult:
     reading = content.get("reading")
     if not isinstance(grammar, dict) or not grammar.get("summary"):
         raise ManifestError("content.grammar.summary: требуется грамматическое объяснение.")
+    _reject_unknown_keys(grammar, {"summary"}, "content.grammar")
     if not isinstance(reading, dict):
         raise ManifestError("content.reading: требуется объект чтения.")
+    _reject_unknown_keys(reading, {"paragraphs", "glossary"}, "content.reading")
     paragraphs = _require_list(reading, "paragraphs", "content.reading")
+    if any(not isinstance(paragraph, str) or not paragraph.strip() for paragraph in paragraphs):
+        raise ManifestError("content.reading.paragraphs: требуются непустые строки.")
     glossary = reading.get("glossary")
     if not isinstance(glossary, dict) or not glossary:
         raise ManifestError("content.reading.glossary: требуется непустой glossary.")
+    for form, entry in glossary.items():
+        location = f"content.reading.glossary.{form}"
+        if not isinstance(form, str) or not form.strip() or not isinstance(entry, dict):
+            raise ManifestError("content.reading.glossary: форма и её описание обязательны.")
+        _reject_unknown_keys(entry, {"lemma", "translation", "part_of_speech"}, location)
+        _require_text(entry, "lemma", location)
+        _require_text(entry, "translation", location)
     if any(not isinstance(item, list) for item in card_sets):
         raise ManifestError("content.card_sets: каждый набор должен быть списком карточек.")
 
     stable_ids: set[str] = set()
     _validate_identified_items(units, "content.active_units", stable_ids)
+    for index, unit in enumerate(units):
+        _reject_unknown_keys(unit, {"id", "polish", "translation"}, f"content.active_units[{index}]")
     for index, card_set in enumerate(card_sets):
         _validate_identified_items(card_set, f"content.card_sets[{index}]", stable_ids)
         for card_index, card in enumerate(card_set):
