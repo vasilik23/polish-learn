@@ -1,0 +1,31 @@
+from django.db import migrations
+E={
+('b1eco-grammar',0):'Wyrażenie „z powodu” wprowadza przyczynę i łączy się z rzeczownikiem w dopełniaczu.',
+('b1eco-grammar',1):'„Dlatego” rozpoczyna skutek opisanej wcześniej przyczyny i porządkuje relację między zdaniami.',
+('b1eco-grammar',2):'Czasownik „prowadzić” w znaczeniu powodowania wymaga przyimka „do” oraz formy dopełniacza.',
+('b1eco-grammar',3):'„Żeby” z bezokolicznikiem wyraża cel, gdy wykonawca obu czynności pozostaje ten sam.',
+('b1eco-grammar',4):'Po „z powodu” używamy dopełniacza: „z powodu zanieczyszczenia” nazywa przyczynę ograniczenia ruchu.',
+('b1eco-grammar',5):'Konstrukcja „żeby zmniejszyć” poprawnie wskazuje cel ponownego używania rzeczy przez ten sam podmiot.',
+('b1eco-quiz',0):'„Odpady” to niepotrzebne materiały przeznaczone do wyrzucenia, przetworzenia albo ponownego wykorzystania.',
+('b1eco-quiz',1):'„Susza” oznacza długi okres bez wystarczających opadów, którego skutkiem może być niedobór wody.',
+('b1eco-quiz',2):'Energia wiatru jest odnawialna, ponieważ korzysta z naturalnego źródła, które nie wyczerpuje się jak paliwa.',
+('b1eco-quiz',3):'Poprawne połączenie brzmi „prowadzić do problemów”, ponieważ po przyimku „do” występuje dopełniacz.',
+('b1eco-quiz',4):'Ponowne używanie przedmiotów ogranicza odpady, bo wydłuża ich życie i zmniejsza potrzebę kupowania nowych.',
+('b1eco-quiz',5):'„Dlatego” pasuje tu jako łącznik skutku: intensywny deszcz spowodował wystąpienie rzeki z brzegów.',
+('b1eco-quiz',6):'„Skutek” jest rezultatem zdarzenia lub działania, natomiast „przyczyna” wyjaśnia, dlaczego do niego doszło.',
+('b1eco-quiz',7):'„Żeby chronić” nazywa cel oszczędzania wody; wykonawcą obu czynności jest ten sam domyślny podmiot.',
+('b1eco-quiz',8):'Naturalne połączenie „ograniczyć emisję” oznacza zmniejszyć ilość substancji uwalnianych do środowiska.',
+('b1eco-quiz',9):'Zdanie z „z powodu” i opisem rezultatu wyraźnie oddziela przyczynę od wynikającego z niej skutku.',
+('b1eco-reading-check',0):'Pierwszy akapit mówi, że rzeka płynęła wcześniej w betonowym kanale między ulicami.',
+('b1eco-reading-check',1):'Podczas intensywnych opadów woda szybko spływała do centrum, zwiększając ryzyko lokalnych podtopień.',
+('b1eco-reading-check',2):'Rośliny miały spowalniać przepływ wody, a jednocześnie tworzyć siedliska dla owadów i ptaków.',
+('b1eco-reading-check',3):'Trasę spacerową odsunięto od miejsc gniazdowania, dzięki czemu ruch ludzi mniej niepokoił ptaki.',
+('b1eco-reading-check',4):'W projekcie ponownie wykorzystano kamienie z rozebranego kanału zamiast zastępować je nowym materiałem.',
+('b1eco-reading-check',5):'Finał pokazuje, że dobra zmiana ekologiczna łączy ochronę przed wodą, przyrodę i potrzeby mieszkańców.',
+}
+def f(apps,schema_editor):
+ Q=apps.get_model('learning','Question')
+ for (lesson,p),e in E.items():Q.objects.filter(lesson_id=lesson,position=p).update(explanation=e)
+class Migration(migrations.Migration):
+ dependencies=[('learning','0084_improve_c2_capstone_explanations')]
+ operations=[migrations.RunPython(f,migrations.RunPython.noop)]
