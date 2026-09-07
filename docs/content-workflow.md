@@ -25,15 +25,15 @@ Manifest версии 1 содержит стабильный `id`, уровен
     "verified_at": "2026-09-01"
   },
   "content": {
-    "active_units": ["12–20 элементов"],
-    "card_sets": [["5–8 карточек"], ["5–8 карточек"]],
+    "active_units": [{"id": "stable-unit-id"}],
+    "card_sets": [[{"id": "card-1", "polish": "forma", "translation": "перевод", "example": "Naturalny przykład."}]],
     "grammar": {"summary": "Объяснение"},
-    "exercises": ["минимум 5 объектов"],
+    "exercises": [{"id": "exercise-1", "prompt": "Pytanie", "options": ["A", "B"], "answer": "A", "explanation": "Dlaczego A."}],
     "reading": {
       "paragraphs": ["непустой текст"],
       "glossary": {"форма": {"lemma": "лемма", "translation": "перевод"}}
     },
-    "final_quiz": ["минимум 8 объектов"]
+    "final_quiz": [{"id": "quiz-1", "prompt": "Pytanie", "options": ["A", "B"], "answer": "A", "explanation": "Dlaczego A."}]
   },
   "expected_counts": {
     "active_units": 12,
@@ -47,8 +47,9 @@ Manifest версии 1 содержит стабильный `id`, уровен
 }
 ```
 
-Элементы внутри списков могут быть полноценными объектами будущего импортера.
-На этом этапе проверяются структура и количества, а не качество польского или
+Все учебные элементы имеют уникальные стабильные `id`; неизвестные поля
+отклоняются. У вопроса варианты уникальны, а `answer` должен ровно совпадать с
+одним из них. На этом этапе проверяются структура и количества, а не качество польского или
 соответствие CEFR. Для внешнего материала обязательна полная карточка из
 [`content-sources.md`](content-sources.md) со `status: "approved"`; `review` и
 `blocked` останавливают workflow.
