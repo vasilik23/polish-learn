@@ -29,11 +29,8 @@
           <span data-save-status role="status">Черновик сохраняется только в этом браузере</span>
         </div>
         <fieldset class="writing-checklist">
-          <legend>Самопроверка перед завершением</legend>
-          <label><input type="checkbox"> Я ответил на все части задания и соблюдаю объём.</label>
-          <label><input type="checkbox"> Текст разделён на логичные абзацы, связки не повторяются.</label>
-          <label><input type="checkbox"> Я проверил окончания, согласование и формы глаголов.</label>
-          <label><input type="checkbox"> Регистр и приветствие соответствуют ситуации.</label>
+          <legend>Самопроверка для этого жанра</legend>
+          {% for criterion in prompt.checklist %}<label><input type="checkbox"> {{ criterion }}</label>{% endfor %}
         </fieldset>
         <div class="writing-feedback-actions">
           <button type="button" data-check-draft>Проверить по критериям</button>

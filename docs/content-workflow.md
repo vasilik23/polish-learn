@@ -114,10 +114,24 @@ RLS/grants и preview, затем применить только reviewed migra
 Каталог должен быть новым или пустым. Команда отказывается писать в настоящие
 `backend/polskiflow/learning/migrations/` и `supabase/migrations/`, не
 перезаписывает файлы, не подключается к сети или БД и не выполняет SQL. Она
-создаёт четыре review-артефакта: точный `approved-manifest.json`, метаданные с
-checksum и approval ID, Django scaffold и SQL scaffold. Последние содержат
-только явные TODO: manifest версии 1 ещё не описывает модели, таблицы, связи и
-конфликты достаточно строго, поэтому генератор не придумывает publish data.
+создаёт пять review-артефактов: точный `approved-manifest.json`, метаданные с
+checksum и approval ID, `model-mapping.json`, Django scaffold и SQL scaffold.
+
+`model-mapping.json` детерминированно фиксирует соответствие текущим Django
+моделям и Supabase-таблицам: тема → `Topic/topics`, карточки →
+`Flashcard/flashcards`, порядок наборов → `LessonFlashcard/lesson_flashcards`,
+грамматика → `Lesson/lessons`, задания → `Question/questions`, чтение →
+`ReadingText/reading_texts`. Для ответа вопроса документирует преобразование
+`options.index(answer) → correct`, а для источника — перенос карточки в
+`source_metadata`. Отдельно перечислены обязательные решения, которых нет в
+manifest v1: course и lesson IDs, оформление уроков, ID и метаданные чтения,
+позиции темы. `active_units` пока остаются редакторским инвентарём: одних ID
+недостаточно для без потерь сопоставления текущей модели.
+
+Mapping является только контрактом проверки: он не импортирует модели, не
+читает БД, не генерирует ORM/SQL и не выбирает отсутствующие значения. Django и
+SQL scaffolds по-прежнему содержат только явные TODO, поэтому генератор не
+придумывает publish data.
 
 Разработчик вручную преобразует заготовки в следующую упорядоченную пару,
 сверяет стабильные ID и текущую схему, добавляет обратимое/корректирующее

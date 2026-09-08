@@ -9,6 +9,7 @@ from django.test import SimpleTestCase
 from polskiflow.domain.content_workflow import (
     ManifestError,
     build_migration_scaffold,
+    build_model_mapping,
     build_preview,
     build_publish_plan,
     validate_manifest,
@@ -167,12 +168,26 @@ class ContentWorkflowDomainTests(SimpleTestCase):
             {
                 "scaffold.json",
                 "approved-manifest.json",
+                "model-mapping.json",
                 "django-data-migration.scaffold.py",
                 "supabase-migration.scaffold.sql",
             },
         )
         self.assertIn("performs no ORM", artifacts["django-data-migration.scaffold.py"])
         self.assertIn("contains no executable SQL", artifacts["supabase-migration.scaffold.sql"])
+
+    def test_model_mapping_is_deterministic_and_exposes_unresolved_fields(self):
+        result = validate_manifest(sample_manifest())
+
+        mapping = build_model_mapping(result)
+
+        self.assertEqual(mapping, build_model_mapping(result))
+        self.assertFalse(mapping["writes_performed"])
+        self.assertEqual(mapping["manifest_checksum"], result.checksum)
+        targets = {(item["django_model"], item["supabase_table"]) for item in mapping["targets"]}
+        self.assertIn(("learning.Flashcard", "flashcards"), targets)
+        self.assertIn(("learning.Question", "questions"), targets)
+        self.assertEqual(mapping["unmapped"][0]["manifest"], "content.active_units[*]")
 
     def test_scaffold_writer_rejects_nonempty_and_forbidden_directories(self):
         with TemporaryDirectory() as directory:
@@ -248,7 +263,9 @@ class ContentWorkflowCommandTests(SimpleTestCase):
             metadata = json.loads((output / "scaffold.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["manifest_checksum"], checksum)
             self.assertFalse(metadata["writes_performed"])
-            self.assertEqual(len(list(output.iterdir())), 4)
+            self.assertEqual(len(list(output.iterdir())), 5)
+            mapping = json.loads((output / "model-mapping.json").read_text(encoding="utf-8"))
+            self.assertFalse(mapping["writes_performed"])
 
     def test_generate_scaffold_requires_explicit_output_and_checksum(self):
         with TemporaryDirectory() as directory:
