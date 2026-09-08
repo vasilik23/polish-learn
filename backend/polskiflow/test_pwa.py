@@ -15,6 +15,7 @@ class PwaPrototypeTests(SimpleTestCase):
         self.assertEqual(manifest["start_url"], "/")
         self.assertEqual(manifest["scope"], "/")
         self.assertEqual(manifest["display"], "standalone")
+        self.assertTrue(all(icon["src"].endswith("?shell=v2") for icon in manifest["icons"]))
         self.assertEqual({icon["purpose"] for icon in manifest["icons"]}, {"any", "maskable"})
         self.assertTrue(all(icon["type"] == "image/svg+xml" for icon in manifest["icons"]))
 
@@ -29,14 +30,28 @@ class PwaPrototypeTests(SimpleTestCase):
     def test_service_worker_only_precaches_public_shell_assets(self):
         source = self.client.get(reverse("service-worker")).content.decode()
 
-        self.assertIn('const OFFLINE_URL = "/offline/?shell=v1"', source)
-        self.assertIn('const PUBLIC_ASSETS = ["/static/polskiflow/favicon.svg?shell=v1"]', source)
+        self.assertIn('const OFFLINE_URL = "/offline/?shell=v2"', source)
+        self.assertIn('"/static/polskiflow/app.css?shell=v2"', source)
+        self.assertIn('"/static/polskiflow/favicon.svg?shell=v2"', source)
         self.assertIn('if (request.method !== "GET") return', source)
         self.assertIn('if (request.mode === "navigate")', source)
         self.assertIn("fetch(request).catch(() => caches.match(OFFLINE_URL))", source)
         self.assertNotIn("cache.put(request", source)
         self.assertNotIn('"/api/', source)
         self.assertNotIn('"/login/', source)
+
+    def test_service_worker_activates_new_public_shell_immediately(self):
+        source = self.client.get(reverse("service-worker")).content.decode()
+
+        self.assertIn("self.skipWaiting()", source)
+        self.assertIn("self.clients.claim()", source)
+
+    def test_base_template_requests_the_versioned_public_assets(self):
+        with self.settings(ROOT_URLCONF="polskiflow.urls"):
+            response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "/static/polskiflow/app.css?shell=v2")
+        self.assertContains(response, "/static/polskiflow/favicon.svg?shell=v2")
 
     def test_service_worker_removes_old_caches(self):
         source = self.client.get(reverse("service-worker")).content.decode()
