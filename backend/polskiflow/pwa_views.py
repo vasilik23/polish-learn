@@ -5,11 +5,12 @@ from django.shortcuts import render
 from django.templatetags.static import static
 
 
-PWA_CACHE_VERSION = "polskiflow-shell-v1"
+PWA_SHELL_VERSION = "v2"
+PWA_CACHE_VERSION = f"polskiflow-shell-{PWA_SHELL_VERSION}"
 
 
 def web_app_manifest(_request):
-    icon_url = static("polskiflow/favicon.svg")
+    icon_url = f'{static("polskiflow/favicon.svg")}?shell={PWA_SHELL_VERSION}'
     manifest = {
         "id": "/",
         "name": "PolskiFlow",
@@ -45,19 +46,26 @@ def web_app_manifest(_request):
 
 
 def service_worker(_request):
-    offline_url = "/offline/?shell=v1"
-    icon_url = f'{static("polskiflow/favicon.svg")}?shell=v1'
+    offline_url = f"/offline/?shell={PWA_SHELL_VERSION}"
+    public_assets = [
+        f'{static("polskiflow/app.css")}?shell={PWA_SHELL_VERSION}',
+        f'{static("polskiflow/favicon.svg")}?shell={PWA_SHELL_VERSION}',
+    ]
     source = f'''"use strict";
 
 const CACHE_NAME = {json.dumps(PWA_CACHE_VERSION)};
 const OFFLINE_URL = {json.dumps(offline_url)};
-// This allowlist contains only a public, versioned brand asset. User data,
+// This allowlist contains only public, versioned static assets. User data,
 // authenticated HTML, auth/API responses and lesson results are never cached.
-const PUBLIC_ASSETS = [{json.dumps(icon_url)}];
+const PUBLIC_ASSETS = {json.dumps(public_assets)};
 const PRECACHE_URLS = [OFFLINE_URL, ...PUBLIC_ASSETS];
 
 self.addEventListener("install", (event) => {{
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
+  );
 }});
 
 self.addEventListener("activate", (event) => {{

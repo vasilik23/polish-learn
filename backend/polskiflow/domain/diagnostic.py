@@ -198,10 +198,11 @@ def score_checked_tasks(raw_answers: dict[str, str]) -> CheckedDiagnosticResult:
         for task in CHECK_TASKS
     )
     correct = sum(item[2] for item in details)
+    foundation_correct = sum(item[2] for item in details[:4])
     # A short multiple-choice sample is deliberately capped at B2.
     if correct <= 2:
         level = "A1"
-    elif correct <= 4:
+    elif correct <= 4 or foundation_correct < 3:
         level = "A2"
     elif correct <= 6:
         level = "B1"
@@ -210,6 +211,8 @@ def score_checked_tasks(raw_answers: dict[str, str]) -> CheckedDiagnosticResult:
     calculation = (
         f"Верных ответов: {correct} из {len(CHECK_TASKS)}. Шкала старта: "
         "0–2 → A1, 3–4 → A2, 5–6 → B1, 7–8 → B2. "
+        f"В базовой части: {foundation_correct} из 4; для старта с B1 или B2 "
+        "нужно не менее 3 верных ответов в этой части. "
         "Короткая проба не рекомендует уровень выше B2."
     )
     return CheckedDiagnosticResult(level, correct, len(CHECK_TASKS), details, calculation)

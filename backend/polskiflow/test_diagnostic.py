@@ -70,7 +70,7 @@ class DiagnosticScoringTests(TestCase):
     def test_checked_tasks_use_visible_bands_and_are_capped_at_b2(self):
         perfect = score_checked_tasks(correct_checked_answers())
         mixed_answers = correct_checked_answers()
-        for task in CHECK_TASKS[:3]:
+        for task in (CHECK_TASKS[3], CHECK_TASKS[5], CHECK_TASKS[6]):
             mixed_answers[task["key"]] = next(
                 value for value, _label in task["options"] if value != task["answer"]
             )
@@ -81,6 +81,20 @@ class DiagnosticScoringTests(TestCase):
         self.assertIn("7–8 → B2", perfect.calculation)
         self.assertEqual(mixed.level, "B1")
         self.assertEqual(mixed.correct, 5)
+
+    def test_advanced_answers_do_not_hide_gaps_in_foundational_tasks(self):
+        answers = correct_checked_answers()
+        for task in CHECK_TASKS[:3]:
+            answers[task["key"]] = next(
+                value for value, _label in task["options"] if value != task["answer"]
+            )
+
+        result = score_checked_tasks(answers)
+
+        self.assertEqual(result.correct, 5)
+        self.assertEqual(result.level, "A2")
+        self.assertIn("В базовой части: 1 из 4", result.calculation)
+        self.assertIn("не менее 3 верных", result.calculation)
 
     def test_checked_tasks_require_every_known_answer(self):
         answers = correct_checked_answers()
