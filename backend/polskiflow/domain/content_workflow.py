@@ -330,6 +330,101 @@ def require_publish_approval(
     return approval_id.strip()
 
 
+def build_model_mapping(result: ValidationResult) -> dict[str, Any]:
+    """Describe the reviewed manifest-to-storage mapping without touching storage."""
+    return {
+        "artifact_type": "polskiflow-content-model-mapping",
+        "schema_version": 1,
+        "manifest_checksum": result.checksum,
+        "writes_performed": False,
+        "targets": [
+            {
+                "manifest": "manifest.level",
+                "django_model": "learning.Course",
+                "supabase_table": "courses",
+                "operation": "lookup-only",
+                "fields": {"level": "level"},
+                "required_resolution": "Select exactly one existing course; never create it implicitly.",
+            },
+            {
+                "manifest": "manifest",
+                "django_model": "learning.Topic",
+                "supabase_table": "topics",
+                "operation": "upsert-by-stable-id",
+                "fields": {"id": "id", "title": "title"},
+                "required_resolution": "course_id, description, emoji, position",
+            },
+            {
+                "manifest": "content.card_sets[*][*]",
+                "django_model": "learning.Flashcard",
+                "supabase_table": "flashcards",
+                "operation": "upsert-by-stable-id",
+                "fields": {
+                    "id": "id",
+                    "polish": "polish",
+                    "translation": "translation",
+                    "example": "example",
+                    "manifest.source": "source_metadata",
+                    "array_index": "position",
+                },
+            },
+            {
+                "manifest": "content.card_sets[*][*]",
+                "django_model": "learning.LessonFlashcard",
+                "supabase_table": "lesson_flashcards",
+                "operation": "replace-membership-in-manifest-order",
+                "fields": {"id": "flashcard_id", "array_index": "position"},
+                "required_resolution": "lesson_id for each card set",
+            },
+            {
+                "manifest": "content.grammar",
+                "django_model": "learning.Lesson",
+                "supabase_table": "lessons",
+                "operation": "update-reviewed-lesson",
+                "fields": {"summary": "theory_sections"},
+                "required_resolution": "lesson id and all required lesson presentation fields",
+            },
+            {
+                "manifest": "content.exercises[*] and content.final_quiz[*]",
+                "django_model": "learning.Question",
+                "supabase_table": "questions",
+                "operation": "replace-for-reviewed-lesson",
+                "fields": {
+                    "prompt": "prompt",
+                    "options": "options",
+                    "options.index(answer)": "correct",
+                    "explanation": "explanation",
+                    "array_index": "position",
+                },
+                "required_resolution": "lesson_id for exercises and final quiz",
+            },
+            {
+                "manifest": "content.reading",
+                "django_model": "learning.ReadingText",
+                "supabase_table": "reading_texts",
+                "operation": "upsert-by-reviewed-id",
+                "fields": {
+                    "paragraphs": "paragraphs",
+                    "glossary": "glossary",
+                    "manifest.level": "level",
+                    "manifest.source": "source_metadata",
+                },
+                "required_resolution": "id, topic_id, title, description, minutes, emoji, position",
+            },
+        ],
+        "unmapped": [
+            {
+                "manifest": "content.active_units[*]",
+                "reason": "Version 1 units contain only IDs and have no lossless current model mapping.",
+            }
+        ],
+        "boundary": (
+            "Mapping contract only. Missing resolutions must be reviewed explicitly; no ORM, SQL, "
+            "database or network operation is generated or performed."
+        ),
+    }
+
+
 def build_migration_scaffold(
     result: ValidationResult, approval_id: str, expected_checksum: str
 ) -> dict[str, str]:
@@ -345,6 +440,7 @@ def build_migration_scaffold(
         "counts": result.counts,
         "files": {
             "payload": "approved-manifest.json",
+            "mapping": "model-mapping.json",
             "django": "django-data-migration.scaffold.py",
             "supabase": "supabase-migration.scaffold.sql",
         },
@@ -356,6 +452,7 @@ def build_migration_scaffold(
         ),
     }
     payload = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    mapping = json.dumps(build_model_mapping(result), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     django = (
         '"""REVIEW SCAFFOLD ONLY — do not copy into migrations without completing TODOs.\n\n'
@@ -384,6 +481,7 @@ def build_migration_scaffold(
     return {
         "scaffold.json": metadata_json,
         "approved-manifest.json": payload,
+        "model-mapping.json": mapping,
         "django-data-migration.scaffold.py": django,
         "supabase-migration.scaffold.sql": sql,
     }
