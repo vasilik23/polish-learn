@@ -144,6 +144,31 @@ class LessonViewsTests(TestCase):
         self.assertContains(result, "Перед кассой номер три")
         self.assertContains(result, "Они уточняют поезд, время и место встречи")
 
+    def test_listening_pilot_includes_original_b1_speech_with_permanent_transcript(self):
+        page = self.client.get("/listening/")
+
+        self.assertContains(page, "Zmiana planu sąsiedzkiego spotkania")
+        self.assertContains(page, 'aria-label="Постоянный транскрипт B1"')
+        self.assertContains(page, "Ponieważ prognoza zapowiada silny deszcz")
+        self.assertContains(page, "data-b1-play")
+        self.assertContains(page, "systemowy głos", count=0)
+        self.assertContains(page, "это не студийная запись")
+
+        result = self.client.post(
+            "/listening/",
+            {
+                "tecza": "tęcza",
+                "wrobel": "wróbel",
+                "mysz": "mysz",
+                "b1_listening_reason": "Из-за прогноза сильного дождя",
+                "b1_listening_plan": "Распределение задач на пикнике",
+                "b1_listening_action": "Подтвердить участие",
+            },
+        )
+        self.assertContains(result, "2 / 3")
+        self.assertContains(result, "Новый детский игровой комплекс")
+        self.assertContains(result, "Слово «najpierw» вводит первый пункт встречи")
+
     def test_course_links_to_listening_pilot(self):
         page = self.client.get("/course/?level=A1")
         self.assertContains(page, 'href="/listening/"')

@@ -43,6 +43,35 @@
       {% endfor %}
       <p class="muted listening-audio-note">Звук создаёт системный польский голос браузера из оригинального текста PolskiFlow; доступность и тембр голоса зависят от устройства.</p>
     </section>
+    <section class="card listening-dialogue" aria-labelledby="b1-listening-title">
+      <p class="eyebrow">Связная речь · {{ b1_listening.level }}</p>
+      <h2 id="b1-listening-title">{{ b1_listening.title }}</h2>
+      {{ b1_listening.lines|json_script:"b1-listening-lines" }}
+      <div class="listening-dialogue-player" data-b1-player hidden>
+        <p class="muted" data-b1-status aria-live="polite">Готово к воспроизведению</p>
+        <div class="reading-audio-actions">
+          <button type="button" data-b1-play>▶ Прослушать</button>
+          <button type="button" data-b1-repeat disabled>↻ Повторить</button>
+          <label><span>Скорость</span><select data-b1-rate><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.15">1,15×</option></select></label>
+        </div>
+      </div>
+      <noscript><p class="muted">Для воспроизведения нужен JavaScript; постоянный транскрипт доступен ниже.</p></noscript>
+      <div class="audio-transcript" aria-label="Постоянный транскрипт B1">
+        <strong>Транскрипт</strong>
+        {% for line in b1_listening.lines %}<p lang="pl">{{ line }}</p>{% endfor %}
+      </div>
+      {% if b1_submitted %}<section class="listening-result" aria-live="polite"><strong>{{ b1_score }} / {{ b1_listening.questions|length }}</strong><span>Ответы по записи B1</span></section>{% endif %}
+      {% for question in b1_listening.questions %}
+        <fieldset class="listening-card">
+          <legend>{{ question.prompt }}</legend>
+          <div class="listening-options">
+            {% for option in question.options %}<label><input type="radio" name="{{ question.id }}" value="{{ option }}" {% if question.selected == option %}checked{% endif %}> {{ option }}</label>{% endfor %}
+          </div>
+          {% if b1_submitted %}<p class="listening-feedback {% if question.is_correct %}is-correct{% else %}is-wrong{% endif %}">{% if question.is_correct %}Верно.{% else %}Правильный ответ: <strong>{{ question.answer }}</strong>.{% endif %} {{ question.explanation }}</p>{% endif %}
+        </fieldset>
+      {% endfor %}
+      <p class="muted listening-audio-note">Звук создаёт системный голос <span lang="pl">pl-PL</span> из оригинального текста PolskiFlow. Голос, тембр и доступность зависят от браузера и устройства; это не студийная запись.</p>
+    </section>
     <h2>Отдельные слова</h2>
     {% for item in listening_items %}
       <fieldset class="card listening-card">
@@ -102,6 +131,27 @@
         speak(lines[index], `фрагмент ${index + 1}`);
       }));
       window.addEventListener('pagehide', () => speechSynthesis.cancel());
+
+      const b1Player = document.querySelector('[data-b1-player]');
+      if (b1Player) {
+        b1Player.hidden = false;
+        const b1Lines = JSON.parse(document.querySelector('#b1-listening-lines').textContent);
+        const b1Status = b1Player.querySelector('[data-b1-status]');
+        const b1Repeat = b1Player.querySelector('[data-b1-repeat]');
+        const speakB1 = () => {
+          speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(b1Lines.join(' '));
+          utterance.lang = 'pl-PL';
+          utterance.rate = Number(b1Player.querySelector('[data-b1-rate]').value);
+          utterance.onend = () => { b1Status.textContent = 'Запись B1 прослушана'; };
+          utterance.onerror = () => { b1Status.textContent = 'Не удалось запустить системный польский голос'; };
+          speechSynthesis.speak(utterance);
+          b1Repeat.disabled = false;
+          b1Status.textContent = 'Воспроизведение записи B1';
+        };
+        b1Player.querySelector('[data-b1-play]').addEventListener('click', speakB1);
+        b1Repeat.addEventListener('click', speakB1);
+      }
     })();
   </script>
 {% endblock %}
