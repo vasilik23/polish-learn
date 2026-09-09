@@ -216,6 +216,40 @@ LISTENING_B1 = {
     ),
 }
 
+LISTENING_B2 = {
+    "title": "Pilotaż pracy hybrydowej",
+    "level": "B2",
+    "lines": (
+        "Choć część zespołu proponowała całkowitą pracę zdalną, kierownictwo zdecydowało się na trzymiesięczny pilotaż modelu hybrydowego.",
+        "We wtorki wszyscy będą spotykać się w biurze, żeby wspólnie planować projekty, natomiast w pozostałe dni miejsce pracy będzie można wybrać samodzielnie.",
+        "Warunkiem udziału jest przestrzeganie zasad bezpieczeństwa danych, zwłaszcza podczas korzystania z sieci poza firmą.",
+        "Po zakończeniu pilotażu pracownicy wypełnią anonimową ankietę, a zarząd podejmie ostateczną decyzję na podstawie jej wyników.",
+    ),
+    "questions": (
+        {
+            "id": "b2_listening_model",
+            "prompt": "Какой формат работы будет тестировать компания?",
+            "options": ("Гибридный формат в течение трёх месяцев", "Полностью удалённую работу без срока", "Четырёхдневную рабочую неделю"),
+            "answer": "Гибридный формат в течение трёх месяцев",
+            "explanation": "Руководство выбрало трёхмесячный пилот гибридного формата, а не полностью удалённую работу.",
+        },
+        {
+            "id": "b2_listening_tuesday",
+            "prompt": "Для чего вся команда будет приезжать в офис по вторникам?",
+            "options": ("Для индивидуальных собеседований", "Для совместного планирования проектов", "Для обучения правилам безопасности"),
+            "answer": "Для совместного планирования проектов",
+            "explanation": "Оборот «żeby wspólnie planować projekty» прямо называет цель встреч по вторникам.",
+        },
+        {
+            "id": "b2_listening_decision",
+            "prompt": "На чём будет основано окончательное решение руководства?",
+            "options": ("На результатах анонимного опроса", "На количестве дней в офисе", "На отчёте службы безопасности"),
+            "answer": "На результатах анонимного опроса",
+            "explanation": "После пилота сотрудники заполнят анонимную анкету, и её результаты станут основанием решения.",
+        },
+    ),
+}
+
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
     """Prefer an explicit valid filter, otherwise use the learner's level."""
@@ -558,6 +592,21 @@ def listening_practice(request: HttpRequest) -> HttpResponse:
     )
     b1_submitted = submitted and any(b1_answers.values())
     b1_listening = {**LISTENING_B1, "questions": b1_questions}
+    b2_answers = {
+        question["id"]: request.POST.get(question["id"], "")
+        for question in LISTENING_B2["questions"]
+    }
+    b2_questions = tuple(
+        {
+            **question,
+            "selected": b2_answers[question["id"]],
+            "is_correct": submitted
+            and b2_answers[question["id"]] == question["answer"],
+        }
+        for question in LISTENING_B2["questions"]
+    )
+    b2_submitted = submitted and any(b2_answers.values())
+    b2_listening = {**LISTENING_B2, "questions": b2_questions}
     return render(
         request,
         "listening.html",
@@ -572,6 +621,11 @@ def listening_practice(request: HttpRequest) -> HttpResponse:
             "b1_submitted": b1_submitted,
             "b1_score": sum(question["is_correct"] for question in b1_questions)
             if b1_submitted
+            else None,
+            "b2_listening": b2_listening,
+            "b2_submitted": b2_submitted,
+            "b2_score": sum(question["is_correct"] for question in b2_questions)
+            if b2_submitted
             else None,
         },
     )
