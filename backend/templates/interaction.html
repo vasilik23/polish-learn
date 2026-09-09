@@ -39,6 +39,13 @@
             {% if not result.is_correct %}<p><span class="muted">Лучший вариант:</span> <span lang="pl">{{ result.correct_option.text }}</span></p>{% endif %}
             <p>{{ scenario.explanation }}</p>
           </div>
+          <fieldset class="interaction-self-check">
+            <legend>Сравни свой ответ с удачным вариантом</legend>
+            <p>Отметки остаются только на этой странице и не оцениваются автоматически.</p>
+            <label><input type="checkbox"> <span>Я сохранил главное намерение и факты ситуации.</span></label>
+            <label><input type="checkbox"> <span>Мой тон подходит адресату и контексту.</span></label>
+            <label><input type="checkbox"> <span>Ответ помогает продолжить разговор или сделать следующий шаг.</span></label>
+          </fieldset>
         {% endif %}
       </article>
     {% endfor %}
@@ -82,6 +89,13 @@
             {% endif %}
             <p>{{ scenario.explanation }}</p>
           </div>
+          <fieldset class="interaction-self-check">
+            <legend>Проверь собранное сообщение</legend>
+            <p>Отметки остаются только на этой странице и не оцениваются автоматически.</p>
+            <label><input type="checkbox"> <span>Все существенные факты сохранены без новых предположений.</span></label>
+            <label><input type="checkbox"> <span>Связь между шагами понятна без исходного сообщения.</span></label>
+            <label><input type="checkbox"> <span>Формулировки нейтральны и подходят адресату.</span></label>
+          </fieldset>
         {% endif %}
       </article>
     {% endfor %}

@@ -50,6 +50,31 @@ class InteractionScenarioTests(TestCase):
         self.assertContains(response, "Подходящий ответ")
         self.assertContains(response, "сохраняет главное опасение")
 
+    def test_feedback_offers_ungraded_manual_self_check(self):
+        response = self.client.post(
+            "/interaction/",
+            {"scenario_id": "meeting-position", "option_id": "a"},
+        )
+
+        self.assertContains(response, "Сравни свой ответ с удачным вариантом")
+        self.assertContains(response, "не оцениваются автоматически")
+        self.assertContains(response, 'class="interaction-self-check"')
+        self.assertNotContains(response, 'name="self_check')
+
+    def test_sequence_feedback_has_mediation_self_check(self):
+        response = self.client.post(
+            "/interaction/",
+            {
+                "task_type": "sequence",
+                "scenario_id": "delay-mediation",
+                "block_id": ["cause", "effect", "reservation"],
+            },
+        )
+
+        self.assertContains(response, "Проверь собранное сообщение")
+        self.assertContains(response, "без новых предположений")
+        self.assertNotContains(response, 'name="self_check')
+
     def test_wrong_answer_shows_better_option_and_reason(self):
         response = self.client.post(
             "/interaction/",
