@@ -182,6 +182,40 @@ LISTENING_DIALOGUE = {
     ),
 }
 
+LISTENING_B1 = {
+    "title": "Zmiana planu sąsiedzkiego spotkania",
+    "level": "B1",
+    "lines": (
+        "Dzień dobry, tu Marta z rady osiedla. Dzwonię w sprawie sobotniego spotkania mieszkańców.",
+        "Ponieważ prognoza zapowiada silny deszcz, nie spotkamy się w parku, lecz w sali biblioteki przy ulicy Lipowej.",
+        "Zaczynamy bez zmian o jedenastej. Najpierw porozmawiamy o nowym placu zabaw, a potem podzielimy się zadaniami przy organizacji pikniku.",
+        "Proszę przynieść swoje propozycje i, jeśli to możliwe, potwierdzić udział do piątku wieczorem. Dziękuję i do zobaczenia.",
+    ),
+    "questions": (
+        {
+            "id": "b1_listening_reason",
+            "prompt": "Почему изменили место встречи?",
+            "options": ("Из-за прогноза сильного дождя", "Из-за ремонта библиотеки", "Из-за изменения времени"),
+            "answer": "Из-за прогноза сильного дождя",
+            "explanation": "Марта связывает перенос из парка с прогнозом сильного дождя.",
+        },
+        {
+            "id": "b1_listening_plan",
+            "prompt": "Что участники обсудят сначала?",
+            "options": ("Новый детский игровой комплекс", "Распределение задач на пикнике", "Расписание библиотеки"),
+            "answer": "Новый детский игровой комплекс",
+            "explanation": "Слово «najpierw» вводит первый пункт встречи — новый plac zabaw.",
+        },
+        {
+            "id": "b1_listening_action",
+            "prompt": "Что Марта просит сделать до вечера пятницы?",
+            "options": ("Подтвердить участие", "Принести еду на пикник", "Позвонить в библиотеку"),
+            "answer": "Подтвердить участие",
+            "explanation": "Фраза «potwierdzić udział do piątku wieczorem» прямо задаёт действие и срок.",
+        },
+    ),
+}
+
 
 def select_cefr_level(request: HttpRequest, profile_level: str) -> str:
     """Prefer an explicit valid filter, otherwise use the learner's level."""
@@ -509,6 +543,21 @@ def listening_practice(request: HttpRequest) -> HttpResponse:
         else None
     )
     dialogue = {**LISTENING_DIALOGUE, "questions": dialogue_questions}
+    b1_answers = {
+        question["id"]: request.POST.get(question["id"], "")
+        for question in LISTENING_B1["questions"]
+    }
+    b1_questions = tuple(
+        {
+            **question,
+            "selected": b1_answers[question["id"]],
+            "is_correct": submitted
+            and b1_answers[question["id"]] == question["answer"],
+        }
+        for question in LISTENING_B1["questions"]
+    )
+    b1_submitted = submitted and any(b1_answers.values())
+    b1_listening = {**LISTENING_B1, "questions": b1_questions}
     return render(
         request,
         "listening.html",
@@ -519,6 +568,11 @@ def listening_practice(request: HttpRequest) -> HttpResponse:
             "dialogue": dialogue,
             "dialogue_submitted": dialogue_submitted,
             "dialogue_score": dialogue_score,
+            "b1_listening": b1_listening,
+            "b1_submitted": b1_submitted,
+            "b1_score": sum(question["is_correct"] for question in b1_questions)
+            if b1_submitted
+            else None,
         },
     )
 
