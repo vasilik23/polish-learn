@@ -418,6 +418,11 @@ p { line-height: 1.65; }
 .interaction-sequence-fields select { width: 100%; min-width: 0; padding: .7rem; border: 1px solid var(--line); border-radius: .75rem; background: var(--surface); color: var(--text); font: inherit; }
 .interaction-result ol { margin: .45rem 0 0; padding-left: 1.3rem; }
 .interaction-result li + li { margin-top: .3rem; }
+.interaction-self-check { display: grid; gap: .6rem; margin: 1rem 0 0; padding: .9rem; border: 1px solid var(--line); border-radius: .85rem; }
+.interaction-self-check legend { margin: 0; padding: 0 .35rem; }
+.interaction-self-check > p { margin: 0 0 .15rem; color: var(--muted); font-size: .76rem; }
+.interaction-self-check label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .6rem; font-size: .82rem; line-height: 1.4; }
+.interaction-self-check input { margin-top: .2rem; accent-color: var(--primary); }
 .compact-empty { padding: 1.2rem; }
 .level-badge { display: inline-grid; place-items: center; min-width: 2.2rem; padding: .28rem .48rem; border-radius: .55rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .7rem; font-weight: 800; }
 .empty-state { grid-column: 1 / -1; justify-items: center; padding: 3rem 1.5rem; text-align: center; }
