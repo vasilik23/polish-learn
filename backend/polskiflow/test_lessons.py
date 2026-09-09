@@ -169,6 +169,30 @@ class LessonViewsTests(TestCase):
         self.assertContains(result, "Новый детский игровой комплекс")
         self.assertContains(result, "Слово «najpierw» вводит первый пункт встречи")
 
+    def test_listening_pilot_includes_original_b2_speech_with_permanent_transcript(self):
+        page = self.client.get("/listening/")
+
+        self.assertContains(page, "Pilotaż pracy hybrydowej")
+        self.assertContains(page, 'aria-label="Постоянный транскрипт B2"')
+        self.assertContains(page, "Choć część zespołu proponowała całkowitą pracę zdalną")
+        self.assertContains(page, "data-b2-play")
+        self.assertContains(page, "не студийная запись")
+
+        result = self.client.post(
+            "/listening/",
+            {
+                "tecza": "tęcza",
+                "wrobel": "wróbel",
+                "mysz": "mysz",
+                "b2_listening_model": "Гибридный формат в течение трёх месяцев",
+                "b2_listening_tuesday": "Для индивидуальных собеседований",
+                "b2_listening_decision": "На результатах анонимного опроса",
+            },
+        )
+        self.assertContains(result, "2 / 3")
+        self.assertContains(result, "Для совместного планирования проектов")
+        self.assertContains(result, "Оборот «żeby wspólnie planować projekty»")
+
     def test_course_links_to_listening_pilot(self):
         page = self.client.get("/course/?level=A1")
         self.assertContains(page, 'href="/listening/"')

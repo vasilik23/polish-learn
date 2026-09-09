@@ -12,9 +12,30 @@ from polskiflow.domain.content_workflow import (
     build_model_mapping,
     build_preview,
     build_publish_plan,
+    validate_model_resolutions,
     validate_manifest,
     write_migration_scaffold,
 )
+
+
+def sample_resolutions(checksum):
+    return {
+        "schema_version": 1,
+        "manifest_checksum": checksum,
+        "course_id": "b1-main",
+        "topic": {"description": "Opis tematu", "emoji": "🧭", "position": 8},
+        "card_set_lesson_ids": ["example-words-one", "example-words-two"],
+        "grammar_lesson": {
+            "id": "example-grammar", "title": "Gramatyka", "plan_title": "Poznaj regułę",
+            "subtitle": "Praktyczne użycie", "description": "Opis lekcji", "minutes": 8,
+            "emoji": "🧩", "theory_title": "Jak działa reguła", "position": 3,
+        },
+        "question_lesson_ids": {"exercises": "example-grammar", "final_quiz": "example-quiz"},
+        "reading": {
+            "id": "example-reading", "topic_id": "test-editorial-topic", "title": "Tekst",
+            "description": "Opis tekstu", "minutes": 6, "emoji": "📖", "position": 4,
+        },
+    }
 
 
 def sample_manifest(*, status="draft", origin="original"):
@@ -189,6 +210,43 @@ class ContentWorkflowDomainTests(SimpleTestCase):
         self.assertIn(("learning.Question", "questions"), targets)
         self.assertEqual(mapping["unmapped"][0]["manifest"], "content.active_units[*]")
 
+    def test_model_resolutions_are_checksum_bound_deterministic_and_write_free(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+        resolutions = sample_resolutions(result.checksum)
+
+        artifact = validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
+
+        self.assertEqual(artifact, validate_model_resolutions(result, resolutions, "ED-103", result.checksum))
+        self.assertTrue(artifact["complete"])
+        self.assertFalse(artifact["writes_performed"])
+        self.assertEqual(len(artifact["resolutions_checksum"]), 64)
+
+    def test_model_resolutions_reject_missing_or_stale_decisions(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+        resolutions = sample_resolutions(result.checksum)
+        resolutions.pop("course_id")
+        with self.assertRaisesRegex(ManifestError, "course_id"):
+            validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
+
+        resolutions = sample_resolutions("0" * 64)
+        with self.assertRaisesRegex(ManifestError, "другому manifest"):
+            validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
+
+        resolutions = sample_resolutions(result.checksum)
+        resolutions["card_set_lesson_ids"][0] = {"unexpected": "object"}
+        with self.assertRaisesRegex(ManifestError, r"card_set_lesson_ids\[0\]"):
+            validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
+
     def test_scaffold_writer_rejects_nonempty_and_forbidden_directories(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -273,3 +331,27 @@ class ContentWorkflowCommandTests(SimpleTestCase):
             manifest_path.write_text(json.dumps(sample_manifest(status="approved")), encoding="utf-8")
             with self.assertRaisesRegex(CommandError, "требует"):
                 call_command("content_workflow", str(manifest_path), generate_scaffold=True)
+
+    def test_check_resolutions_writes_deterministic_report(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = sample_manifest(status="approved")
+            manifest["review"] = {
+                "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+                "reviewed_at": "2026-09-01",
+            }
+            result = validate_manifest(manifest)
+            manifest_path = root / "approved.json"
+            resolutions_path = root / "resolutions.json"
+            output_path = root / "resolution-check.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            resolutions_path.write_text(json.dumps(sample_resolutions(result.checksum)), encoding="utf-8")
+
+            call_command(
+                "content_workflow", str(manifest_path), check_resolutions=str(resolutions_path),
+                approval_id="ED-103", expected_checksum=result.checksum, output=str(output_path),
+            )
+
+            artifact = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertTrue(artifact["complete"])
+            self.assertFalse(artifact["writes_performed"])

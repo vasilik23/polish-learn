@@ -72,6 +72,35 @@
       {% endfor %}
       <p class="muted listening-audio-note">Звук создаёт системный голос <span lang="pl">pl-PL</span> из оригинального текста PolskiFlow. Голос, тембр и доступность зависят от браузера и устройства; это не студийная запись.</p>
     </section>
+    <section class="card listening-dialogue" aria-labelledby="b2-listening-title">
+      <p class="eyebrow">Связная речь · {{ b2_listening.level }}</p>
+      <h2 id="b2-listening-title">{{ b2_listening.title }}</h2>
+      {{ b2_listening.lines|json_script:"b2-listening-lines" }}
+      <div class="listening-dialogue-player" data-b2-player hidden>
+        <p class="muted" data-b2-status aria-live="polite">Готово к воспроизведению</p>
+        <div class="reading-audio-actions">
+          <button type="button" data-b2-play>▶ Прослушать</button>
+          <button type="button" data-b2-repeat disabled>↻ Повторить</button>
+          <label><span>Скорость</span><select data-b2-rate><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.15">1,15×</option></select></label>
+        </div>
+      </div>
+      <noscript><p class="muted">Для воспроизведения нужен JavaScript; постоянный транскрипт доступен ниже.</p></noscript>
+      <div class="audio-transcript" aria-label="Постоянный транскрипт B2">
+        <strong>Транскрипт</strong>
+        {% for line in b2_listening.lines %}<p lang="pl">{{ line }}</p>{% endfor %}
+      </div>
+      {% if b2_submitted %}<section class="listening-result" aria-live="polite"><strong>{{ b2_score }} / {{ b2_listening.questions|length }}</strong><span>Ответы по записи B2</span></section>{% endif %}
+      {% for question in b2_listening.questions %}
+        <fieldset class="listening-card">
+          <legend>{{ question.prompt }}</legend>
+          <div class="listening-options">
+            {% for option in question.options %}<label><input type="radio" name="{{ question.id }}" value="{{ option }}" {% if question.selected == option %}checked{% endif %}> {{ option }}</label>{% endfor %}
+          </div>
+          {% if b2_submitted %}<p class="listening-feedback {% if question.is_correct %}is-correct{% else %}is-wrong{% endif %}">{% if question.is_correct %}Верно.{% else %}Правильный ответ: <strong>{{ question.answer }}</strong>.{% endif %} {{ question.explanation }}</p>{% endif %}
+        </fieldset>
+      {% endfor %}
+      <p class="muted listening-audio-note">Звук создаёт системный голос <span lang="pl">pl-PL</span> из оригинального текста PolskiFlow. Это тренировка понимания связной речи, но не студийная запись: голос и тембр зависят от браузера и устройства.</p>
+    </section>
     <h2>Отдельные слова</h2>
     {% for item in listening_items %}
       <fieldset class="card listening-card">
@@ -151,6 +180,27 @@
         };
         b1Player.querySelector('[data-b1-play]').addEventListener('click', speakB1);
         b1Repeat.addEventListener('click', speakB1);
+      }
+
+      const b2Player = document.querySelector('[data-b2-player]');
+      if (b2Player) {
+        b2Player.hidden = false;
+        const b2Lines = JSON.parse(document.querySelector('#b2-listening-lines').textContent);
+        const b2Status = b2Player.querySelector('[data-b2-status]');
+        const b2Repeat = b2Player.querySelector('[data-b2-repeat]');
+        const speakB2 = () => {
+          speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(b2Lines.join(' '));
+          utterance.lang = 'pl-PL';
+          utterance.rate = Number(b2Player.querySelector('[data-b2-rate]').value);
+          utterance.onend = () => { b2Status.textContent = 'Запись B2 прослушана'; };
+          utterance.onerror = () => { b2Status.textContent = 'Не удалось запустить системный польский голос'; };
+          speechSynthesis.speak(utterance);
+          b2Repeat.disabled = false;
+          b2Status.textContent = 'Воспроизведение записи B2';
+        };
+        b2Player.querySelector('[data-b2-play]').addEventListener('click', speakB2);
+        b2Repeat.addEventListener('click', speakB2);
       }
     })();
   </script>

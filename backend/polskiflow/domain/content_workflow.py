@@ -425,6 +425,135 @@ def build_model_mapping(result: ValidationResult) -> dict[str, Any]:
     }
 
 
+def validate_model_resolutions(
+    result: ValidationResult,
+    resolutions: dict[str, Any],
+    approval_id: str,
+    expected_checksum: str,
+) -> dict[str, Any]:
+    """Validate explicit storage decisions without importing models or touching storage."""
+    approval_id = require_publish_approval(result, approval_id, expected_checksum)
+    if not isinstance(resolutions, dict):
+        raise ManifestError("model_resolutions: ожидается JSON-объект.")
+    _reject_unknown_keys(
+        resolutions,
+        {
+            "schema_version",
+            "manifest_checksum",
+            "course_id",
+            "topic",
+            "card_set_lesson_ids",
+            "grammar_lesson",
+            "question_lesson_ids",
+            "reading",
+        },
+        "model_resolutions",
+    )
+    if resolutions.get("schema_version") != 1:
+        raise ManifestError("model_resolutions.schema_version: поддерживается только версия 1.")
+    if resolutions.get("manifest_checksum") != result.checksum:
+        raise ManifestError(
+            "model_resolutions.manifest_checksum: resolutions относятся к другому manifest."
+        )
+
+    def require_slug(container: dict[str, Any], key: str, location: str) -> str:
+        value = _require_text(container, key, location)
+        if not SLUG_RE.fullmatch(value):
+            raise ManifestError(f"{location}.{key}: используйте lowercase kebab-case.")
+        return value
+
+    def require_position(container: dict[str, Any], location: str) -> int:
+        value = container.get("position")
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ManifestError(f"{location}.position: ожидается целое число не меньше нуля.")
+        return value
+
+    require_slug(resolutions, "course_id", "model_resolutions")
+    topic = resolutions.get("topic")
+    if not isinstance(topic, dict):
+        raise ManifestError("model_resolutions.topic: требуется объект.")
+    _reject_unknown_keys(topic, {"description", "emoji", "position"}, "model_resolutions.topic")
+    _require_text(topic, "description", "model_resolutions.topic")
+    _require_text(topic, "emoji", "model_resolutions.topic")
+    require_position(topic, "model_resolutions.topic")
+
+    lesson_fields = {
+        "id", "title", "plan_title", "subtitle", "description", "minutes", "emoji",
+        "theory_title", "position",
+    }
+    grammar = resolutions.get("grammar_lesson")
+    if not isinstance(grammar, dict):
+        raise ManifestError("model_resolutions.grammar_lesson: требуется объект.")
+    _reject_unknown_keys(grammar, lesson_fields, "model_resolutions.grammar_lesson")
+    require_slug(grammar, "id", "model_resolutions.grammar_lesson")
+    for key in ("title", "plan_title", "subtitle", "description", "emoji", "theory_title"):
+        _require_text(grammar, key, "model_resolutions.grammar_lesson")
+    minutes = grammar.get("minutes")
+    if not isinstance(minutes, int) or isinstance(minutes, bool) or minutes <= 0:
+        raise ManifestError("model_resolutions.grammar_lesson.minutes: ожидается положительное целое число.")
+    require_position(grammar, "model_resolutions.grammar_lesson")
+
+    card_lessons = resolutions.get("card_set_lesson_ids")
+    expected_sets = result.counts["card_sets"]
+    if not isinstance(card_lessons, list) or len(card_lessons) != expected_sets:
+        raise ManifestError(
+            f"model_resolutions.card_set_lesson_ids: требуется {expected_sets} lesson ID."
+        )
+    for index, lesson_id in enumerate(card_lessons):
+        if not isinstance(lesson_id, str) or not SLUG_RE.fullmatch(lesson_id):
+            raise ManifestError(
+                f"model_resolutions.card_set_lesson_ids[{index}]: используйте lowercase kebab-case."
+            )
+    if len(set(card_lessons)) != len(card_lessons):
+        raise ManifestError("model_resolutions.card_set_lesson_ids: lesson ID должны быть уникальны.")
+
+    question_lessons = resolutions.get("question_lesson_ids")
+    if not isinstance(question_lessons, dict):
+        raise ManifestError("model_resolutions.question_lesson_ids: требуется объект.")
+    _reject_unknown_keys(
+        question_lessons, {"exercises", "final_quiz"}, "model_resolutions.question_lesson_ids"
+    )
+    require_slug(question_lessons, "exercises", "model_resolutions.question_lesson_ids")
+    require_slug(question_lessons, "final_quiz", "model_resolutions.question_lesson_ids")
+
+    reading = resolutions.get("reading")
+    if not isinstance(reading, dict):
+        raise ManifestError("model_resolutions.reading: требуется объект.")
+    _reject_unknown_keys(
+        reading,
+        {"id", "topic_id", "title", "description", "minutes", "emoji", "position"},
+        "model_resolutions.reading",
+    )
+    require_slug(reading, "id", "model_resolutions.reading")
+    topic_id = require_slug(reading, "topic_id", "model_resolutions.reading")
+    if topic_id != result.manifest["id"]:
+        raise ManifestError("model_resolutions.reading.topic_id: должен совпадать с manifest.id.")
+    for key in ("title", "description", "emoji"):
+        _require_text(reading, key, "model_resolutions.reading")
+    reading_minutes = reading.get("minutes")
+    if not isinstance(reading_minutes, int) or isinstance(reading_minutes, bool) or reading_minutes <= 0:
+        raise ManifestError("model_resolutions.reading.minutes: ожидается положительное целое число.")
+    require_position(reading, "model_resolutions.reading")
+
+    canonical = json.dumps(resolutions, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return {
+        "artifact_type": "polskiflow-content-model-resolution-check",
+        "schema_version": 1,
+        "manifest_checksum": result.checksum,
+        "resolutions_checksum": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        "approval_id": approval_id,
+        "complete": True,
+        "writes_performed": False,
+        "resolutions": resolutions,
+        "unmapped": build_model_mapping(result)["unmapped"],
+        "boundary": (
+            "Resolution check only. IDs and presentation fields are syntactically complete but "
+            "their database existence is not verified; no ORM, SQL, database or network operation "
+            "was generated or performed."
+        ),
+    }
+
+
 def build_migration_scaffold(
     result: ValidationResult, approval_id: str, expected_checksum: str
 ) -> dict[str, str]:

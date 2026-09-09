@@ -9,6 +9,7 @@ from polskiflow.domain.content_workflow import (
     build_migration_scaffold,
     build_publish_plan,
     load_manifest,
+    validate_model_resolutions,
     validate_manifest,
     write_migration_scaffold,
 )
@@ -30,6 +31,10 @@ class Command(BaseCommand):
             action="store_true",
             help="Write non-executable paired migration review scaffolds to a new/empty directory.",
         )
+        parser.add_argument(
+            "--check-resolutions",
+            help="Validate a UTF-8 JSON model-resolution file without storage access.",
+        )
         parser.add_argument("--expected-checksum", default="", help="Exact approved SHA-256.")
         parser.add_argument("--output-directory", help="New or empty directory for scaffolds.")
         parser.add_argument(
@@ -40,16 +45,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         scaffold = options["generate_scaffold"]
-        if options["prepare_publish"] and scaffold:
-            raise CommandError("Выберите только один режим: --prepare-publish или --generate-scaffold.")
-        if options["approval_id"] and not (options["prepare_publish"] or scaffold):
-            raise CommandError("--approval-id используется с publish-plan или scaffold.")
+        resolution_path = options["check_resolutions"]
+        selected_modes = sum(bool(value) for value in (options["prepare_publish"], scaffold, resolution_path))
+        if selected_modes > 1:
+            raise CommandError("Выберите только один режим публикации, scaffold или проверки resolutions.")
+        if options["approval_id"] and not selected_modes:
+            raise CommandError(
+                "--approval-id используется с publish-plan, scaffold или проверкой resolutions."
+            )
         if scaffold and (not options["output_directory"] or not options["expected_checksum"]):
             raise CommandError(
                 "--generate-scaffold требует --output-directory и --expected-checksum."
             )
         if scaffold and options["output"]:
             raise CommandError("--output несовместим с --generate-scaffold.")
+        if resolution_path and (not options["approval_id"] or not options["expected_checksum"]):
+            raise CommandError(
+                "--check-resolutions требует --approval-id и --expected-checksum."
+            )
         try:
             result = validate_manifest(load_manifest(options["manifest"]))
             if scaffold:
@@ -67,11 +80,19 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(self.style.SUCCESS(f"Scaffold written to {output}"))
                 return
-            artifact = (
-                build_publish_plan(result, options["approval_id"])
-                if options["prepare_publish"]
-                else build_preview(result)
-            )
+            if resolution_path:
+                artifact = validate_model_resolutions(
+                    result,
+                    load_manifest(resolution_path),
+                    options["approval_id"],
+                    options["expected_checksum"],
+                )
+            else:
+                artifact = (
+                    build_publish_plan(result, options["approval_id"])
+                    if options["prepare_publish"]
+                    else build_preview(result)
+                )
         except ManifestError as exc:
             raise CommandError(str(exc)) from exc
 
