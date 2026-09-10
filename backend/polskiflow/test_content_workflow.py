@@ -8,6 +8,7 @@ from django.test import SimpleTestCase
 
 from polskiflow.domain.content_workflow import (
     ManifestError,
+    build_executable_migration_preview,
     build_migration_scaffold,
     build_model_mapping,
     build_preview,
@@ -247,6 +248,40 @@ class ContentWorkflowDomainTests(SimpleTestCase):
         with self.assertRaisesRegex(ManifestError, r"card_set_lesson_ids\[0\]"):
             validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
 
+        resolutions = sample_resolutions(result.checksum)
+        resolutions["question_lesson_ids"]["final_quiz"] = "example-grammar"
+        with self.assertRaisesRegex(ManifestError, "должны быть разными"):
+            validate_model_resolutions(result, resolutions, "ED-103", result.checksum)
+
+    def test_executable_preview_is_deterministic_checksum_bound_and_review_only(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+        resolutions = sample_resolutions(result.checksum)
+        checked = validate_model_resolutions(result, resolutions, "ED-104", result.checksum)
+
+        artifacts = build_executable_migration_preview(
+            result, resolutions, "ED-104", result.checksum, checked["resolutions_checksum"]
+        )
+
+        self.assertEqual(artifacts, build_executable_migration_preview(
+            result, resolutions, "ED-104", result.checksum, checked["resolutions_checksum"]
+        ))
+        metadata = json.loads(artifacts["migration-preview.json"])
+        self.assertFalse(metadata["writes_performed"])
+        compile(artifacts["candidate-django-runpython.py"], "candidate.py", "exec")
+        self.assertIn("RunPython", artifacts["candidate-django-runpython.py"])
+        self.assertIn("on conflict", artifacts["candidate-supabase-content.sql"].lower())
+        self.assertNotIn("rollback;", artifacts["candidate-supabase-content.sql"].lower())
+
+        with self.assertRaisesRegex(ManifestError, "resolutions изменились"):
+            build_executable_migration_preview(
+                result, resolutions, "ED-104", result.checksum, "0" * 64
+            )
+
     def test_scaffold_writer_rejects_nonempty_and_forbidden_directories(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -259,6 +294,8 @@ class ContentWorkflowDomainTests(SimpleTestCase):
             forbidden = root / "migrations"
             with self.assertRaisesRegex(ManifestError, "реальный каталог"):
                 write_migration_scaffold({"safe.txt": "ok"}, forbidden / "draft", (forbidden,))
+            with self.assertRaisesRegex(ManifestError, "Недопустимое имя"):
+                write_migration_scaffold({"../escape.txt": "no"}, root / "safe", ())
 
 
 class ContentWorkflowCommandTests(SimpleTestCase):
@@ -355,3 +392,32 @@ class ContentWorkflowCommandTests(SimpleTestCase):
             artifact = json.loads(output_path.read_text(encoding="utf-8"))
             self.assertTrue(artifact["complete"])
             self.assertFalse(artifact["writes_performed"])
+
+    def test_generate_migration_preview_requires_and_writes_review_artifacts(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = sample_manifest(status="approved")
+            manifest["review"] = {
+                "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+                "reviewed_at": "2026-09-01",
+            }
+            result = validate_manifest(manifest)
+            resolutions = sample_resolutions(result.checksum)
+            checked = validate_model_resolutions(result, resolutions, "ED-104", result.checksum)
+            manifest_path = root / "approved.json"
+            resolutions_path = root / "resolutions.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            resolutions_path.write_text(json.dumps(resolutions), encoding="utf-8")
+            output = root / "migration-preview"
+
+            call_command(
+                "content_workflow", str(manifest_path), generate_migration_preview=True,
+                model_resolutions=str(resolutions_path), approval_id="ED-104",
+                expected_checksum=result.checksum,
+                expected_resolutions_checksum=checked["resolutions_checksum"],
+                output_directory=str(output),
+            )
+
+            metadata = json.loads((output / "migration-preview.json").read_text())
+            self.assertEqual(metadata["resolutions_checksum"], checked["resolutions_checksum"])
+            self.assertEqual(len(list(output.iterdir())), 3)

@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from polskiflow.domain.content_workflow import (
     ManifestError,
+    build_executable_migration_preview,
     build_preview,
     build_migration_scaffold,
     build_publish_plan,
@@ -35,6 +36,15 @@ class Command(BaseCommand):
             "--check-resolutions",
             help="Validate a UTF-8 JSON model-resolution file without storage access.",
         )
+        parser.add_argument(
+            "--generate-migration-preview",
+            action="store_true",
+            help="Render executable migration candidates for manual review; never execute them.",
+        )
+        parser.add_argument("--model-resolutions", help="Validated UTF-8 JSON resolutions input.")
+        parser.add_argument(
+            "--expected-resolutions-checksum", default="", help="Exact reviewed resolutions SHA-256."
+        )
         parser.add_argument("--expected-checksum", default="", help="Exact approved SHA-256.")
         parser.add_argument("--output-directory", help="New or empty directory for scaffolds.")
         parser.add_argument(
@@ -46,7 +56,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         scaffold = options["generate_scaffold"]
         resolution_path = options["check_resolutions"]
-        selected_modes = sum(bool(value) for value in (options["prepare_publish"], scaffold, resolution_path))
+        migration_preview = options["generate_migration_preview"]
+        selected_modes = sum(bool(value) for value in (
+            options["prepare_publish"], scaffold, resolution_path, migration_preview
+        ))
         if selected_modes > 1:
             raise CommandError("Выберите только один режим публикации, scaffold или проверки resolutions.")
         if options["approval_id"] and not selected_modes:
@@ -63,6 +76,16 @@ class Command(BaseCommand):
             raise CommandError(
                 "--check-resolutions требует --approval-id и --expected-checksum."
             )
+        if migration_preview and not all((
+            options["output_directory"], options["model_resolutions"], options["approval_id"],
+            options["expected_checksum"], options["expected_resolutions_checksum"],
+        )):
+            raise CommandError(
+                "--generate-migration-preview требует --output-directory, --model-resolutions, "
+                "--approval-id, --expected-checksum и --expected-resolutions-checksum."
+            )
+        if migration_preview and options["output"]:
+            raise CommandError("--output несовместим с --generate-migration-preview.")
         try:
             result = validate_manifest(load_manifest(options["manifest"]))
             if scaffold:
@@ -79,6 +102,26 @@ class Command(BaseCommand):
                     ),
                 )
                 self.stdout.write(self.style.SUCCESS(f"Scaffold written to {output}"))
+                return
+            if migration_preview:
+                project_root = Path(__file__).resolve().parents[5]
+                artifacts = build_executable_migration_preview(
+                    result,
+                    load_manifest(options["model_resolutions"]),
+                    options["approval_id"],
+                    options["expected_checksum"],
+                    options["expected_resolutions_checksum"],
+                )
+                output = write_migration_scaffold(
+                    artifacts,
+                    options["output_directory"],
+                    (
+                        project_root,
+                        project_root / "backend/polskiflow/learning/migrations",
+                        project_root / "supabase/migrations",
+                    ),
+                )
+                self.stdout.write(self.style.SUCCESS(f"Migration preview written to {output}"))
                 return
             if resolution_path:
                 artifact = validate_model_resolutions(
