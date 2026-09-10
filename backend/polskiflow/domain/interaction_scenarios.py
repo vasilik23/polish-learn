@@ -41,6 +41,17 @@ class SequenceScenario:
     explanation: str
 
 
+@dataclass(frozen=True)
+class FreeProductionScenario:
+    id: str
+    level: str
+    mode: str
+    title: str
+    situation: str
+    task: str
+    checklist: tuple[str, ...]
+
+
 SCENARIOS = (
     InteractionScenario(
         id="weekend-plan",
@@ -175,6 +186,36 @@ SEQUENCE_SCENARIOS = (
 SEQUENCE_SCENARIOS_BY_ID = {
     scenario.id: scenario for scenario in SEQUENCE_SCENARIOS
 }
+
+
+FREE_PRODUCTION_SCENARIOS = (
+    FreeProductionScenario(
+        id="schedule-compromise",
+        level="B1",
+        mode="Взаимодействие",
+        title="Предложить компромисс в переписке",
+        situation="Друг хочет встретиться в пятницу вечером, но ты можешь только в субботу до обеда.",
+        task="Напиши по-польски короткий ответ: признай предложение, объясни ограничение и предложи конкретную альтернативу.",
+        checklist=(
+            "Я отреагировал на предложение собеседника, а не начал новую тему.",
+            "Я кратко и вежливо объяснил своё ограничение.",
+            "Я предложил конкретное время или попросил выбрать из вариантов.",
+        ),
+    ),
+    FreeProductionScenario(
+        id="event-mediation",
+        level="B2",
+        mode="Медиация",
+        title="Передать важное из объявления",
+        situation="Организатор сообщил: встреча переносится с 18:00 на 19:30 из-за задержки поезда; место не меняется, регистрацию продлили до 19:15.",
+        task="Передай по-польски эту информацию знакомому нейтрально и понятно, не копируя исходную формулировку.",
+        checklist=(
+            "Я сохранил причину переноса, новое время и прежнее место.",
+            "Я упомянул новый срок регистрации и не добавил своих догадок.",
+            "Текст понятен человеку, который не видел исходного объявления.",
+        ),
+    ),
+)
 
 
 def validate_answer(scenario_id: str, option_id: str) -> tuple[InteractionScenario, bool]:

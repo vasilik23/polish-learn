@@ -4,6 +4,7 @@ from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
 from polskiflow.domain.interaction_scenarios import (
+    FREE_PRODUCTION_SCENARIOS,
     SCENARIOS,
     SEQUENCE_SCENARIOS,
     validate_answer,
@@ -39,6 +40,30 @@ class InteractionScenarioTests(TestCase):
         self.assertContains(response, "Собери ответ по смысловым шагам")
         self.assertContains(response, "Собрать вежливую просьбу")
         self.assertContains(response, 'name="block_id"', count=9)
+
+    def test_page_offers_local_ungraded_free_production(self):
+        response = self.client.get("/interaction/")
+
+        self.assertEqual(len(FREE_PRODUCTION_SCENARIOS), 2)
+        self.assertContains(response, "Сформулируй ответ самостоятельно")
+        self.assertContains(response, "Предложить компромисс в переписке")
+        self.assertContains(response, "Передать важное из объявления")
+        self.assertContains(response, "не отправляется на сервер")
+        self.assertContains(response, "не оценивается автоматически")
+        self.assertContains(response, "Жанровая самопроверка", count=2)
+        self.assertContains(response, 'data-interaction-draft="', count=2)
+        self.assertNotContains(response, 'name="free_draft')
+
+    def test_free_production_drafts_use_per_user_local_storage(self):
+        response = self.client.get("/interaction/")
+
+        self.assertContains(response, 'storagePrefix = "polskiflow-interaction:')
+        self.assertContains(
+            response, 'storagePrefix = "polskiflow-interaction:user\\u002D123:'
+        )
+        self.assertContains(response, "localStorage.setItem(key, textarea.value)")
+        self.assertContains(response, "localStorage.removeItem(key)")
+        self.assertContains(response, 'type="button" data-reset-interaction-draft', count=2)
 
     def test_correct_answer_has_transparent_explanation(self):
         response = self.client.post(

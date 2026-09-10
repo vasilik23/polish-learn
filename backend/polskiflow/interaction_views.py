@@ -6,6 +6,7 @@ from django.views.decorators.http import require_http_methods
 
 from polskiflow.auth_views import require_browser_user
 from polskiflow.domain.interaction_scenarios import (
+    FREE_PRODUCTION_SCENARIOS,
     SCENARIOS,
     SEQUENCE_SCENARIOS,
     validate_answer,
@@ -76,6 +77,7 @@ def interaction_practice(request: HttpRequest) -> HttpResponse:
         {
             "scenarios": SCENARIOS,
             "sequence_scenarios": SEQUENCE_SCENARIOS,
+            "free_production_scenarios": FREE_PRODUCTION_SCENARIOS,
             "result": result,
             "error": error,
         },
