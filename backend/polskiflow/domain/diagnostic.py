@@ -128,6 +128,7 @@ class CheckedDiagnosticResult:
     level: str
     correct: int
     total: int
+    mode_scores: tuple[tuple[str, int, int], ...]
     answers: tuple[tuple[str, str, bool, str], ...]
     calculation: str
 
@@ -198,6 +199,14 @@ def score_checked_tasks(raw_answers: dict[str, str]) -> CheckedDiagnosticResult:
         for task in CHECK_TASKS
     )
     correct = sum(item[2] for item in details)
+    mode_scores = tuple(
+        (
+            mode,
+            sum(item[2] for item in details if item[0] == mode),
+            sum(1 for item in details if item[0] == mode),
+        )
+        for mode in dict.fromkeys(task["mode"] for task in CHECK_TASKS)
+    )
     foundation_correct = sum(item[2] for item in details[:4])
     # A short multiple-choice sample is deliberately capped at B2.
     if correct <= 2:
@@ -215,4 +224,6 @@ def score_checked_tasks(raw_answers: dict[str, str]) -> CheckedDiagnosticResult:
         "нужно не менее 3 верных ответов в этой части. "
         "Короткая проба не рекомендует уровень выше B2."
     )
-    return CheckedDiagnosticResult(level, correct, len(CHECK_TASKS), details, calculation)
+    return CheckedDiagnosticResult(
+        level, correct, len(CHECK_TASKS), mode_scores, details, calculation
+    )

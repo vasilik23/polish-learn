@@ -96,6 +96,25 @@ class DiagnosticScoringTests(TestCase):
         self.assertIn("В базовой части: 1 из 4", result.calculation)
         self.assertIn("не менее 3 верных", result.calculation)
 
+    def test_checked_tasks_report_each_observed_mode_separately(self):
+        answers = correct_checked_answers()
+        for task in (CHECK_TASKS[0], CHECK_TASKS[6]):
+            answers[task["key"]] = next(
+                value for value, _label in task["options"] if value != task["answer"]
+            )
+
+        result = score_checked_tasks(answers)
+
+        self.assertEqual(
+            result.mode_scores,
+            (
+                ("Восприятие", 1, 2),
+                ("Языковая форма", 2, 2),
+                ("Взаимодействие", 1, 2),
+                ("Медиация", 2, 2),
+            ),
+        )
+
     def test_checked_tasks_require_every_known_answer(self):
         answers = correct_checked_answers()
         answers.pop("check_8")
@@ -151,6 +170,8 @@ class DiagnosticViewTests(TestCase):
         self.assertContains(response, "самооценка <strong>B1</strong>")
         self.assertContains(response, "короткая проверяемая проба <strong>B2</strong>")
         self.assertContains(response, "Короткая проверяемая проба: 8 из 8")
+        self.assertContains(response, "Результат проверяемой пробы по режимам")
+        self.assertContains(response, "2 из 2", count=4)
         self.assertContains(response, "0–2 → A1, 3–4 → A2, 5–6 → B1, 7–8 → B2")
         self.assertContains(response, "Продукция, Медиация")
         self.assertContains(response, "Среднее с округлением вниз: B1")

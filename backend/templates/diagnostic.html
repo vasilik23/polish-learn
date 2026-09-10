@@ -25,6 +25,11 @@
       <div class="diagnostic-checked-summary">
         <h3>Короткая проверяемая проба: {{ checked_result.correct }} из {{ checked_result.total }}</h3>
         <p class="muted">{{ checked_result.calculation }}</p>
+        <div class="diagnostic-summary" aria-label="Результат проверяемой пробы по режимам">
+          {% for mode, correct, total in checked_result.mode_scores %}
+            <div><strong>{{ mode }}</strong><span>{{ correct }} из {{ total }}</span><small>верных ответов в короткой пробе</small></div>
+          {% endfor %}
+        </div>
         <ol class="diagnostic-answer-review">
           {% for mode, prompt, is_correct, explanation in checked_result.answers %}
             <li class="{% if is_correct %}is-correct{% else %}is-missing{% endif %}">
