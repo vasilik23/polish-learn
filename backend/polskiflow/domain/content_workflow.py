@@ -515,6 +515,10 @@ def validate_model_resolutions(
     )
     require_slug(question_lessons, "exercises", "model_resolutions.question_lesson_ids")
     require_slug(question_lessons, "final_quiz", "model_resolutions.question_lesson_ids")
+    if question_lessons["exercises"] == question_lessons["final_quiz"]:
+        raise ManifestError(
+            "model_resolutions.question_lesson_ids: exercises и final_quiz должны быть разными уроками."
+        )
 
     reading = resolutions.get("reading")
     if not isinstance(reading, dict):
@@ -551,6 +555,225 @@ def validate_model_resolutions(
             "their database existence is not verified; no ORM, SQL, database or network operation "
             "was generated or performed."
         ),
+    }
+
+
+def build_executable_migration_preview(
+    result: ValidationResult,
+    resolutions: dict[str, Any],
+    approval_id: str,
+    expected_checksum: str,
+    expected_resolutions_checksum: str,
+) -> dict[str, str]:
+    """Render reviewable migration candidates without importing ORM or executing SQL."""
+    checked = validate_model_resolutions(
+        result, resolutions, approval_id, expected_checksum
+    )
+    resolutions_checksum = expected_resolutions_checksum.strip().lower()
+    if not CHECKSUM_RE.fullmatch(resolutions_checksum):
+        raise ManifestError(
+            "expected_resolutions_checksum: ожидается полный SHA-256 из 64 символов."
+        )
+    if resolutions_checksum != checked["resolutions_checksum"]:
+        raise ManifestError(
+            "expected_resolutions_checksum: resolutions изменились после проверки."
+        )
+
+    manifest_json = json.dumps(result.manifest, ensure_ascii=False, sort_keys=True)
+    resolutions_json = json.dumps(resolutions, ensure_ascii=False, sort_keys=True)
+    metadata = {
+        "artifact_type": "polskiflow-content-executable-migration-preview",
+        "schema_version": 1,
+        "manifest_checksum": result.checksum,
+        "resolutions_checksum": resolutions_checksum,
+        "approval_id": checked["approval_id"],
+        "writes_performed": False,
+        "files": {
+            "django": "candidate-django-runpython.py",
+            "supabase": "candidate-supabase-content.sql",
+        },
+        "boundary": (
+            "Review artifact only. These candidates were not installed, imported, executed, "
+            "or written to migration directories. A developer must review schema assumptions, "
+            "assign ordered filenames/dependencies, add tests, and approve each real migration."
+        ),
+    }
+    django = f'''"""REVIEW CANDIDATE ONLY — never auto-installed or executed.
+Manifest: {result.checksum}
+Resolutions: {resolutions_checksum}
+Approval: {checked["approval_id"]}
+"""
+import json
+
+MANIFEST = json.loads({manifest_json!r})
+RESOLUTIONS = json.loads({resolutions_json!r})
+
+
+def forwards(apps, schema_editor):
+    Course = apps.get_model("learning", "Course")
+    Topic = apps.get_model("learning", "Topic")
+    Lesson = apps.get_model("learning", "Lesson")
+    Flashcard = apps.get_model("learning", "Flashcard")
+    LessonFlashcard = apps.get_model("learning", "LessonFlashcard")
+    Question = apps.get_model("learning", "Question")
+    ReadingText = apps.get_model("learning", "ReadingText")
+    course = Course.objects.get(pk=RESOLUTIONS["course_id"])
+    topic_data = RESOLUTIONS["topic"]
+    topic, _ = Topic.objects.update_or_create(
+        pk=MANIFEST["id"], defaults={{"course": course, "title": MANIFEST["title"],
+        "description": topic_data["description"], "emoji": topic_data["emoji"],
+        "position": topic_data["position"], "is_active": True}}
+    )
+    grammar_data = RESOLUTIONS["grammar_lesson"]
+    grammar, _ = Lesson.objects.update_or_create(
+        pk=grammar_data["id"], defaults={{"topic": topic, "kind": "grammar",
+        "title": grammar_data["title"], "plan_title": grammar_data["plan_title"],
+        "subtitle": grammar_data["subtitle"], "description": grammar_data["description"],
+        "minutes": grammar_data["minutes"], "emoji": grammar_data["emoji"],
+        "theory_title": grammar_data["theory_title"],
+        "theory_sections": [{{"text": MANIFEST["content"]["grammar"]["summary"]}}],
+        "position": grammar_data["position"], "is_active": True}}
+    )
+    source = MANIFEST["source"]
+    for set_position, cards in enumerate(MANIFEST["content"]["card_sets"]):
+        lesson = Lesson.objects.get(pk=RESOLUTIONS["card_set_lesson_ids"][set_position])
+        LessonFlashcard.objects.filter(lesson=lesson).delete()
+        for position, card in enumerate(cards):
+            flashcard, _ = Flashcard.objects.update_or_create(
+                pk=card["id"], defaults={{"polish": card["polish"],
+                "translation": card["translation"], "example": card["example"],
+                "source_metadata": source, "position": position, "is_active": True}}
+            )
+            LessonFlashcard.objects.create(lesson=lesson, flashcard=flashcard, position=position)
+    for group in ("exercises", "final_quiz"):
+        lesson = Lesson.objects.get(pk=RESOLUTIONS["question_lesson_ids"][group])
+        Question.objects.filter(lesson=lesson).delete()
+        for position, item in enumerate(MANIFEST["content"][group]):
+            Question.objects.create(lesson=lesson, prompt=item["prompt"],
+                options=item["options"], correct=item["options"].index(item["answer"]),
+                explanation=item["explanation"], position=position, is_active=True)
+    reading = RESOLUTIONS["reading"]
+    ReadingText.objects.update_or_create(pk=reading["id"], defaults={{"topic": topic,
+        "title": reading["title"], "description": reading["description"],
+        "level": MANIFEST["level"], "minutes": reading["minutes"], "emoji": reading["emoji"],
+        "paragraphs": MANIFEST["content"]["reading"]["paragraphs"],
+        "glossary": MANIFEST["content"]["reading"]["glossary"],
+        "source_metadata": source, "position": reading["position"], "is_active": True}})
+
+
+def reverse_noop(apps, schema_editor):
+    # Forward-only correction is mandatory; reviewed content is never silently deleted.
+    pass
+
+
+# A developer must add migrations.RunPython(forwards, reverse_noop) manually.
+'''
+    sql_manifest = json.dumps(result.manifest, ensure_ascii=False, sort_keys=True).replace("'", "''")
+    sql_resolutions = json.dumps(resolutions, ensure_ascii=False, sort_keys=True).replace("'", "''")
+    delimiter_suffix = result.checksum
+    sql_delimiter = f"$pf_{delimiter_suffix}$"
+    while sql_delimiter in sql_manifest or sql_delimiter in sql_resolutions:
+        delimiter_suffix += "x"
+        sql_delimiter = f"$pf_{delimiter_suffix}$"
+    sql = f"""-- REVIEW CANDIDATE ONLY — never auto-installed or executed.
+-- Manifest: {result.checksum}
+-- Resolutions: {resolutions_checksum}
+-- Approval: {checked['approval_id']}
+begin;
+do {sql_delimiter}
+declare
+  manifest jsonb := '{sql_manifest}'::jsonb;
+  resolutions jsonb := '{sql_resolutions}'::jsonb;
+  cards jsonb;
+  item jsonb;
+  lesson_slug text;
+  set_index integer;
+  item_index integer;
+begin
+  if not exists (select 1 from courses where id = resolutions->>'course_id') then
+    raise exception 'Resolved course does not exist';
+  end if;
+  insert into topics (id, course_id, title, description, emoji, position, is_active)
+  values (manifest->>'id', resolutions->>'course_id', manifest->>'title',
+    resolutions#>>'{{topic,description}}', resolutions#>>'{{topic,emoji}}',
+    (resolutions#>>'{{topic,position}}')::integer, true)
+  on conflict (id) do update set course_id=excluded.course_id, title=excluded.title,
+    description=excluded.description, emoji=excluded.emoji, position=excluded.position, is_active=true;
+
+  insert into lessons (id, topic_id, kind, title, plan_title, subtitle, description,
+    minutes, emoji, theory_title, theory_sections, position, is_active, source_metadata)
+  values (resolutions#>>'{{grammar_lesson,id}}', manifest->>'id', 'grammar',
+    resolutions#>>'{{grammar_lesson,title}}', resolutions#>>'{{grammar_lesson,plan_title}}',
+    resolutions#>>'{{grammar_lesson,subtitle}}', resolutions#>>'{{grammar_lesson,description}}',
+    (resolutions#>>'{{grammar_lesson,minutes}}')::integer,
+    resolutions#>>'{{grammar_lesson,emoji}}', resolutions#>>'{{grammar_lesson,theory_title}}',
+    jsonb_build_array(jsonb_build_object('text', manifest#>>'{{content,grammar,summary}}')),
+    (resolutions#>>'{{grammar_lesson,position}}')::integer, true, '{{}}'::jsonb)
+  on conflict (id) do update set topic_id=excluded.topic_id, kind=excluded.kind,
+    title=excluded.title, plan_title=excluded.plan_title, subtitle=excluded.subtitle,
+    description=excluded.description, minutes=excluded.minutes, emoji=excluded.emoji,
+    theory_title=excluded.theory_title, theory_sections=excluded.theory_sections,
+    position=excluded.position, is_active=true;
+
+  for cards, set_index in select value, ordinality - 1 from
+    jsonb_array_elements(manifest#>'{{content,card_sets}}') with ordinality loop
+    lesson_slug := resolutions#>>array['card_set_lesson_ids', set_index::text];
+    if not exists (select 1 from lessons where id=lesson_slug) then
+      raise exception 'Resolved card-set lesson does not exist: %', lesson_slug;
+    end if;
+    delete from lesson_flashcards where lesson_id=lesson_slug;
+    for item, item_index in select value, ordinality - 1 from
+      jsonb_array_elements(cards) with ordinality loop
+      insert into flashcards (id, polish, translation, example, source_metadata, position, is_active)
+      values (item->>'id', item->>'polish', item->>'translation', item->>'example',
+        manifest->'source', item_index, true)
+      on conflict (id) do update set polish=excluded.polish, translation=excluded.translation,
+        example=excluded.example, source_metadata=excluded.source_metadata,
+        position=excluded.position, is_active=true;
+      insert into lesson_flashcards (lesson_id, flashcard_id, position)
+      values (lesson_slug, item->>'id', item_index);
+    end loop;
+  end loop;
+
+  foreach lesson_slug in array array[resolutions#>>'{{question_lesson_ids,exercises}}',
+    resolutions#>>'{{question_lesson_ids,final_quiz}}'] loop
+    if not exists (select 1 from lessons where id=lesson_slug) then
+      raise exception 'Resolved question lesson does not exist: %', lesson_slug;
+    end if;
+  end loop;
+  for lesson_slug, cards in select resolutions#>>'{{question_lesson_ids,exercises}}',
+    manifest#>'{{content,exercises}}' union all select
+    resolutions#>>'{{question_lesson_ids,final_quiz}}', manifest#>'{{content,final_quiz}}' loop
+    delete from questions where lesson_id=lesson_slug;
+    for item, item_index in select value, ordinality - 1 from
+      jsonb_array_elements(cards) with ordinality loop
+      insert into questions (lesson_id, prompt, options, correct, explanation, position, is_active)
+      select lesson_slug, item->>'prompt', item->'options', answer.ordinality - 1,
+        item->>'explanation', item_index, true from
+        jsonb_array_elements_text(item->'options') with ordinality answer(value, ordinality)
+        where answer.value=item->>'answer';
+    end loop;
+  end loop;
+
+  insert into reading_texts (id, topic_id, title, description, level, minutes, emoji,
+    paragraphs, glossary, source_metadata, position, is_active)
+  values (resolutions#>>'{{reading,id}}', manifest->>'id', resolutions#>>'{{reading,title}}',
+    resolutions#>>'{{reading,description}}', manifest->>'level',
+    (resolutions#>>'{{reading,minutes}}')::integer, resolutions#>>'{{reading,emoji}}',
+    manifest#>'{{content,reading,paragraphs}}', manifest#>'{{content,reading,glossary}}',
+    manifest->'source', (resolutions#>>'{{reading,position}}')::integer, true)
+  on conflict (id) do update set topic_id=excluded.topic_id, title=excluded.title,
+    description=excluded.description, level=excluded.level, minutes=excluded.minutes,
+    emoji=excluded.emoji, paragraphs=excluded.paragraphs, glossary=excluded.glossary,
+    source_metadata=excluded.source_metadata, position=excluded.position, is_active=true;
+end
+{sql_delimiter};
+commit;
+"""
+    return {
+        "migration-preview.json": json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        "candidate-django-runpython.py": django,
+        "candidate-supabase-content.sql": sql,
     }
 
 
