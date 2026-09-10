@@ -1,0 +1,34 @@
+from pathlib import Path
+
+from django.test import SimpleTestCase
+
+
+SOURCE = (Path(__file__).parent / "learning/static/polskiflow/result-queue.js").read_text()
+
+
+class OfflineResultQueueContractTests(SimpleTestCase):
+    def test_queue_is_namespaced_and_deduplicated_by_event(self):
+        self.assertIn('return `user:${userId}`', SOURCE)
+        self.assertIn('key: `${owner}:${payload.event_id}`', SOURCE)
+        self.assertIn('throw new Error("Idempotency conflict")', SOURCE)
+        self.assertIn("store.put(item)", SOURCE)
+
+    def test_sensitive_fields_cannot_enter_persisted_payload(self):
+        self.assertIn('"access_token", "refresh_token", "token", "email", "user_id"', SOURCE)
+        self.assertNotIn("localStorage", SOURCE)
+        self.assertNotIn("sessionStorage", SOURCE)
+
+    def test_bearer_exists_only_at_flush_boundary(self):
+        self.assertIn("async function flush(userId, accessToken)", SOURCE)
+        self.assertIn('"Authorization": `Bearer ${accessToken}`', SOURCE)
+
+    def test_retries_and_permanent_failures_have_bounded_visible_states(self):
+        self.assertIn("const MAX_ATTEMPTS = 5", SOURCE)
+        self.assertIn('item.state = "needs-attention"', SOURCE)
+        self.assertIn('state: "retry-paused"', SOURCE)
+        self.assertIn('state: "auth-required"', SOURCE)
+
+    def test_only_matching_confirmations_are_removed(self):
+        self.assertIn("response.status === 200 || response.status === 201", SOURCE)
+        self.assertIn("body?.data?.event_id === item.payload.event_id", SOURCE)
+        self.assertIn("await remove(item.key)", SOURCE)

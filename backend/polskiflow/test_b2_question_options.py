@@ -63,3 +63,46 @@ class B2QuestionOptionTests(TestCase):
         )
         for artificial in artificial_fragments:
             self.assertNotIn(artificial, all_options)
+
+    def test_sentence_building_distractors_are_natural_near_misses(self):
+        expected = {
+            "b2view-grammar": "Mimo że rozumiem to zastrzeżenie, nowe dane potwierdzają nasz wniosek.",
+            "b2news-grammar": "Świadek przekazał, że pociąg zatrzymał się przed stacją.",
+            "b2prof-grammar": "Ustalono, że wdrożenie zostanie przesunięte na przyszły miesiąc.",
+            "b2tech-grammar": "Na podstawie wyników opracowano nowe rozwiązanie.",
+            "b2economy-grammar": "Prawdopodobnie ten wariant będzie bardziej opłacalny w porównaniu z poprzednim.",
+            "b2law-grammar": "W związku z brakiem odpowiedzi składam skargę na bezczynność organu.",
+            "b2psych-grammar": "Z jego perspektywy mogła okazać więcej zrozumienia.",
+            "b2lit-grammar": "Bohaterka powiedziała, że wróci, ale narrator poddaje jej słowa w wątpliwość.",
+            "b2discussion-grammar": "Podsumowując, zgadzamy się co do celu, ale sposób pozostaje sporny.",
+            "b2intercultural-grammar": "Jeśli dobrze rozumiem, milczenie nie oznaczało sprzeciwu.",
+            "b2academic-grammar": "Na podstawie tej próby nie można sformułować ostatecznego wniosku.",
+            "b2final-grammar": "Gdybyśmy powtórzyli projekt, wcześniej zebralibyśmy informację zwrotną.",
+        }
+        for lesson_id, answer in expected.items():
+            question = Question.objects.get(lesson_id=lesson_id, position=5)
+            self.assertEqual(question.options[question.correct], answer)
+            self.assertEqual(len(question.options), 3)
+            self.assertEqual(len(set(question.options)), 3)
+
+        all_options = " ".join(
+            option
+            for lesson_id in expected
+            for option in Question.objects.get(lesson_id=lesson_id, position=5).options
+        )
+        artificial_fragments = (
+            "dane wnioskiem",
+            "przed stacji",
+            "przesunęło miesiącem",
+            "opracować rozwiązanie",
+            "wariant będzie opłacalność",
+            "skargą do bezczynność",
+            "zrozumieć mogła",
+            "poddawać słowa",
+            "mimo sposób spornego",
+            "milczenie bez sprzeciwem",
+            "wniosek kończy",
+            "informacja zbiera",
+        )
+        for artificial in artificial_fragments:
+            self.assertNotIn(artificial, all_options)
