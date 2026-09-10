@@ -423,6 +423,11 @@ p { line-height: 1.65; }
 .interaction-self-check > p { margin: 0 0 .15rem; color: var(--muted); font-size: .76rem; }
 .interaction-self-check label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: .6rem; font-size: .82rem; line-height: 1.4; }
 .interaction-self-check input { margin-top: .2rem; accent-color: var(--primary); }
+.interaction-free-practice > label { display: block; margin-top: 1rem; font-weight: 800; }
+.interaction-free-task { padding: .8rem; border-radius: .75rem; background: var(--surface-soft); color: var(--text) !important; }
+.interaction-free-practice textarea { width: 100%; min-height: 10rem; margin-top: .45rem; resize: vertical; padding: .9rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--surface); color: var(--text); font: inherit; line-height: 1.55; }
+.interaction-free-practice textarea:focus-visible { outline: 3px solid var(--primary-soft); border-color: var(--primary); }
+.interaction-draft-reset { width: auto; margin-top: .8rem; }
 .compact-empty { padding: 1.2rem; }
 .level-badge { display: inline-grid; place-items: center; min-width: 2.2rem; padding: .28rem .48rem; border-radius: .55rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .7rem; font-weight: 800; }
 .empty-state { grid-column: 1 / -1; justify-items: center; padding: 3rem 1.5rem; text-align: center; }

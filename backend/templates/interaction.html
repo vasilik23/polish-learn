@@ -100,4 +100,65 @@
       </article>
     {% endfor %}
   </div>
+
+  <header class="section-heading interaction-sequence-heading">
+    <div><p class="eyebrow">Свободная практика</p><h2>Сформулируй ответ самостоятельно</h2></div>
+    <p class="muted">Черновик остаётся только в этом браузере. Он не отправляется на сервер и не оценивается автоматически.</p>
+  </header>
+  <div class="interaction-list">
+    {% for scenario in free_production_scenarios %}
+      <article class="card interaction-card interaction-free-practice" id="free-{{ scenario.id }}">
+        <header><span>{{ scenario.level }}</span><span>{{ scenario.mode }}</span><span>Свободный ответ</span></header>
+        <h2>{{ scenario.title }}</h2>
+        <p>{{ scenario.situation }}</p>
+        <p class="interaction-free-task"><strong>Задание:</strong> {{ scenario.task }}</p>
+        <label for="free-draft-{{ scenario.id }}">Твой черновик</label>
+        <textarea id="free-draft-{{ scenario.id }}" rows="7" data-interaction-draft="{{ scenario.id }}" aria-describedby="free-status-{{ scenario.id }}"></textarea>
+        <div class="writing-draft-meta" id="free-status-{{ scenario.id }}">
+          <span data-word-count aria-live="polite">0 слов</span>
+          <span data-save-status role="status">Сохраняется только локально в этом браузере</span>
+        </div>
+        <fieldset class="interaction-self-check">
+          <legend>Жанровая самопроверка</legend>
+          <p>Отметь признаки вручную: это ориентир для перечитывания, а не проверка языка.</p>
+          {% for criterion in scenario.checklist %}<label><input type="checkbox"> <span>{{ criterion }}</span></label>{% endfor %}
+        </fieldset>
+        <button class="secondary compact-button interaction-draft-reset" type="button" data-reset-interaction-draft>Удалить черновик</button>
+      </article>
+    {% endfor %}
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script>
+    (function () {
+      const storagePrefix = "polskiflow-interaction:{{ request.supabase_user.id|escapejs }}:";
+      document.querySelectorAll("[data-interaction-draft]").forEach(function (textarea) {
+        const card = textarea.closest(".interaction-free-practice");
+        const key = storagePrefix + textarea.dataset.interactionDraft;
+        const count = card.querySelector("[data-word-count]");
+        const status = card.querySelector("[data-save-status]");
+        function updateCount() {
+          const value = textarea.value.trim();
+          count.textContent = (value ? value.split(/\s+/u).length : 0) + " слов";
+        }
+        try { textarea.value = localStorage.getItem(key) || ""; }
+        catch (error) { status.textContent = "Локальное сохранение недоступно"; }
+        updateCount();
+        textarea.addEventListener("input", function () {
+          updateCount();
+          try { localStorage.setItem(key, textarea.value); status.textContent = "Черновик сохранён в этом браузере"; }
+          catch (error) { status.textContent = "Не удалось сохранить черновик локально"; }
+        });
+        card.querySelector("[data-reset-interaction-draft]").addEventListener("click", function () {
+          if (!window.confirm("Удалить этот локальный черновик? Восстановить его не получится.")) return;
+          textarea.value = "";
+          card.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) { checkbox.checked = false; });
+          try { localStorage.removeItem(key); } catch (error) { /* Поле всё равно очищено. */ }
+          updateCount();
+          status.textContent = "Черновик удалён";
+          textarea.focus();
+        });
+      });
+    }());
+  </script>
 {% endblock %}
