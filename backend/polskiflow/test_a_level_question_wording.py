@@ -37,7 +37,7 @@ class ALevelQuestionWordingTests(TestCase):
 
     def test_ambiguous_prompts_are_explicit(self):
         prompts = {
-            ("food-grammar", 2): "Kupuję dziś ___.",
+            ("food-grammar", 2): "Widzę świeży ___ na półce.",
             ("weather-grammar", 0): "Lekarz podkreśla konieczność:",
             ("weather-grammar", 3): "Prognoza nie jest pewna:",
         }
