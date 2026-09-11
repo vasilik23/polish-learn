@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "manifest_checksum": "11c18422c41f6f80f995c7127445836e70d7202e51678b37578ecf12a2f27a94",
+  "course_id": "a1-foundations",
+  "topic": {
+    "description": "Называем время и дни недели, договариваемся о встрече",
+    "emoji": "🕒",
+    "position": 7
+  },
+  "card_set_lesson_ids": ["time-words", "time-review"],
+  "grammar_lesson": {
+    "id": "time-grammar",
+    "title": "O której?",
+    "plan_title": "Договариваемся",
+    "subtitle": "5 заданий · A1",
+    "description": "Используй o, w и we со временем",
+    "minutes": 8,
+    "emoji": "✏️",
+    "theory_title": "O szóstej — w poniedziałek — we wtorek",
+    "position": 29
+  },
+  "question_lesson_ids": {
+    "exercises": "time-grammar",
+    "final_quiz": "time-quiz"
+  },
+  "reading": {
+    "id": "spotkanie-w-piatek",
+    "topic_id": "time-meetings",
+    "title": "Spotkanie w piątek",
+    "description": "Марта и Павел договариваются встретиться после работы",
+    "minutes": 4,
+    "emoji": "🕒",
+    "position": 7
+  }
+}

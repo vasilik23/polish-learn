@@ -2,14 +2,17 @@
 
 import json
 import random
+import uuid
+from datetime import datetime, timezone
 
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import render
+from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_POST
 
 from polskiflow.auth_views import require_browser_user
 from polskiflow.content import flashcards, grammar, quiz, task
-from polskiflow.progress_store import save_lesson_completion
+from polskiflow.progress_store import save_lesson_completion_result
 
 
 @require_browser_user
@@ -247,15 +250,39 @@ def _builder_is_correct(
 
 
 def _complete(request: HttpRequest, lesson_id: str, score: int, total: int) -> HttpResponse:
-    saved = save_lesson_completion(
+    save_result = save_lesson_completion_result(
         request.supabase_access_token,
         request.supabase_user.id,
         lesson_id,
         total,
         score,
     )
+    context = {"score": score, "total": total, "saved": save_result.saved}
+    # Start with one narrowly scoped flow. The browser receives an opaque,
+    # stable namespace and an immutable result, never identity or auth tokens.
+    if lesson_id == "words" and save_result.retryable:
+        completed_at = datetime.now(timezone.utc)
+        context.update(
+            {
+                "offline_queue_namespace": salted_hmac(
+                    "polskiflow.result-queue", request.supabase_user.id
+                ).hexdigest()[:32],
+                "offline_result_json": json.dumps(
+                    {
+                        "event_id": str(uuid.uuid4()),
+                        "lesson_id": lesson_id,
+                        "plan_date": completed_at.date().isoformat(),
+                        "completed_at": completed_at.isoformat().replace("+00:00", "Z"),
+                        "cards_total": total,
+                        "cards_known": score,
+                        "contract_version": "1.0",
+                    },
+                    separators=(",", ":"),
+                ),
+            }
+        )
     return render(
         request,
         "lessons/_complete.html",
-        {"score": score, "total": total, "saved": saved},
+        context,
     )

@@ -1,13 +1,16 @@
 import json
 from datetime import date
 from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 from django.test import SimpleTestCase, override_settings
 
 from polskiflow.progress_store import (
+    CompletionSaveResult,
     load_dashboard_progress,
     record_lesson_result_event,
     save_lesson_completion,
+    save_lesson_completion_result,
     save_profile_settings,
 )
 from polskiflow.domain.lesson_results import validate_lesson_result
@@ -100,6 +103,33 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(request.headers["Authorization"], "Bearer access")
         self.assertEqual(json.loads(request.data)["cards_known"], 4)
         self.assertIn("on_conflict=user_id%2Clesson_id%2Cplan_date", request.full_url)
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+        SUPABASE_AUTH_TIMEOUT=2,
+    )
+    @patch("polskiflow.progress_store.urlopen", side_effect=TimeoutError)
+    def test_completion_timeout_is_safe_to_retry(self, _mocked_urlopen):
+        self.assertEqual(
+            save_lesson_completion_result("access", "user", "words", 5, 4),
+            CompletionSaveResult(saved=False, retryable=True),
+        )
+
+    @override_settings(
+        SUPABASE_URL="https://project.supabase.co",
+        SUPABASE_ANON_KEY="public-key",
+        SUPABASE_AUTH_TIMEOUT=2,
+    )
+    @patch("polskiflow.progress_store.urlopen")
+    def test_completion_client_error_is_not_queued(self, mocked_urlopen):
+        mocked_urlopen.side_effect = HTTPError(
+            "https://project.supabase.co", 400, "bad request", {}, None
+        )
+        self.assertEqual(
+            save_lesson_completion_result("access", "user", "words", 5, 4),
+            CompletionSaveResult(saved=False, retryable=False),
+        )
 
     @override_settings(
         SUPABASE_URL="https://project.supabase.co",
