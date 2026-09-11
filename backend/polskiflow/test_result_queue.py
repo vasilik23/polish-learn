@@ -22,6 +22,13 @@ class OfflineResultQueueContractTests(SimpleTestCase):
         self.assertIn("async function flush(userId, accessToken)", SOURCE)
         self.assertIn('"Authorization": `Bearer ${accessToken}`', SOURCE)
 
+    def test_browser_session_flush_uses_csrf_without_exposing_bearer(self):
+        session_source = SOURCE[SOURCE.index("async function flushSession"):]
+        self.assertIn('"/api/v1/me/lesson-results/session/"', session_source)
+        self.assertIn('"X-CSRFToken": csrfToken', session_source)
+        self.assertIn('credentials: "same-origin"', session_source)
+        self.assertNotIn("Authorization", session_source)
+
     def test_retries_and_permanent_failures_have_bounded_visible_states(self):
         self.assertIn("const MAX_ATTEMPTS = 5", SOURCE)
         self.assertIn('item.state = "needs-attention"', SOURCE)

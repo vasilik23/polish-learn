@@ -124,6 +124,23 @@ def lesson_results_v1(request):
         or bearer_token != request.supabase_access_token
     ):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    return _store_lesson_result(request)
+
+
+@require_POST
+@require_supabase_user
+def lesson_results_session_v1(request):
+    """Store a browser-queued result without exposing its HttpOnly token."""
+    if request.headers.get("Authorization"):
+        return _error_response(
+            "cookie_session_required",
+            "Use the browser session without an Authorization header",
+            401,
+        )
+    return _store_lesson_result(request)
+
+
+def _store_lesson_result(request):
     if request.content_type != "application/json":
         return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
     if len(request.body) > MAX_REQUEST_BYTES:
