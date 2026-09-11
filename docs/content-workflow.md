@@ -195,3 +195,53 @@ RLS/grants и только затем отдельно применяет review
 с её стабильными ID выключаются, заменённые значения восстанавливаются из
 предыдущей reviewed migration, после чего сверяются количества и маршруты.
 Конкретный `scope_key` и эти шаги включены в publish-plan artifact.
+
+## 6. Write-free пилот на существующей теме
+
+Workflow проверен на небольшой реальной ORIGINAL-теме A1 «Время и встречи».
+Зафиксированные review-fixtures находятся в
+[`examples/content-workflow/`](examples/content-workflow/): approved manifest
+описывает уже существующий контент, а resolutions ссылаются на его стабильные
+course/topic/lesson/reading ID. `PILOT-TIME-001` — идентификатор только этого
+тестового review-артефакта и не является разрешением на production-публикацию.
+
+Из корня репозитория структурная проверка имеет детерминированную границу:
+
+```bash
+backend/.venv/bin/python backend/manage.py content_workflow \
+  docs/examples/content-workflow/time-meetings-approved.json
+```
+
+В JSON-выводе ожидаются `publishable: true`, manifest checksum
+`11c18422c41f6f80f995c7127445836e70d7202e51678b37578ecf12a2f27a94` и
+boundary `Preview only: no database, Supabase, migration or network write was
+performed.` Проверка resolutions:
+
+```bash
+backend/.venv/bin/python backend/manage.py content_workflow \
+  docs/examples/content-workflow/time-meetings-approved.json \
+  --check-resolutions docs/examples/content-workflow/time-meetings-resolutions.json \
+  --approval-id PILOT-TIME-001 \
+  --expected-checksum 11c18422c41f6f80f995c7127445836e70d7202e51678b37578ecf12a2f27a94
+```
+
+Она возвращает `complete: true`, `writes_performed: false` и resolutions
+checksum `e90d33273ce5fc14c288f4e49eac503bfc44fb43c7e458aa73a0888590fe5f45`.
+Scaffold и migration preview следует направлять только в новый каталог под
+`/tmp`; их кандидаты остаются review-файлами и не являются миграциями:
+
+```bash
+backend/.venv/bin/python backend/manage.py content_workflow \
+  docs/examples/content-workflow/time-meetings-approved.json \
+  --generate-migration-preview \
+  --model-resolutions docs/examples/content-workflow/time-meetings-resolutions.json \
+  --approval-id PILOT-TIME-001 \
+  --expected-checksum 11c18422c41f6f80f995c7127445836e70d7202e51678b37578ecf12a2f27a94 \
+  --expected-resolutions-checksum e90d33273ce5fc14c288f4e49eac503bfc44fb43c7e458aa73a0888590fe5f45 \
+  --output-directory /tmp/polskiflow-time-meetings-preview
+```
+
+Регрессионный тест дважды создаёт preview в изолированных временных каталогах,
+побайтово сравнивает три результата и подтверждает, что настоящие Django и
+Supabase migration-каталоги не изменились. Проверка не читает БД, не обращается
+к сети и ничего не публикует.

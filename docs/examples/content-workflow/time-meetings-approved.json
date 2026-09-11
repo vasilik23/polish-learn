@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "time-meetings",
+  "title": "Время и встречи",
+  "level": "A1",
+  "language": "pl",
+  "status": "approved",
+  "source": {
+    "origin": "original",
+    "created_for": "PolskiFlow",
+    "license": "PolskiFlow original content",
+    "verified_at": "2026-08-27"
+  },
+  "review": {
+    "language_reviewer": "pilot-language-review",
+    "license_reviewer": "pilot-rights-review",
+    "reviewed_at": "2026-09-11"
+  },
+  "content": {
+    "active_units": [
+      {"id": "time-unit-hour"},
+      {"id": "time-unit-minute"},
+      {"id": "time-unit-monday"},
+      {"id": "time-unit-tuesday"},
+      {"id": "time-unit-wednesday"},
+      {"id": "time-unit-thursday"},
+      {"id": "time-unit-friday"},
+      {"id": "time-unit-weekend"},
+      {"id": "time-unit-today"},
+      {"id": "time-unit-tomorrow"},
+      {"id": "time-unit-morning"},
+      {"id": "time-unit-evening"},
+      {"id": "time-unit-meeting"},
+      {"id": "time-unit-what-time"},
+      {"id": "time-unit-suit"}
+    ],
+    "card_sets": [
+      [
+        {"id": "time-godzina", "polish": "godzina", "translation": "час; время", "example": "Która jest godzina?"},
+        {"id": "time-minuta", "polish": "minuta", "translation": "минута", "example": "Spotkanie zaczyna się za pięć minut."},
+        {"id": "time-poniedzialek", "polish": "poniedziałek", "translation": "понедельник", "example": "W poniedziałek pracuję."},
+        {"id": "time-wtorek", "polish": "wtorek", "translation": "вторник", "example": "We wtorek mam kurs."},
+        {"id": "time-sroda", "polish": "środa", "translation": "среда", "example": "W środę spotykam się z Olą."},
+        {"id": "time-czwartek", "polish": "czwartek", "translation": "четверг", "example": "W czwartek jestem w domu."},
+        {"id": "time-piatek", "polish": "piątek", "translation": "пятница", "example": "W piątek idziemy do kina."},
+        {"id": "time-weekend", "polish": "weekend", "translation": "выходные", "example": "W weekend mam czas."}
+      ],
+      [
+        {"id": "time-dzisiaj", "polish": "dzisiaj", "translation": "сегодня", "example": "Dzisiaj jest środa."},
+        {"id": "time-jutro", "polish": "jutro", "translation": "завтра", "example": "Jutro mam spotkanie."},
+        {"id": "time-rano", "polish": "rano", "translation": "утром", "example": "Rano piję kawę."},
+        {"id": "time-wieczorem", "polish": "wieczorem", "translation": "вечером", "example": "Wieczorem czytam książkę."},
+        {"id": "time-spotkanie", "polish": "spotkanie", "translation": "встреча", "example": "Spotkanie jest o szóstej."},
+        {"id": "time-o-ktorej", "polish": "o której?", "translation": "в котором часу?", "example": "O której zaczynamy?"},
+        {"id": "time-pasowac", "polish": "pasować", "translation": "подходить; быть удобным", "example": "Czy pasuje ci piątek?"}
+      ]
+    ],
+    "grammar": {
+      "summary": "Точное время вводим предлогом o, с днями недели употребляем w или we; время встречи спрашиваем конструкцией O której się spotykamy?"
+    },
+    "exercises": [
+      {"id": "time-exercise-at-six", "prompt": "Spotkanie jest ___ szóstej.", "options": ["w", "o", "na"], "answer": "o", "explanation": "Точное время вводим предлогом o: o szóstej."},
+      {"id": "time-exercise-on-monday", "prompt": "Kurs jest ___ poniedziałek.", "options": ["o", "w", "na"], "answer": "w", "explanation": "С днями недели употребляем w: w poniedziałek."},
+      {"id": "time-exercise-on-tuesday", "prompt": "Spotykamy się ___ wtorek.", "options": ["we", "o", "do"], "answer": "we", "explanation": "Перед wtorek для удобства произношения употребляем we: we wtorek."},
+      {"id": "time-exercise-ask-time", "prompt": "Как спросить время встречи?", "options": ["Który spotkanie?", "O której się spotykamy?", "Gdzie godzina?"], "answer": "O której się spotykamy?", "explanation": "O której się spotykamy? — естественный вопрос «Во сколько встречаемся?»."},
+      {"id": "time-exercise-suits", "prompt": "Czy pasuje ci piątek?", "options": ["Тебе подходит пятница?", "Ты работаешь в пятницу?", "Сегодня пятница?"], "answer": "Тебе подходит пятница?", "explanation": "Pasować в договорённостях означает «подходить, быть удобным»."}
+    ],
+    "reading": {
+      "paragraphs": [
+        "W środę Marta pisze do Pawła. Chce spotkać się z nim w tym tygodniu. Pyta: „Czy pasuje ci czwartek wieczorem?”. Paweł odpowiada, że w czwartek ma kurs języka polskiego.",
+        "Paweł proponuje piątek. Marta ma czas, więc pyta: „O której się spotykamy?”. Ustalają spotkanie o szóstej. Chcą wypić kawę w małej kawiarni obok parku.",
+        "W piątek Marta kończy pracę o piątej. Jedzie autobusem do centrum i przychodzi pięć minut wcześniej. Paweł już czeka przy wejściu. Oboje cieszą się, że zaczynają weekend razem."
+      ],
+      "glossary": {
+        "pisze": {"lemma": "pisać", "translation": "писать", "part_of_speech": "глагол"},
+        "spotkać": {"lemma": "spotkać się", "translation": "встретиться", "part_of_speech": "глагол"},
+        "tygodniu": {"lemma": "tydzień", "translation": "неделя", "part_of_speech": "существительное"},
+        "odpowiada": {"lemma": "odpowiadać", "translation": "отвечать", "part_of_speech": "глагол"},
+        "proponuje": {"lemma": "proponować", "translation": "предлагать", "part_of_speech": "глагол"},
+        "ustalają": {"lemma": "ustalać", "translation": "договариваться; определять", "part_of_speech": "глагол"},
+        "wypić": {"lemma": "wypić", "translation": "выпить", "part_of_speech": "глагол"},
+        "kończy": {"lemma": "kończyć", "translation": "заканчивать", "part_of_speech": "глагол"},
+        "jedzie": {"lemma": "jechać", "translation": "ехать", "part_of_speech": "глагол"},
+        "przychodzi": {"lemma": "przychodzić", "translation": "приходить", "part_of_speech": "глагол"},
+        "wcześniej": {"lemma": "wcześnie", "translation": "раньше", "part_of_speech": "наречие"},
+        "czeka": {"lemma": "czekać", "translation": "ждать", "part_of_speech": "глагол"},
+        "cieszą": {"lemma": "cieszyć się", "translation": "радоваться", "part_of_speech": "глагол"}
+      }
+    },
+    "final_quiz": [
+      {"id": "time-quiz-tomorrow", "prompt": "Что означает jutro?", "options": ["сегодня", "завтра", "утром"], "answer": "завтра", "explanation": "Jutro — завтра."},
+      {"id": "time-quiz-at-eight", "prompt": "Film zaczyna się ___ ósmej.", "options": ["o", "w", "we"], "answer": "o", "explanation": "Перед точным временем используем o."},
+      {"id": "time-quiz-tuesday", "prompt": "___ wtorek mam lekcję.", "options": ["O", "We", "Na"], "answer": "We", "explanation": "Говорим we wtorek."},
+      {"id": "time-quiz-wednesday", "prompt": "Как сказать «в среду»?", "options": ["o środzie", "w środę", "na środa"], "answer": "w środę", "explanation": "Устойчивое сочетание — w środę."},
+      {"id": "time-quiz-which-hour", "prompt": "O ___ zaczynamy?", "options": ["której", "który", "która"], "answer": "której", "explanation": "О времени спрашиваем o której?"},
+      {"id": "time-quiz-meeting", "prompt": "Что означает spotkanie?", "options": ["расписание", "встреча", "опоздание"], "answer": "встреча", "explanation": "Spotkanie — встреча."},
+      {"id": "time-quiz-natural-answer", "prompt": "Выберите естественный ответ на предложение встретиться.", "options": ["Tak, pasuje mi.", "Tak, jestem godzina.", "Tak, spotkanie robi."], "answer": "Tak, pasuje mi.", "explanation": "Pasuje mi — «мне подходит»."},
+      {"id": "time-quiz-next-day", "prompt": "Dzisiaj jest czwartek, a ___ piątek.", "options": ["rano", "jutro", "wieczorem"], "answer": "jutro", "explanation": "Если сегодня четверг, завтра — пятница: jutro."}
+    ]
+  },
+  "expected_counts": {
+    "active_units": 15,
+    "card_sets": 2,
+    "flashcards": 15,
+    "exercises": 5,
+    "reading_paragraphs": 3,
+    "glossary": 13,
+    "final_quiz": 8
+  }
+}

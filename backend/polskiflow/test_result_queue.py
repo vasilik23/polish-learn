@@ -4,6 +4,7 @@ from django.test import SimpleTestCase
 
 
 SOURCE = (Path(__file__).parent / "learning/static/polskiflow/result-queue.js").read_text()
+SYNC_SOURCE = (Path(__file__).parent / "learning/static/polskiflow/lesson-result-sync.js").read_text()
 
 
 class OfflineResultQueueContractTests(SimpleTestCase):
@@ -39,3 +40,11 @@ class OfflineResultQueueContractTests(SimpleTestCase):
         self.assertIn("response.status === 200 || response.status === 201", SOURCE)
         self.assertIn("body?.data?.event_id === item.payload.event_id", SOURCE)
         self.assertIn("await remove(item.key)", SOURCE)
+
+    def test_lesson_pilot_uses_cookie_session_and_has_visible_retry(self):
+        self.assertIn("queue.flushSession(namespace, csrfToken)", SYNC_SOURCE)
+        self.assertIn('retry.addEventListener("click", flush)', SYNC_SOURCE)
+        self.assertIn('window.addEventListener("online", flush)', SYNC_SOURCE)
+        self.assertNotIn("Authorization", SYNC_SOURCE)
+        self.assertNotIn("user_id", SYNC_SOURCE)
+        self.assertNotIn("email", SYNC_SOURCE)

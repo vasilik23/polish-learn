@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
 from polskiflow.learning.models import Course, Flashcard, Lesson, LessonFlashcard, Question, Topic
-from polskiflow.progress_store import DashboardProgress
+from polskiflow.progress_store import CompletionSaveResult, DashboardProgress
 
 
 class LessonViewsTests(TestCase):
@@ -733,6 +733,44 @@ class LessonViewsTests(TestCase):
             )
         self.assertContains(response, "5 / 5")
         self.assertContains(response, "Урок завершён")
+
+    @patch("polskiflow.lesson_views.save_lesson_completion_result")
+    def test_words_transient_failure_exposes_token_free_offline_handoff(self, mocked_save):
+        mocked_save.return_value = CompletionSaveResult(saved=False, retryable=True)
+
+        response = self.client.post(
+            "/lesson/words/step/",
+            {"action": "know", "index": 4, "score": 4},
+        )
+
+        self.assertContains(response, "data-lesson-result-sync")
+        self.assertContains(response, "data-sync-retry")
+        self.assertContains(response, '&quot;lesson_id&quot;:&quot;words&quot;')
+        self.assertNotContains(response, "user-123")
+        self.assertNotContains(response, "learner@example.com")
+        self.assertNotContains(response, "access_token")
+
+    @patch("polskiflow.lesson_views.save_lesson_completion_result")
+    def test_quiz_failure_does_not_join_narrow_offline_pilot(self, mocked_save):
+        mocked_save.return_value = CompletionSaveResult(saved=False, retryable=True)
+
+        response = self.client.post(
+            "/lesson/quiz/step/",
+            {"action": "next", "index": 4, "score": 3, "selected": 1},
+        )
+
+        self.assertNotContains(response, "data-lesson-result-sync")
+
+    @patch("polskiflow.lesson_views.save_lesson_completion_result")
+    def test_permanent_words_failure_is_not_queued(self, mocked_save):
+        mocked_save.return_value = CompletionSaveResult(saved=False, retryable=False)
+
+        response = self.client.post(
+            "/lesson/words/step/",
+            {"action": "know", "index": 4, "score": 4},
+        )
+
+        self.assertNotContains(response, "data-lesson-result-sync")
 
     def test_quiz_answer_shows_explanation_and_next_question(self):
         answered = self.client.post(

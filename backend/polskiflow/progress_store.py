@@ -44,6 +44,12 @@ class DashboardProgress:
         return self.weekly_completed_count - self.previous_week_completed_count
 
 
+@dataclass(frozen=True)
+class CompletionSaveResult:
+    saved: bool
+    retryable: bool
+
+
 def load_dashboard_progress(
     access_token: str | None,
     user_id: str,
@@ -145,8 +151,22 @@ def save_lesson_completion(
     environment, a rejected or unavailable write is reported to the UI.
     """
 
+    return save_lesson_completion_result(
+        access_token, user_id, lesson_id, cards_total, cards_known
+    ).saved
+
+
+def save_lesson_completion_result(
+    access_token: str | None,
+    user_id: str,
+    lesson_id: str,
+    cards_total: int,
+    cards_known: int,
+) -> CompletionSaveResult:
+    """Save a completion and identify failures that are safe to retry later."""
+
     if not _configured(access_token):
-        return False
+        return CompletionSaveResult(saved=False, retryable=False)
     query = urlencode({"on_conflict": "user_id,lesson_id,plan_date"})
     payload = {
         "user_id": user_id,
@@ -168,9 +188,12 @@ def save_lesson_completion(
     )
     try:
         with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
-            return response.status in (200, 201, 204)
-    except (HTTPError, URLError, TimeoutError):
-        return False
+            saved = response.status in (200, 201, 204)
+            return CompletionSaveResult(saved=saved, retryable=response.status >= 500)
+    except HTTPError as error:
+        return CompletionSaveResult(saved=False, retryable=error.code >= 500)
+    except (URLError, TimeoutError):
+        return CompletionSaveResult(saved=False, retryable=True)
 
 
 def record_lesson_result_event(

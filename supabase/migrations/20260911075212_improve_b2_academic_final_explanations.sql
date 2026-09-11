@@ -1,0 +1,52 @@
+with explanations(lesson_id, position, explanation) as (
+  values
+    ('b2academic-grammar', 0, 'Forma „wynika” łączy się z przyimkiem „z” i wprowadza wniosek oparty na danych.'),
+    ('b2academic-grammar', 1, 'Czasownik „sugerują” sygnalizuje ostrożną zależność, ponieważ dane nie dowodzą związku przyczynowego.'),
+    ('b2academic-grammar', 2, 'Spójnik „podczas gdy” zestawia dwa odmienne podejścia badawcze opisane w zdaniu.'),
+    ('b2academic-grammar', 3, 'Po konstrukcji „nie pozwala” używamy bezokolicznika, dlatego poprawną formą jest „uogólnić”.'),
+    ('b2academic-grammar', 4, 'Zaimek „oba” zgadza się z nijakim rzeczownikiem „źródła”, a zdanie poprawnie przeciwstawia metody.'),
+    ('b2academic-grammar', 5, 'Wyrażenie „na podstawie” wymaga dopełniacza „tej próby” i wskazuje podstawę formułowanego wniosku.'),
+    ('b2academic-quiz', 0, '„Wiarygodne źródło” to po rosyjsku „надёжный источник”, czyli materiał zasługujący na zaufanie.'),
+    ('b2academic-quiz', 1, '„Przypis” oznacza rosyjską „сноску”, która wskazuje źródło informacji lub dodaje objaśnienie.'),
+    ('b2academic-quiz', 2, '„Teza” odpowiada rosyjskiemu słowu „тезис” i nazywa główne twierdzenie wymagające uzasadnienia.'),
+    ('b2academic-quiz', 3, '„Dowód” to po rosyjsku „доказательство”, czyli fakt lub argument potwierdzający dane twierdzenie.'),
+    ('b2academic-quiz', 4, '„Wniosek” oznacza rosyjski „вывод”, formułowany na podstawie wcześniej przedstawionych danych i argumentów.'),
+    ('b2academic-quiz', 5, '„Streszczenie” to rosyjskie „резюме”, czyli zwięzłe przedstawienie najważniejszych treści dłuższego tekstu.'),
+    ('b2academic-quiz', 6, '„Sparafrazować” znaczy „перефразировать”, a więc przekazać tę samą myśl własnymi słowami.'),
+    ('b2academic-quiz', 7, '„Cytować” odpowiada rosyjskiemu „цитировать” i oznacza dosłownie przytaczać cudze słowa ze źródłem.'),
+    ('b2academic-quiz', 8, 'Zwrot „porównać wyniki” oznacza „сравнить результаты”, czyli wskazać podobieństwa i różnice rezultatów.'),
+    ('b2academic-quiz', 9, '„Zakres badania” to „охват исследования”, określający temat, granice i obszar przeprowadzonej analizy.'),
+    ('b2academic-reading-check', 0, 'Oba opisane badania dotyczyły nauki słownictwa, choć sprawdzały odmienne metody uczenia się.'),
+    ('b2academic-reading-check', 1, 'Pierwsze badanie trwało tylko trzy tygodnie, dlatego jego ograniczeniem był krótki czas obserwacji.'),
+    ('b2academic-reading-check', 2, 'Drugie badanie sugerowało, że samodzielne tworzenie przykładów pomaga skuteczniej zapamiętywać nowe słowa.'),
+    ('b2academic-reading-check', 3, 'Natalia nie połączyła liczb, ponieważ badania wykorzystywały różne metody i odmienne próby.'),
+    ('b2academic-reading-check', 4, 'Natalia sparafrazowała tezy i podała przypisy, zachowując zasady rzetelnej pracy ze źródłami.'),
+    ('b2academic-reading-check', 5, 'Końcowy wniosek wskazywał korzyści metody, ale wyraźnie uwzględniał również ograniczenia badań.'),
+    ('b2final-grammar', 0, 'Forma „zbadalibyśmy” wyraża niezrealizowaną możliwość zależną od warunku wprowadzonego przez „gdybyśmy”.'),
+    ('b2final-grammar', 1, 'Spójnik „niemniej” wprowadza istotne zastrzeżenie, które ogranicza wcześniejszą pozytywną ocenę wyniku.'),
+    ('b2final-grammar', 2, 'Czasownik „odwoływać się” wymaga przyimka „do” oraz rzeczownika w dopełniaczu: „do danych”.'),
+    ('b2final-grammar', 3, 'Spójnik „o ile” wprowadza warunek, a czasownik „spełnia” zgadza się z podmiotem „projekt”.'),
+    ('b2final-grammar', 4, 'Spójnik „chociaż” wyraża ustępstwo, a konstrukcja „nie można” bezosobowo wskazuje konieczność.'),
+    ('b2final-grammar', 5, 'Po „gdybyśmy” występuje forma przeszła, a „zebralibyśmy” wyraża skutek nierealnego warunku.'),
+    ('b2final-quiz', 0, '„Pytanie badawcze” oznacza „исследовательский вопрос” i precyzyjnie określa problem analizowany w projekcie.'),
+    ('b2final-quiz', 1, '„Założenie” odpowiada rosyjskiej „предпосылке”, czyli twierdzeniu przyjętemu jako punkt wyjścia analizy.'),
+    ('b2final-quiz', 2, '„Kryterium sukcesu” to „критерий успеха”, pozwalający zmierzyć, czy projekt osiągnął cel.'),
+    ('b2final-quiz', 3, '„Harmonogram” oznacza „график”, czyli uporządkowany w czasie plan działań i terminów projektu.'),
+    ('b2final-quiz', 4, '„Etap pośredni” to „промежуточный этап”, znajdujący się między rozpoczęciem a zakończeniem projektu.'),
+    ('b2final-quiz', 5, '„Uzasadnienie” oznacza „обоснование”, czyli przedstawienie powodów i dowodów wspierających daną decyzję.'),
+    ('b2final-quiz', 6, '„Kontrargument” to „контраргумент”, a więc argument skierowany przeciwko wcześniej przedstawionej tezie.'),
+    ('b2final-quiz', 7, '„Zastrzeżenie” odpowiada rosyjskiej „оговорке” i wskazuje ograniczenie albo warunek przedstawionej opinii.'),
+    ('b2final-quiz', 8, 'Zwrot „wyciągnąć wniosek” znaczy „сделать вывод”, czyli sformułować rezultat na podstawie danych.'),
+    ('b2final-quiz', 9, '„Ocenić rezultat” oznacza „оценить результат”, czyli porównać uzyskany wynik z przyjętymi kryteriami.'),
+    ('b2final-reading-check', 0, 'Pytanie projektu dotyczyło poprawy warunków dzięki cichej godzinie bez ograniczania dostępu do biblioteki.'),
+    ('b2final-reading-check', 1, 'Zespół przyjął mierzalne kryteria: mniej hałasu oraz brak wzrostu liczby skarg użytkowników.'),
+    ('b2final-reading-check', 2, 'Harmonogram wydłużono po informacji zwrotnej, aby możliwe było porównanie wyników z różnych dni.'),
+    ('b2final-reading-check', 3, 'Badanie objęło tylko jedną filię, więc jego wyniku nie można automatycznie uogólnić.'),
+    ('b2final-reading-check', 4, 'Zespół przyznał, że problem jest możliwy, a następnie odpowiedział na niego konkretnymi danymi.'),
+    ('b2final-reading-check', 5, 'Dobra obrona projektu wymagała uczciwego pokazania zarówno siły danych, jak i ich granic.')
+)
+update public.questions as question
+set explanation = explanations.explanation
+from explanations
+where question.lesson_id = explanations.lesson_id
+  and question.position = explanations.position;

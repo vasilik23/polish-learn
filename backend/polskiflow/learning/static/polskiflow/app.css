@@ -546,6 +546,8 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .message { color: #176b47; background: var(--green-soft); }
 
 .complete-card { min-height: 24rem; display: grid; align-content: center; justify-items: center; text-align: center; }
+.lesson-sync { display: grid; justify-items: center; gap: .65rem; max-width: 30rem; margin: .25rem 0 .75rem; }
+.lesson-sync-status { margin: 0; color: var(--muted); font-size: .9rem; }
 .complete-icon { display: grid; place-items: center; width: 5rem; aspect-ratio: 1; margin-bottom: 1rem; border-radius: 1.5rem; background: var(--green-soft); font-size: 2.4rem; transform: rotate(-3deg); }
 .score { margin: .3rem 0 1rem; font-size: 2.2rem; font-weight: 800; color: var(--primary); }
 
