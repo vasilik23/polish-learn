@@ -81,3 +81,9 @@ lesson and canonicalizes the payload before hashing it. The first event returns
 `event_id` for different data returns `409 idempotency_conflict`. Event storage
 and the existing daily completion projection are updated atomically by a
 `security invoker` Supabase function operating under the caller's RLS context.
+
+Для Django/PWA-клиента доступен отдельный
+`POST /api/v1/me/lesson-results/session/`. Он требует действующую HttpOnly
+cookie-сессию и стандартный Django CSRF token, отвергает `Authorization` и не
+возвращает bearer в браузер. Payload, идемпотентность, ответы и owner-scoped
+Supabase RPC совпадают с основным write-контрактом.

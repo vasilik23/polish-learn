@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import json
 import uuid
 
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 
 from polskiflow.auth import SupabaseUser
 from polskiflow.learning.models import Course, Lesson, Topic
@@ -361,3 +361,55 @@ class LessonResultApiV1Tests(TestCase):
         self.assertEqual(wrong_type.status_code, 415)
         self.assertEqual(too_large.status_code, 413)
         self.assertEqual(unavailable.status_code, 503)
+
+    def test_session_handoff_requires_csrf_before_storage(self):
+        anonymous = self.client.post(
+            "/api/v1/me/lesson-results/session/",
+            data=json.dumps(self.payload),
+            content_type="application/json",
+        )
+        strict_client = Client(enforce_csrf_checks=True)
+        strict_client.cookies["polskiflow_access_token"] = "cookie-token"
+        with self._auth(), patch("polskiflow.api_views.record_lesson_result_event") as store:
+            response = strict_client.post(
+                "/api/v1/me/lesson-results/session/",
+                data=json.dumps(self.payload),
+                content_type="application/json",
+            )
+
+        self.assertEqual(anonymous.status_code, 401)
+        self.assertEqual(response.status_code, 403)
+        store.assert_not_called()
+
+    def test_session_handoff_uses_cookie_token_and_preserves_contract(self):
+        strict_client = Client(enforce_csrf_checks=True)
+        csrf_token = "a" * 32
+        strict_client.cookies["csrftoken"] = csrf_token
+        strict_client.cookies["polskiflow_access_token"] = "cookie-token"
+        with self._auth(), patch(
+            "polskiflow.api_views.record_lesson_result_event",
+            return_value={"status": "created"},
+        ) as store:
+            response = strict_client.post(
+                "/api/v1/me/lesson-results/session/",
+                data=json.dumps(self.payload),
+                content_type="application/json",
+                HTTP_X_CSRFTOKEN=csrf_token,
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["data"]["event_id"], self.payload["event_id"])
+        self.assertEqual(store.call_args.args[0], "cookie-token")
+
+    def test_session_handoff_rejects_authorization_header(self):
+        with self._auth(), patch("polskiflow.api_views.record_lesson_result_event") as store:
+            response = self.client.post(
+                "/api/v1/me/lesson-results/session/",
+                data=json.dumps(self.payload),
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer owner-token",
+            )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "cookie_session_required")
+        store.assert_not_called()

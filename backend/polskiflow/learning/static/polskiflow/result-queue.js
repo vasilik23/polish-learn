@@ -1,5 +1,5 @@
-/* Offline result queue prototype. Not loaded by the Django UI: its Supabase
- * tokens remain HttpOnly and must only be supplied by a client at flush time. */
+/* Offline result queue prototype. Not loaded by the Django UI. Browser flushes
+ * use the CSRF-protected session handoff and never receive Supabase tokens. */
 (function (root, factory) {
   "use strict";
   const api = factory();
@@ -112,7 +112,45 @@
       onStatus({ state: pending ? "pending" : "synced", pending });
       return { sent, pending, authRequired: false };
     }
-    return { enqueue, list, remove, flush };
+    async function flushSession(userId, csrfToken) {
+      if (!csrfToken || typeof csrfToken !== "string") throw new Error("csrfToken is required");
+      let sent = 0;
+      for (const item of await list(userId)) {
+        if (item.state === "needs-attention") continue;
+        let response = null;
+        try {
+          response = await fetchImpl("/api/v1/me/lesson-results/session/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "X-CSRFToken": csrfToken, "Content-Type": "application/json" },
+            body: JSON.stringify(item.payload),
+          });
+        } catch (error) { /* Offline: keep the immutable payload queued. */ }
+        if (response && (response.status === 200 || response.status === 201)) {
+          const body = await response.json().catch(() => null);
+          if (body?.data?.event_id === item.payload.event_id) {
+            await remove(item.key); sent += 1;
+            onStatus({ state: "sent", eventId: item.payload.event_id });
+            continue;
+          }
+        }
+        if (response?.status === 401 || response?.status === 403) {
+          onStatus({ state: "auth-required", eventId: item.payload.event_id });
+          return { sent, pending: (await list(userId)).length, authRequired: true };
+        }
+        if (response && response.status >= 400 && response.status < 500) {
+          item.state = "needs-attention"; await save(item);
+          onStatus({ state: "needs-attention", eventId: item.payload.event_id, status: response.status });
+          continue;
+        }
+        item.attempts += 1; await save(item);
+        onStatus({ state: item.attempts >= MAX_ATTEMPTS ? "retry-paused" : "pending", eventId: item.payload.event_id });
+      }
+      const pending = (await list(userId)).length;
+      onStatus({ state: pending ? "pending" : "synced", pending });
+      return { sent, pending, authRequired: false };
+    }
+    return { enqueue, list, remove, flush, flushSession };
   }
   return { createQueue, validatePayload, constants: { DATABASE, STORE, MAX_ATTEMPTS } };
 }));

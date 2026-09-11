@@ -1,0 +1,48 @@
+update public.questions as question
+set explanation = updates.explanation
+from (
+  values
+    ('b2economy-grammar', 0, 'Przyimek „o” wskazuje wielkość zmiany, dlatego sprzedaż wzrosła właśnie o dwanaście procent.'),
+    ('b2economy-grammar', 1, 'Konstrukcja „z… do…” podaje wartość początkową i końcową badanego udziału.'),
+    ('b2economy-grammar', 2, 'Po stopniu wyższym używamy „niż”, gdy bezpośrednio porównujemy dwa konkretne okresy.'),
+    ('b2economy-grammar', 3, 'Przysłówek „prawdopodobnie” przedstawia stabilizację jako prognozę, a nie pewny fakt.'),
+    ('b2economy-quiz', 0, 'Siła nabywcza określa ilość dóbr, które można kupić za posiadany dochód.'),
+    ('b2economy-quiz', 1, 'Spadek o 12 zł wobec początkowych 120 zł stanowi dokładnie dziesięć procent.'),
+    ('b2economy-quiz', 2, 'Popyt opisuje zapotrzebowanie kupujących, natomiast podaż dotyczy towarów oferowanych przez sprzedawców.'),
+    ('b2economy-quiz', 3, 'Przyimek „o” odpowiada na pytanie, o jaką wartość zwiększył się dochód.'),
+    ('b2economy-quiz', 4, 'Zwrot „możliwe, że” ogranicza pewność wniosku i sygnalizuje jedynie prawdopodobny rozwój sytuacji.'),
+    ('b2economy-quiz', 5, 'Opłacalność uwzględnia łączny koszt oraz odpowiednią jakość, a nie tylko cenę początkową.'),
+    ('b2economy-quiz', 6, 'Wzrost z 20% do 30% oznacza różnicę dziesięciu punktów procentowych.'),
+    ('b2economy-quiz', 7, 'Czasownik „wahać się” opisuje naprzemienne wzrosty i spadki wartości w badanym okresie.'),
+    ('b2economy-quiz', 8, 'Rozsądna decyzja wymaga porównania całkowitych kosztów, warunków umowy oraz własnych potrzeb.'),
+    ('b2economy-quiz', 9, 'Czas przyszły i słowo „prawdopodobnie” wskazują, że zdanie przedstawia prognozę.'),
+    ('b2economy-reading-check', 1, 'W pierwszym akapicie abonament obejmuje nie tylko urządzenie, lecz także jego naprawy.'),
+    ('b2economy-reading-check', 2, 'Przy najwyższej miesięcznej opłacie suma po czterech latach może osiągnąć 3900 złotych.'),
+    ('b2economy-reading-check', 3, 'Firmy rozwijają subskrypcje, ponieważ stałe przychody ułatwiają im przewidywanie przyszłych wpływów.'),
+    ('b2economy-reading-check', 4, 'Tekst ostrzega zarówno przed podwyżką opłat, jak i karą za wcześniejsze rozwiązanie umowy.'),
+    ('b2economy-reading-check', 5, 'Końcowy wniosek zaleca porównać pełne koszty, warunki umowy oraz rzeczywiste potrzeby.'),
+    ('b2law-grammar', 0, 'Rzeczownik „prośba” łączy się z przyimkiem „o”, który wprowadza jej przedmiot.'),
+    ('b2law-grammar', 1, 'Czasownik zwrotny „odwołać się” wymaga przyimka „od” oraz rzeczownika w dopełniaczu.'),
+    ('b2law-grammar', 2, 'Stałe połączenie „ubiegać się o” nazywa świadczenie, które ktoś chce uzyskać.'),
+    ('b2law-grammar', 3, 'Wyrażenie „zgodnie z” wprowadza regulamin jako podstawę określającą wymagany termin odpowiedzi.'),
+    ('b2law-grammar', 4, 'Po „proszę o” używamy rzeczownika odczasownikowego, a „na podstawie” wymaga dopełniacza.'),
+    ('b2law-grammar', 5, 'Wyrażenie „w związku z” wymaga narzędnika, natomiast skargę składamy „na” bezczynność.'),
+    ('b2law-quiz', 0, 'Załącznik jest dokumentem dołączanym do pisma, gdy wymaga go dana procedura.'),
+    ('b2law-quiz', 1, 'Od decyzji można się odwołać, ponieważ czasownik ten tworzy połączenie „odwołać się od”.'),
+    ('b2law-quiz', 2, 'Formuła „zwracam się z prośbą” jest neutralna, precyzyjna i odpowiednia dla oficjalnego pisma.'),
+    ('b2law-quiz', 3, 'Wyrażenie „na podstawie ustawy” wskazuje akt prawny będący podstawą działania urzędu.'),
+    ('b2law-quiz', 4, 'Uzasadnienie przedstawia faktyczne i prawne powody, które doprowadziły do danego rozstrzygnięcia.'),
+    ('b2law-quiz', 5, 'Stałe połączenie „ubiegać się o” wymaga przyimka „o” przed nazwą oczekiwanego dokumentu.'),
+    ('b2law-quiz', 6, 'Gdy termin upływa, kończy się czas przewidziany na wykonanie wymaganej czynności.'),
+    ('b2law-quiz', 7, 'Konkretne żądanie, jego podstawa i załączniki pozwalają organowi sprawnie ocenić wniosek.'),
+    ('b2law-quiz', 8, 'Przed grupą spółgłosek używamy wariantu „ze”, dlatego mówimy „w związku ze zmianą”.'),
+    ('b2law-quiz', 9, 'Sprawę rozpatruje organ właściwy według rodzaju sprawy i obowiązujących przepisów.'),
+    ('b2law-reading-check', 0, 'W pouczeniu do decyzji wyraźnie wskazano czternastodniowy termin na wniesienie odwołania.'),
+    ('b2law-reading-check', 1, 'Urząd odmówił świadczenia, ponieważ uznał, że do wniosku nie dołączono dokumentu o dochodzie.'),
+    ('b2law-reading-check', 2, 'Marta dysponowała elektronicznym potwierdzeniem, że wymagany plik został wysłany przez platformę.'),
+    ('b2law-reading-check', 3, 'W odwołaniu Marta zażądała ponownego rozpatrzenia sprawy oraz zmiany wcześniejszej decyzji.'),
+    ('b2law-reading-check', 4, 'Rezygnacja z ocen pracownika pozwoliła Marcie skupić oficjalne pismo na sprawdzalnych faktach.'),
+    ('b2law-reading-check', 5, 'Przed wysłaniem pisma tekst zaleca sprawdzić właściwy organ, termin oraz sposób doręczenia.')
+) as updates(lesson_id, position, explanation)
+where question.lesson_id = updates.lesson_id
+  and question.position = updates.position;
