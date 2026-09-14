@@ -21,6 +21,9 @@ ORIGINS = {"original", "external"}
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CHECKSUM_RE = re.compile(r"^[0-9a-f]{64}$")
 APPROVAL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$")
+REVIEWER_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@/-]{0,99}$")
+DJANGO_MIGRATION_RE = re.compile(r"^[0-9]{4}_[a-z0-9_]+\.py$")
+SUPABASE_MIGRATION_RE = re.compile(r"^[0-9]{14}_[a-z0-9_]+\.sql$")
 
 
 class ManifestError(ValueError):
@@ -774,6 +777,93 @@ commit;
         "migration-preview.json": json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         "candidate-django-runpython.py": django,
         "candidate-supabase-content.sql": sql,
+    }
+
+
+def build_production_promotion_receipt(
+    result: ValidationResult,
+    resolutions: dict[str, Any],
+    approval_id: str,
+    expected_checksum: str,
+    expected_resolutions_checksum: str,
+    django_migration_filename: str,
+    supabase_migration_filename: str,
+    release_reviewer: str,
+) -> dict[str, str]:
+    """Bind reviewed inputs to exact production targets without publishing them."""
+    checked = validate_model_resolutions(
+        result, resolutions, approval_id, expected_checksum
+    )
+    resolutions_checksum = expected_resolutions_checksum.strip().lower()
+    if not CHECKSUM_RE.fullmatch(resolutions_checksum):
+        raise ManifestError(
+            "expected_resolutions_checksum: ожидается полный SHA-256 из 64 символов."
+        )
+    if resolutions_checksum != checked["resolutions_checksum"]:
+        raise ManifestError(
+            "expected_resolutions_checksum: resolutions изменились после проверки."
+        )
+
+    django_filename = django_migration_filename.strip()
+    supabase_filename = supabase_migration_filename.strip()
+    reviewer = release_reviewer.strip()
+    if not DJANGO_MIGRATION_RE.fullmatch(django_filename):
+        raise ManifestError(
+            "django_migration_filename: ожидается basename вида 0107_topic_name.py."
+        )
+    if not SUPABASE_MIGRATION_RE.fullmatch(supabase_filename):
+        raise ManifestError(
+            "supabase_migration_filename: ожидается basename вида YYYYMMDDHHMMSS_topic_name.sql."
+        )
+    if not REVIEWER_ID_RE.fullmatch(reviewer):
+        raise ManifestError(
+            "release_reviewer: используйте 1–100 букв, цифр или символов . _ @ / -."
+        )
+
+    receipt = {
+        "artifact_type": "polskiflow-content-production-promotion-receipt",
+        "schema_version": 1,
+        "draft_id": result.manifest["id"],
+        "manifest_checksum": result.checksum,
+        "resolutions_checksum": resolutions_checksum,
+        "approval_id": checked["approval_id"],
+        "reviewers": {
+            "language": result.manifest["review"]["language_reviewer"],
+            "license": result.manifest["review"]["license_reviewer"],
+            "release": reviewer,
+        },
+        "promotion_order": [
+            {
+                "order": 1,
+                "action": "apply-reviewed-supabase-migration",
+                "target": f"supabase/migrations/{supabase_filename}",
+            },
+            {
+                "order": 2,
+                "action": "deploy-commit-containing-django-migration",
+                "target": f"backend/polskiflow/learning/migrations/{django_filename}",
+            },
+        ],
+        "reviewer_boundary": {
+            "approved": False,
+            "writes_performed": False,
+            "required_confirmation": (
+                "The release reviewer must confirm that both exact target files were manually "
+                "reviewed, checks passed, and the Supabase migration is applied before the "
+                "matching Django commit is deployed."
+            ),
+        },
+        "boundary": (
+            "Audit receipt only. It does not inspect, create, copy, import, execute, apply, "
+            "or deploy either target and performs no database or network writes."
+        ),
+    }
+    canonical = json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    receipt["receipt_checksum"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return {
+        "production-promotion-receipt.json": json.dumps(
+            receipt, ensure_ascii=False, indent=2, sort_keys=True
+        ) + "\n"
     }
 
 

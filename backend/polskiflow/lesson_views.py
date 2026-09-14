@@ -15,6 +15,12 @@ from polskiflow.content import flashcards, grammar, quiz, task
 from polskiflow.progress_store import save_lesson_completion_result
 
 
+# Expansion is release-gated by a successful offline -> online recovery smoke
+# in a production-like Preview environment. Keep this explicit so a new lesson
+# cannot silently join the persisted browser queue through a broad kind check.
+OFFLINE_RESULT_QUEUE_LESSON_IDS = frozenset({"words"})
+
+
 @require_browser_user
 def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
     lesson_task = task(lesson_id)
@@ -260,7 +266,7 @@ def _complete(request: HttpRequest, lesson_id: str, score: int, total: int) -> H
     context = {"score": score, "total": total, "saved": save_result.saved}
     # Start with one narrowly scoped flow. The browser receives an opaque,
     # stable namespace and an immutable result, never identity or auth tokens.
-    if lesson_id == "words" and save_result.retryable:
+    if lesson_id in OFFLINE_RESULT_QUEUE_LESSON_IDS and save_result.retryable:
         completed_at = datetime.now(timezone.utc)
         context.update(
             {

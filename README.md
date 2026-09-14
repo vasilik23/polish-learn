@@ -99,6 +99,7 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/me/progress/` | owner-scoped read-only прогресс пользователя |
 | `/api/v1/me/sm2/` | owner-scoped read-only очередь SM-2 |
 | `/api/v1/me/lesson-results/` | bearer-only идемпотентная отправка результата урока |
+| `/api/v1/me/lesson-results/session/` | cookie-only и CSRF-protected отправка результата из браузерной offline-очереди |
 | `/admin/` | управление учебным контентом |
 | `/health/` | проверка состояния приложения |
 

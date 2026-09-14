@@ -2,7 +2,7 @@
 
 `content_workflow` — безопасный первый этап подготовки вертикальной темы. Он
 проверяет JSON manifest и создаёт preview либо план публикации. Команда **не**
-подключается к Supabase, не читает секреты, не создаёт миграции и не пишет в БД.
+подключается к Supabase, не читает секреты, не создаёт настоящие миграции и не пишет в БД.
 
 ## 1. Черновик
 
@@ -188,7 +188,35 @@ RLS/grants и только затем отдельно применяет review
 сверяет стабильные ID и текущую схему, добавляет обратимое/корректирующее
 поведение и тесты. До этого scaffold нельзя копировать в migration-каталоги.
 
-## 5. Откат
+## 5. Квитанция production promotion
+
+После ручного переноса кандидатов в две реальные, упорядоченные миграции можно
+создать отдельную аудиторскую квитанцию. Она связывает оба review-checksum,
+approval ID, трёх ответственных редакторов и точные basename файлов:
+
+```bash
+.venv/bin/python manage.py content_workflow path/to/approved.json \
+  --generate-promotion-receipt \
+  --model-resolutions path/to/model-resolutions.json \
+  --approval-id ED-123 \
+  --expected-checksum <SHA-256 manifest> \
+  --expected-resolutions-checksum <SHA-256 resolutions> \
+  --django-migration-filename 0107_example_topic.py \
+  --supabase-migration-filename 20260914123000_example_topic.sql \
+  --release-reviewer release-reviewer-id \
+  --output-directory /tmp/example-topic-promotion-receipt
+```
+
+Результат детерминирован и содержит собственный checksum, порядок production-
+действий (сначала reviewed Supabase migration, затем deploy commit с парной
+Django migration) и явное `approved: false`: квитанция фиксирует границу, но не
+заменяет финальное подтверждение release reviewer. Допускаются только безопасные
+basename установленного формата; пути, `..` и произвольные расширения
+отклоняются. Выходной каталог должен быть новым или пустым и находиться вне
+корня проекта. Команда не проверяет существование файлов, не копирует их, не
+обращается к сети/БД и ничего не применяет или не развёртывает.
+
+## 6. Откат
 
 Применённые миграции не редактируются и production-строки не удаляются вручную.
 Откат выполняется новой forward-only корректирующей парой миграций: записи темы
@@ -196,7 +224,7 @@ RLS/grants и только затем отдельно применяет review
 предыдущей reviewed migration, после чего сверяются количества и маршруты.
 Конкретный `scope_key` и эти шаги включены в publish-plan artifact.
 
-## 6. Write-free пилот на существующей теме
+## 7. Write-free пилот на существующей теме
 
 Workflow проверен на небольшой реальной ORIGINAL-теме A1 «Время и встречи».
 Зафиксированные review-fixtures находятся в
