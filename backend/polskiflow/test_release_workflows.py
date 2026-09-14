@@ -17,4 +17,14 @@ class ReleaseWorkflowTests(SimpleTestCase):
         self.assertIn("for run_number in 1 2 3", workflow)
         self.assertNotIn("&\n", workflow)
         self.assertEqual(workflow.count("manage.py check_lighthouse_budget"), 2)
-        self.assertIn("actions/upload-artifact@v4", workflow)
+        self.assertIn("--only-categories=performance,accessibility", workflow)
+        self.assertIn("actions/checkout@v6", workflow)
+        self.assertIn("actions/setup-python@v6", workflow)
+        self.assertIn("actions/upload-artifact@v6", workflow)
+
+    def test_python_workflow_uses_node_24_action_majors(self):
+        workflow = (
+            Path(__file__).resolve().parents[2] / ".github/workflows/python.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("actions/checkout@v6", workflow)
+        self.assertIn("actions/setup-python@v6", workflow)
