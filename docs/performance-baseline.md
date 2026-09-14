@@ -85,6 +85,12 @@ cd backend
 в CI после отдельного последовательного шага сбора Lighthouse-артефактов;
 INP остаётся field-метрикой и этим lab-check не подменяется.
 
+Ручной GitHub Actions workflow `Lighthouse Preview` принимает публичный HTTPS
+URL конкретного Vercel Preview, последовательно делает по три мобильных прогона
+для `/login/` и `/sources/`, проверяет обе медианы и сохраняет JSON-артефакты на
+14 дней. Он не принимает cookies или credentials, поэтому авторизованные
+маршруты остаются отдельной ручной проверкой с временным профилем вне Git.
+
 Источники методики:
 
 - [Web Vitals](https://web.dev/articles/vitals)
