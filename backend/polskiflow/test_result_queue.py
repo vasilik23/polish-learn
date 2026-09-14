@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 from django.test import SimpleTestCase
@@ -48,3 +49,17 @@ class OfflineResultQueueContractTests(SimpleTestCase):
         self.assertNotIn("Authorization", SYNC_SOURCE)
         self.assertNotIn("user_id", SYNC_SOURCE)
         self.assertNotIn("email", SYNC_SOURCE)
+
+
+class OfflineResultQueueRecoveryTests(SimpleTestCase):
+    def test_transient_failure_recovers_without_leaking_or_mutating_payload(self):
+        harness = Path(__file__).parent / "test_result_queue_recovery.cjs"
+        completed = subprocess.run(
+            ["node", str(harness)],
+            cwd=Path(__file__).parents[2],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
