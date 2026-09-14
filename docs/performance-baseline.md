@@ -19,6 +19,7 @@ INP должен быть добавлен из real-user monitoring после 
 Рабочий lab budget для ключевых маршрутов:
 
 - performance score ≥ 90;
+- accessibility score ≥ 95;
 - LCP ≤ 2,5 с;
 - CLS ≤ 0,1;
 - TBT ≤ 200 мс;
@@ -80,14 +81,14 @@ cd backend
   /tmp/run-1.json /tmp/run-2.json /tmp/run-3.json
 ```
 
-Команда вычисляет медианы score, LCP, CLS, TBT и диагностического TTFB и
-возвращает ненулевой код при нарушении release budgets. Её можно использовать
+Команда вычисляет медианы performance/accessibility score, LCP, CLS, TBT и
+диагностического TTFB и возвращает ненулевой код при нарушении release budgets. Её можно использовать
 в CI после отдельного последовательного шага сбора Lighthouse-артефактов;
 INP остаётся field-метрикой и этим lab-check не подменяется.
 
 Ручной GitHub Actions workflow `Lighthouse Preview` принимает публичный HTTPS
 URL конкретного Vercel Preview, последовательно делает по три мобильных прогона
-для `/login/` и `/sources/`, проверяет обе медианы и сохраняет JSON-артефакты на
+performance и accessibility для `/login/` и `/sources/`, проверяет обе медианы и сохраняет JSON-артефакты на
 14 дней. Он не принимает cookies или credentials, поэтому авторизованные
 маршруты остаются отдельной ручной проверкой с временным профилем вне Git.
 

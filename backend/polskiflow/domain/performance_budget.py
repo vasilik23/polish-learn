@@ -11,6 +11,7 @@ class LighthouseReportError(ValueError):
 @dataclass(frozen=True)
 class LighthouseMedian:
     score: float
+    accessibility_score: float
     lcp_ms: float
     cls: float
     tbt_ms: float
@@ -31,8 +32,10 @@ def load_lighthouse_report(path):
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         audits = payload["audits"]
         score = payload["categories"]["performance"]["score"]
+        accessibility_score = payload["categories"]["accessibility"]["score"]
         values = (
             _number(score, "performance score") * 100,
+            _number(accessibility_score, "accessibility score") * 100,
             _number(audits["largest-contentful-paint"]["numericValue"], "LCP"),
             _number(audits["cumulative-layout-shift"]["numericValue"], "CLS"),
             _number(audits["total-blocking-time"]["numericValue"], "TBT"),
@@ -51,6 +54,8 @@ def evaluate_lighthouse_reports(paths):
     failures = []
     if median.score < 90:
         failures.append("score < 90")
+    if median.accessibility_score < 95:
+        failures.append("accessibility score < 95")
     if median.lcp_ms > 2500:
         failures.append("LCP > 2500 ms")
     if median.cls > 0.1:

@@ -23,8 +23,8 @@ jobs:
       AUDIT_BASE_URL: ${{ inputs.base_url }}
       REPORT_DIR: /tmp/polskiflow-lighthouse
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version-file: backend/.python-version
           cache: pip
@@ -48,7 +48,7 @@ jobs:
           for route in login sources; do
             for run_number in 1 2 3; do
               npx --yes lighthouse@13.4.1 "${AUDIT_BASE_URL%/}/${route}/" \
-                --only-categories=performance \
+                --only-categories=performance,accessibility \
                 --form-factor=mobile \
                 --screenEmulation.mobile=true \
                 --throttling-method=simulate \
@@ -65,7 +65,7 @@ jobs:
           python manage.py check_lighthouse_budget "$REPORT_DIR"/sources/*.json
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lighthouse-preview-${{ github.run_id }}
           path: /tmp/polskiflow-lighthouse

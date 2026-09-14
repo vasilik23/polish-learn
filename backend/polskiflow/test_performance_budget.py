@@ -7,9 +7,12 @@ from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 
-def report(score=0.95, lcp=1900, cls=0.02, tbt=80, ttfb=100):
+def report(score=0.95, accessibility=1.0, lcp=1900, cls=0.02, tbt=80, ttfb=100):
     return {
-        "categories": {"performance": {"score": score}},
+        "categories": {
+            "performance": {"score": score},
+            "accessibility": {"score": accessibility},
+        },
         "audits": {
             "largest-contentful-paint": {"numericValue": lcp},
             "cumulative-layout-shift": {"numericValue": cls},
@@ -38,6 +41,7 @@ class PerformanceBudgetTests(SimpleTestCase):
             output = __import__("io").StringIO()
             call_command("check_lighthouse_budget", *paths, stdout=output)
         self.assertIn('"lcp_ms": 2000.0', output.getvalue())
+        self.assertIn('"accessibility_score": 100.0', output.getvalue())
         self.assertIn('"ttfb_ms": 200.0', output.getvalue())
         self.assertIn("Performance budget passed", output.getvalue())
 
@@ -51,4 +55,10 @@ class PerformanceBudgetTests(SimpleTestCase):
         with TemporaryDirectory() as directory:
             paths = self.write_reports(directory, [report()] * 2)
             with self.assertRaisesMessage(CommandError, "At least three"):
+                call_command("check_lighthouse_budget", *paths)
+
+    def test_command_rejects_accessibility_regression(self):
+        with TemporaryDirectory() as directory:
+            paths = self.write_reports(directory, [report(accessibility=0.94)] * 3)
+            with self.assertRaisesMessage(CommandError, "accessibility score < 95"):
                 call_command("check_lighthouse_budget", *paths)
