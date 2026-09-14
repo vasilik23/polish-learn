@@ -72,6 +72,19 @@ npx --yes lighthouse https://polish-learn.vercel.app/login/ \
 режим throttling и медиану не менее трёх прогонов. Lab-данные не выдавать за
 field Core Web Vitals.
 
+Три последовательных JSON-отчёта проверяются одной воспроизводимой командой:
+
+```bash
+cd backend
+.venv/bin/python manage.py check_lighthouse_budget \
+  /tmp/run-1.json /tmp/run-2.json /tmp/run-3.json
+```
+
+Команда вычисляет медианы score, LCP, CLS, TBT и диагностического TTFB и
+возвращает ненулевой код при нарушении release budgets. Её можно использовать
+в CI после отдельного последовательного шага сбора Lighthouse-артефактов;
+INP остаётся field-метрикой и этим lab-check не подменяется.
+
 Источники методики:
 
 - [Web Vitals](https://web.dev/articles/vitals)
