@@ -1,5 +1,5 @@
-/* Offline result queue prototype. Not loaded by the Django UI. Browser flushes
- * use the CSRF-protected session handoff and never receive Supabase tokens. */
+/* Controlled offline queue pilot for word lessons. Browser flushes use the
+ * CSRF-protected session handoff and never receive Supabase tokens. */
 (function (root, factory) {
   "use strict";
   const api = factory();
