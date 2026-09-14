@@ -1,0 +1,52 @@
+with explanations(lesson_id, position, explanation) as (
+  values
+    ('b2prof-grammar', 0, 'Zwrot „zwracam się z prośbą o” łagodzi żądanie i zachowuje formalny rejestr korespondencji.'),
+    ('b2prof-grammar', 1, '„Omówienie” jest rzeczownikiem odczasownikowym, który nazywa proces omawiania planu bez wskazywania wykonawcy.'),
+    ('b2prof-grammar', 2, 'Forma „ustalono” bezosobowo przedstawia podjętą decyzję, skupiając uwagę odbiorcy na jej treści.'),
+    ('b2prof-grammar', 3, 'Czasownik „prosić” łączy się z przyimkiem „o”, dlatego mówimy „proszę o potwierdzenie”.'),
+    ('b2prof-grammar', 4, 'Konstrukcja „w nawiązaniu do” wymaga dopełniacza i formalnie odsyła do wcześniejszego spotkania.'),
+    ('b2prof-grammar', 5, 'Bezosobowe „ustalono” oraz strona bierna „zostanie przesunięte” podkreślają decyzję, nie jej autora.'),
+    ('b2prof-quiz', 0, '„Porządek obrad” oznacza rosyjską „повестку встречи”, czyli listę kwestii zaplanowanych do omówienia.'),
+    ('b2prof-quiz', 1, 'Pytanie „Czy mogę zabrać głos?” uprzejmie prosi o możliwość wypowiedzi i respektuje kolejność rozmówców.'),
+    ('b2prof-quiz', 2, 'Po spotkaniu wysyła się podsumowanie, aby utrwalić decyzje, terminy oraz dalsze zadania uczestników.'),
+    ('b2prof-quiz', 3, 'Formuła „uprzejmie przypominam” przekazuje informację o terminie bez rozkazującego lub agresywnego tonu.'),
+    ('b2prof-quiz', 4, '„Wdrożenie” jest nominalizacją czasownika „wdrożyć”, ponieważ rzeczownik nazywa proces wprowadzania rozwiązania.'),
+    ('b2prof-quiz', 5, 'Osoby odpowiedzialne i terminy wskazują, kto oraz kiedy ma wykonać uzgodnione zadania.'),
+    ('b2prof-quiz', 6, 'Rzeczownik „przesłanie” wymaga dopełniacza, dlatego poprawną formą jest „przesłanie załącznika”.'),
+    ('b2prof-quiz', 7, '„Zgłosić zastrzeżenie” znaczy przedstawić uzasadnioną wątpliwość lub sprzeciw wobec proponowanego rozwiązania.'),
+    ('b2prof-quiz', 8, 'Zwrot „pozostaję do dyspozycji” jest neutralnym, profesjonalnym zakończeniem oferującym dalszą pomoc odbiorcy.'),
+    ('b2prof-quiz', 9, 'Bezosobowe „uzgodniono” wysuwa osiągnięte porozumienie na pierwszy plan zamiast wskazywać konkretnych autorów.'),
+    ('b2prof-reading-check', 0, 'Przed spotkaniem uczestnicy otrzymali porządek obrad, projekt harmonogramu oraz pytania wymagające decyzji.'),
+    ('b2prof-reading-check', 1, 'Dział sprzedaży obawiał się, że pracownicy nie zdążą przejść szkolenia przed planowanym terminem.'),
+    ('b2prof-reading-check', 2, 'Zespół rozwiązał problem przez podział wdrożenia na dwa etapy, osiągając praktyczny kompromis.'),
+    ('b2prof-reading-check', 3, 'Każdemu zadaniu przypisano termin realizacji i osobę odpowiedzialną, aby plan był wykonalny.'),
+    ('b2prof-reading-check', 4, 'Formy bezosobowe zastosowano, by protokół podkreślał uzgodnione rezultaty zamiast przebiegu indywidualnych wypowiedzi.'),
+    ('b2prof-reading-check', 5, 'Maja poprosiła uczestników o przesłanie uwag do podsumowania najpóźniej do środy.'),
+    ('b2tech-grammar', 0, 'Zaimek „które” ma rodzaj nijaki i zgadza się z rzeczownikiem „urządzenie” w mianowniku.'),
+    ('b2tech-grammar', 1, 'Strona bierna wymaga imiesłowu „przetwarzane”, który zgadza się z liczbą mnogą rzeczownika „dane”.'),
+    ('b2tech-grammar', 2, 'Konstrukcja „bada się” bezosobowo opisuje proces badawczy, gdy wykonawca nie jest istotny.'),
+    ('b2tech-grammar', 3, 'Forma „zaobserwowano” na „-no” informuje o wyniku obserwacji bez nazywania konkretnego badacza.'),
+    ('b2tech-grammar', 4, 'Definicję tworzy konstrukcja „to zbiór”, a imiesłów „wykorzystywany” zgadza się z rzeczownikiem „zbiór”.'),
+    ('b2tech-grammar', 5, 'Wyrażenie „na podstawie” rządzi dopełniaczem „wyników”, a „opracowano” bezosobowo opisuje rezultat.'),
+    ('b2tech-quiz', 0, 'W badaniu „próbka” oznacza wybrany materiał albo grupę obserwacji poddawaną analizie.'),
+    ('b2tech-quiz', 1, 'Hipotezę należy sprawdzić za pomocą danych, ponieważ samo założenie nie stanowi jeszcze wyniku.'),
+    ('b2tech-quiz', 2, 'Zdanie definiuje czujnik przez wskazanie jego klasy, czyli urządzenia, oraz wyróżniającej funkcji.'),
+    ('b2tech-quiz', 3, 'Strona bierna „zostały zweryfikowane” wymaga imiesłowu zgodnego z rzeczownikiem „dane” w liczbie mnogiej.'),
+    ('b2tech-quiz', 4, 'Powtórzenie badania na większej próbce zwiększa wiarygodność, ponieważ ogranicza wpływ przypadkowych wyników.'),
+    ('b2tech-quiz', 5, 'Bezosobowe „testuje się” opisuje regularną czynność laboratoryjną bez wskazywania konkretnego wykonawcy.'),
+    ('b2tech-quiz', 6, 'Czasownik „wykrywać” naturalnie łączy się z rzeczownikiem „wzorce” i opisuje działanie algorytmu.'),
+    ('b2tech-quiz', 7, 'Opis ograniczeń wyznacza granice wniosku i zapobiega nadmiernemu uogólnianiu rezultatów badania.'),
+    ('b2tech-quiz', 8, 'Przyimek złożony „na podstawie” wymaga dopełniacza, dlatego poprawna forma brzmi „wyników”.'),
+    ('b2tech-quiz', 9, 'Strona bierna wysuwa rozwiązanie i rezultat opracowania przed osobę wykonującą tę czynność.'),
+    ('b2tech-reading-check', 0, 'Czujnik mierzy wilgotność gleby, a zebrane dane przekazuje programowi sterującemu podlewaniem.'),
+    ('b2tech-reading-check', 1, 'System uruchamia podlewanie dopiero po wykryciu dłuższego niedoboru wody w wybranej części ogrodu.'),
+    ('b2tech-reading-check', 2, 'Badanie przeprowadzono w sześciu miejskich ogrodach, porównując zużycie wody przez dwa miesiące.'),
+    ('b2tech-reading-check', 3, 'Średni wynik wskazywał osiemnaście procent oszczędności wody w badanych lokalizacjach.'),
+    ('b2tech-reading-check', 4, 'Autorzy wskazali niewielką próbkę oraz prowadzenie badania wyłącznie latem jako jego ograniczenia.'),
+    ('b2tech-reading-check', 5, 'Jasne objaśnienie technologii kolejno przedstawia definicję, proces, wyniki oraz granice wyciąganego wniosku.')
+)
+update public.questions as question
+set explanation = explanations.explanation
+from explanations
+where question.lesson_id = explanations.lesson_id
+  and question.position = explanations.position;
