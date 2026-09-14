@@ -1,0 +1,73 @@
+name: Lighthouse Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Public HTTPS Vercel Preview or production base URL"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-preview-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  budgets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUDIT_BASE_URL: ${{ inputs.base_url }}
+      REPORT_DIR: /tmp/polskiflow-lighthouse
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: python -m pip install --disable-pip-version-check -r backend/requirements.lock
+      - name: Validate public audit URL
+        shell: bash
+        run: |
+          case "$AUDIT_BASE_URL" in
+            https://*) ;;
+            *) echo "base_url must use https://" >&2; exit 2 ;;
+          esac
+          if [[ "$AUDIT_BASE_URL" == *$'\n'* || "$AUDIT_BASE_URL" == *$'\r'* ]]; then
+            echo "base_url must be a single line" >&2
+            exit 2
+          fi
+      - name: Collect sequential mobile reports
+        shell: bash
+        run: |
+          mkdir -p "$REPORT_DIR/login" "$REPORT_DIR/sources"
+          for route in login sources; do
+            for run_number in 1 2 3; do
+              npx --yes lighthouse@13.4.1 "${AUDIT_BASE_URL%/}/${route}/" \
+                --only-categories=performance \
+                --form-factor=mobile \
+                --screenEmulation.mobile=true \
+                --throttling-method=simulate \
+                --output=json \
+                --output-path="$REPORT_DIR/$route/run-$run_number.json" \
+                --chrome-flags='--headless --no-sandbox' \
+                --quiet
+            done
+          done
+      - name: Enforce release budgets
+        working-directory: backend
+        run: |
+          python manage.py check_lighthouse_budget "$REPORT_DIR"/login/*.json
+          python manage.py check_lighthouse_budget "$REPORT_DIR"/sources/*.json
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-preview-${{ github.run_id }}
+          path: /tmp/polskiflow-lighthouse
+          if-no-files-found: warn
+          retention-days: 14
