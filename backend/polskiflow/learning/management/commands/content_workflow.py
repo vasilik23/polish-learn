@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from polskiflow.domain.content_workflow import (
     ManifestError,
     build_executable_migration_preview,
+    build_production_promotion_receipt,
     build_preview,
     build_migration_scaffold,
     build_publish_plan,
@@ -41,12 +42,20 @@ class Command(BaseCommand):
             action="store_true",
             help="Render executable migration candidates for manual review; never execute them.",
         )
+        parser.add_argument(
+            "--generate-promotion-receipt",
+            action="store_true",
+            help="Create an auditable, write-free receipt binding reviewed production targets.",
+        )
         parser.add_argument("--model-resolutions", help="Validated UTF-8 JSON resolutions input.")
         parser.add_argument(
             "--expected-resolutions-checksum", default="", help="Exact reviewed resolutions SHA-256."
         )
         parser.add_argument("--expected-checksum", default="", help="Exact approved SHA-256.")
         parser.add_argument("--output-directory", help="New or empty directory for scaffolds.")
+        parser.add_argument("--django-migration-filename", default="")
+        parser.add_argument("--supabase-migration-filename", default="")
+        parser.add_argument("--release-reviewer", default="")
         parser.add_argument(
             "--approval-id",
             default="",
@@ -57,8 +66,10 @@ class Command(BaseCommand):
         scaffold = options["generate_scaffold"]
         resolution_path = options["check_resolutions"]
         migration_preview = options["generate_migration_preview"]
+        promotion_receipt = options["generate_promotion_receipt"]
         selected_modes = sum(bool(value) for value in (
-            options["prepare_publish"], scaffold, resolution_path, migration_preview
+            options["prepare_publish"], scaffold, resolution_path, migration_preview,
+            promotion_receipt,
         ))
         if selected_modes > 1:
             raise CommandError("Выберите только один режим публикации, scaffold или проверки resolutions.")
@@ -86,6 +97,18 @@ class Command(BaseCommand):
             )
         if migration_preview and options["output"]:
             raise CommandError("--output несовместим с --generate-migration-preview.")
+        if promotion_receipt and not all((
+            options["output_directory"], options["model_resolutions"], options["approval_id"],
+            options["expected_checksum"], options["expected_resolutions_checksum"],
+            options["django_migration_filename"], options["supabase_migration_filename"],
+            options["release_reviewer"],
+        )):
+            raise CommandError(
+                "--generate-promotion-receipt требует output directory, resolutions, оба checksum, "
+                "approval ID, два точных имени миграций и release reviewer."
+            )
+        if promotion_receipt and options["output"]:
+            raise CommandError("--output несовместим с --generate-promotion-receipt.")
         try:
             result = validate_manifest(load_manifest(options["manifest"]))
             if scaffold:
@@ -122,6 +145,25 @@ class Command(BaseCommand):
                     ),
                 )
                 self.stdout.write(self.style.SUCCESS(f"Migration preview written to {output}"))
+                return
+            if promotion_receipt:
+                project_root = Path(__file__).resolve().parents[5]
+                artifacts = build_production_promotion_receipt(
+                    result,
+                    load_manifest(options["model_resolutions"]),
+                    options["approval_id"],
+                    options["expected_checksum"],
+                    options["expected_resolutions_checksum"],
+                    options["django_migration_filename"],
+                    options["supabase_migration_filename"],
+                    options["release_reviewer"],
+                )
+                output = write_migration_scaffold(
+                    artifacts,
+                    options["output_directory"],
+                    (project_root,),
+                )
+                self.stdout.write(self.style.SUCCESS(f"Promotion receipt written to {output}"))
                 return
             if resolution_path:
                 artifact = validate_model_resolutions(

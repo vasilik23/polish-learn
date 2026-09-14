@@ -12,6 +12,7 @@ from polskiflow.domain.content_workflow import (
     build_migration_scaffold,
     build_model_mapping,
     build_preview,
+    build_production_promotion_receipt,
     build_publish_plan,
     validate_model_resolutions,
     validate_manifest,
@@ -282,6 +283,65 @@ class ContentWorkflowDomainTests(SimpleTestCase):
                 result, resolutions, "ED-104", result.checksum, "0" * 64
             )
 
+    def test_promotion_receipt_binds_checksums_reviewers_targets_and_order(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+        resolutions = sample_resolutions(result.checksum)
+        checked = validate_model_resolutions(result, resolutions, "ED-105", result.checksum)
+
+        artifacts = build_production_promotion_receipt(
+            result, resolutions, "ED-105", result.checksum,
+            checked["resolutions_checksum"], "0107_example_topic.py",
+            "20260914123000_example_topic.sql", "release-reviewer",
+        )
+        repeated = build_production_promotion_receipt(
+            result, resolutions, "ED-105", result.checksum,
+            checked["resolutions_checksum"], "0107_example_topic.py",
+            "20260914123000_example_topic.sql", "release-reviewer",
+        )
+
+        self.assertEqual(artifacts, repeated)
+        receipt = json.loads(artifacts["production-promotion-receipt.json"])
+        self.assertEqual(receipt["manifest_checksum"], result.checksum)
+        self.assertEqual(receipt["resolutions_checksum"], checked["resolutions_checksum"])
+        self.assertEqual(receipt["approval_id"], "ED-105")
+        self.assertEqual(receipt["reviewers"]["release"], "release-reviewer")
+        self.assertEqual([item["order"] for item in receipt["promotion_order"]], [1, 2])
+        self.assertTrue(receipt["promotion_order"][0]["target"].endswith(".sql"))
+        self.assertTrue(receipt["promotion_order"][1]["target"].endswith(".py"))
+        self.assertFalse(receipt["reviewer_boundary"]["writes_performed"])
+        self.assertFalse(receipt["reviewer_boundary"]["approved"])
+        self.assertEqual(len(receipt["receipt_checksum"]), 64)
+
+    def test_promotion_receipt_rejects_stale_or_unsafe_inputs(self):
+        manifest = sample_manifest(status="approved")
+        manifest["review"] = {
+            "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+            "reviewed_at": "2026-09-01",
+        }
+        result = validate_manifest(manifest)
+        resolutions = sample_resolutions(result.checksum)
+        checked = validate_model_resolutions(result, resolutions, "ED-105", result.checksum)
+        args = (result, resolutions, "ED-105", result.checksum, checked["resolutions_checksum"])
+
+        with self.assertRaisesRegex(ManifestError, "django_migration_filename"):
+            build_production_promotion_receipt(
+                *args, "../0107_escape.py", "20260914123000_example.sql", "reviewer"
+            )
+        with self.assertRaisesRegex(ManifestError, "supabase_migration_filename"):
+            build_production_promotion_receipt(
+                *args, "0107_example.py", "/tmp/20260914123000_example.sql", "reviewer"
+            )
+        with self.assertRaisesRegex(ManifestError, "resolutions изменились"):
+            build_production_promotion_receipt(
+                result, resolutions, "ED-105", result.checksum, "0" * 64,
+                "0107_example.py", "20260914123000_example.sql", "reviewer",
+            )
+
     def test_scaffold_writer_rejects_nonempty_and_forbidden_directories(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -421,3 +481,34 @@ class ContentWorkflowCommandTests(SimpleTestCase):
             metadata = json.loads((output / "migration-preview.json").read_text())
             self.assertEqual(metadata["resolutions_checksum"], checked["resolutions_checksum"])
             self.assertEqual(len(list(output.iterdir())), 3)
+
+    def test_generate_promotion_receipt_writes_only_to_external_empty_directory(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = sample_manifest(status="approved")
+            manifest["review"] = {
+                "language_reviewer": "language-editor", "license_reviewer": "rights-editor",
+                "reviewed_at": "2026-09-01",
+            }
+            result = validate_manifest(manifest)
+            resolutions = sample_resolutions(result.checksum)
+            checked = validate_model_resolutions(result, resolutions, "ED-105", result.checksum)
+            manifest_path = root / "approved.json"
+            resolutions_path = root / "resolutions.json"
+            output = root / "receipt"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            resolutions_path.write_text(json.dumps(resolutions), encoding="utf-8")
+
+            call_command(
+                "content_workflow", str(manifest_path), generate_promotion_receipt=True,
+                model_resolutions=str(resolutions_path), approval_id="ED-105",
+                expected_checksum=result.checksum,
+                expected_resolutions_checksum=checked["resolutions_checksum"],
+                django_migration_filename="0107_example_topic.py",
+                supabase_migration_filename="20260914123000_example_topic.sql",
+                release_reviewer="release-reviewer", output_directory=str(output),
+            )
+
+            receipt = json.loads((output / "production-promotion-receipt.json").read_text())
+            self.assertEqual(receipt["approval_id"], "ED-105")
+            self.assertEqual(len(list(output.iterdir())), 1)
