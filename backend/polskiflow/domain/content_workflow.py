@@ -24,6 +24,11 @@ APPROVAL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,99}$")
 REVIEWER_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._@/-]{0,99}$")
 DJANGO_MIGRATION_RE = re.compile(r"^[0-9]{4}_[a-z0-9_]+\.py$")
 SUPABASE_MIGRATION_RE = re.compile(r"^[0-9]{14}_[a-z0-9_]+\.sql$")
+MIGRATION_PREVIEW_FILES = (
+    "migration-preview.json",
+    "candidate-django-runpython.py",
+    "candidate-supabase-content.sql",
+)
 
 
 class ManifestError(ValueError):
@@ -789,6 +794,7 @@ def build_production_promotion_receipt(
     django_migration_filename: str,
     supabase_migration_filename: str,
     release_reviewer: str,
+    migration_preview_artifacts: dict[str, str],
 ) -> dict[str, str]:
     """Bind reviewed inputs to exact production targets without publishing them."""
     checked = validate_model_resolutions(
@@ -820,6 +826,33 @@ def build_production_promotion_receipt(
             "release_reviewer: используйте 1–100 букв, цифр или символов . _ @ / -."
         )
 
+    if set(migration_preview_artifacts) != set(MIGRATION_PREVIEW_FILES):
+        raise ManifestError("migration preview: ожидаются ровно три штатных файла.")
+    try:
+        preview_metadata = json.loads(
+            migration_preview_artifacts["migration-preview.json"]
+        )
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ManifestError("migration preview: повреждён metadata JSON.") from exc
+    expected_metadata = {
+        "artifact_type": "polskiflow-content-executable-migration-preview",
+        "manifest_checksum": result.checksum,
+        "resolutions_checksum": resolutions_checksum,
+        "approval_id": checked["approval_id"],
+    }
+    for key, expected in expected_metadata.items():
+        if preview_metadata.get(key) != expected:
+            raise ManifestError(f"migration preview: {key} не совпадает с approval.")
+    if preview_metadata.get("files") != {
+        "django": "candidate-django-runpython.py",
+        "supabase": "candidate-supabase-content.sql",
+    }:
+        raise ManifestError("migration preview: metadata содержит неожиданные имена файлов.")
+    preview_hashes = {
+        filename: hashlib.sha256(content.encode("utf-8")).hexdigest()
+        for filename, content in sorted(migration_preview_artifacts.items())
+    }
+
     receipt = {
         "artifact_type": "polskiflow-content-production-promotion-receipt",
         "schema_version": 1,
@@ -832,6 +865,7 @@ def build_production_promotion_receipt(
             "license": result.manifest["review"]["license_reviewer"],
             "release": reviewer,
         },
+        "migration_preview_sha256": preview_hashes,
         "promotion_order": [
             {
                 "order": 1,
@@ -854,7 +888,8 @@ def build_production_promotion_receipt(
             ),
         },
         "boundary": (
-            "Audit receipt only. It does not inspect, create, copy, import, execute, apply, "
+            "Audit receipt only. It inspects and hashes the three review-preview files but does "
+            "not create, copy, import, execute, apply, "
             "or deploy either target and performs no database or network writes."
         ),
     }
@@ -864,6 +899,63 @@ def build_production_promotion_receipt(
         "production-promotion-receipt.json": json.dumps(
             receipt, ensure_ascii=False, indent=2, sort_keys=True
         ) + "\n"
+    }
+
+
+def load_migration_preview_artifacts(
+    directory: str | Path, project_root: str | Path
+) -> dict[str, str]:
+    """Read the exact preview bundle outside the repository without following symlinks."""
+    root = Path(directory)
+    if root.is_symlink() or not root.is_dir():
+        raise ManifestError("migration preview directory: требуется обычный каталог.")
+    resolved = root.resolve()
+    repository = Path(project_root).resolve()
+    if resolved == repository or repository in resolved.parents:
+        raise ManifestError("migration preview directory должен находиться вне корня проекта.")
+    if {path.name for path in root.iterdir()} != set(MIGRATION_PREVIEW_FILES):
+        raise ManifestError("migration preview: ожидаются ровно три штатных файла.")
+    artifacts = {}
+    for filename in MIGRATION_PREVIEW_FILES:
+        path = root / filename
+        if path.is_symlink() or not path.is_file():
+            raise ManifestError("migration preview: symlink и специальные файлы запрещены.")
+        try:
+            artifacts[filename] = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            raise ManifestError(f"migration preview: не удалось прочитать {filename}.") from exc
+    return artifacts
+
+
+def verify_production_promotion_receipt(
+    receipt: dict[str, Any], migration_preview_artifacts: dict[str, str], manifest_checksum: str
+) -> dict[str, Any]:
+    """Detect accidental receipt or preview drift before the manual promotion step."""
+    if not isinstance(receipt, dict):
+        raise ManifestError("promotion receipt: ожидается JSON-объект.")
+    supplied_checksum = receipt.get("receipt_checksum")
+    unsigned = {key: value for key, value in receipt.items() if key != "receipt_checksum"}
+    canonical = json.dumps(unsigned, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    calculated = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    if supplied_checksum != calculated:
+        raise ManifestError("promotion receipt: checksum не совпадает.")
+    if receipt.get("manifest_checksum") != manifest_checksum:
+        raise ManifestError("promotion receipt: manifest checksum не совпадает.")
+    expected_hashes = receipt.get("migration_preview_sha256")
+    actual_hashes = {
+        filename: hashlib.sha256(content.encode("utf-8")).hexdigest()
+        for filename, content in sorted(migration_preview_artifacts.items())
+    }
+    if expected_hashes != actual_hashes:
+        raise ManifestError("promotion receipt: migration preview изменился после ревью.")
+    return {
+        "artifact_type": "polskiflow-content-production-promotion-verification",
+        "schema_version": 1,
+        "receipt_checksum": supplied_checksum,
+        "manifest_checksum": manifest_checksum,
+        "complete": True,
+        "writes_performed": False,
+        "boundary": "Integrity verification only; this is not a signature or publication approval.",
     }
 
 

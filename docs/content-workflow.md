@@ -204,17 +204,35 @@ approval ID, трёх ответственных редакторов и точ�
   --django-migration-filename 0107_example_topic.py \
   --supabase-migration-filename 20260914123000_example_topic.sql \
   --release-reviewer release-reviewer-id \
+  --migration-preview-directory /tmp/example-topic-migration-preview \
   --output-directory /tmp/example-topic-promotion-receipt
 ```
 
+Команда сначала проверяет ровно три штатных файла migration preview, сверяет
+их manifest/resolutions checksum и approval ID, а затем включает SHA-256
+каждого файла в квитанцию. Любая подмена preview после ревью меняет receipt.
 Результат детерминирован и содержит собственный checksum, порядок production-
 действий (сначала reviewed Supabase migration, затем deploy commit с парной
 Django migration) и явное `approved: false`: квитанция фиксирует границу, но не
 заменяет финальное подтверждение release reviewer. Допускаются только безопасные
 basename установленного формата; пути, `..` и произвольные расширения
 отклоняются. Выходной каталог должен быть новым или пустым и находиться вне
-корня проекта. Команда не проверяет существование файлов, не копирует их, не
-обращается к сети/БД и ничего не применяет или не развёртывает.
+корня проекта. Preview-каталог также должен находиться вне репозитория, содержать
+ровно три обычных файла и не использовать symlink. Команда только читает и
+хеширует их: не копирует, не обращается к сети/БД и ничего не применяет или не
+развёртывает.
+
+Непосредственно перед ручным переносом integrity проверяется повторно:
+
+```bash
+.venv/bin/python manage.py content_workflow path/to/approved.json \
+  --verify-promotion-receipt /tmp/example-topic-promotion-receipt/production-promotion-receipt.json \
+  --migration-preview-directory /tmp/example-topic-migration-preview
+```
+
+Проверка пересчитывает checksum самой квитанции и трёх preview-файлов, а также
+сверяет manifest checksum. Она обнаруживает случайную подмену после ревью, но
+не является криптографической подписью и не заменяет решение release reviewer.
 
 ## 6. Откат
 
