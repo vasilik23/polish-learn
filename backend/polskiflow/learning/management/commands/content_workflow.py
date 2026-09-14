@@ -11,8 +11,10 @@ from polskiflow.domain.content_workflow import (
     build_migration_scaffold,
     build_publish_plan,
     load_manifest,
+    load_migration_preview_artifacts,
     validate_model_resolutions,
     validate_manifest,
+    verify_production_promotion_receipt,
     write_migration_scaffold,
 )
 
@@ -57,6 +59,14 @@ class Command(BaseCommand):
         parser.add_argument("--supabase-migration-filename", default="")
         parser.add_argument("--release-reviewer", default="")
         parser.add_argument(
+            "--migration-preview-directory",
+            help="External directory containing the exact three reviewed preview files.",
+        )
+        parser.add_argument(
+            "--verify-promotion-receipt",
+            help="Verify an existing receipt against the approved manifest and preview files.",
+        )
+        parser.add_argument(
             "--approval-id",
             default="",
             help="Editorial approval/ticket ID required with --prepare-publish.",
@@ -67,9 +77,10 @@ class Command(BaseCommand):
         resolution_path = options["check_resolutions"]
         migration_preview = options["generate_migration_preview"]
         promotion_receipt = options["generate_promotion_receipt"]
+        verify_promotion_receipt = options["verify_promotion_receipt"]
         selected_modes = sum(bool(value) for value in (
             options["prepare_publish"], scaffold, resolution_path, migration_preview,
-            promotion_receipt,
+            promotion_receipt, verify_promotion_receipt,
         ))
         if selected_modes > 1:
             raise CommandError("Выберите только один режим публикации, scaffold или проверки resolutions.")
@@ -101,16 +112,31 @@ class Command(BaseCommand):
             options["output_directory"], options["model_resolutions"], options["approval_id"],
             options["expected_checksum"], options["expected_resolutions_checksum"],
             options["django_migration_filename"], options["supabase_migration_filename"],
-            options["release_reviewer"],
+            options["release_reviewer"], options["migration_preview_directory"],
         )):
             raise CommandError(
                 "--generate-promotion-receipt требует output directory, resolutions, оба checksum, "
-                "approval ID, два точных имени миграций и release reviewer."
+                "approval ID, preview directory, два точных имени миграций и release reviewer."
             )
         if promotion_receipt and options["output"]:
             raise CommandError("--output несовместим с --generate-promotion-receipt.")
+        if verify_promotion_receipt and not options["migration_preview_directory"]:
+            raise CommandError(
+                "--verify-promotion-receipt требует --migration-preview-directory."
+            )
         try:
             result = validate_manifest(load_manifest(options["manifest"]))
+            if verify_promotion_receipt:
+                project_root = Path(__file__).resolve().parents[5]
+                artifact = verify_production_promotion_receipt(
+                    load_manifest(verify_promotion_receipt),
+                    load_migration_preview_artifacts(
+                        options["migration_preview_directory"], project_root
+                    ),
+                    result.checksum,
+                )
+                self.stdout.write(json.dumps(artifact, ensure_ascii=False, sort_keys=True))
+                return
             if scaffold:
                 project_root = Path(__file__).resolve().parents[5]
                 artifacts = build_migration_scaffold(
@@ -157,6 +183,9 @@ class Command(BaseCommand):
                     options["django_migration_filename"],
                     options["supabase_migration_filename"],
                     options["release_reviewer"],
+                    load_migration_preview_artifacts(
+                        options["migration_preview_directory"], project_root
+                    ),
                 )
                 output = write_migration_scaffold(
                     artifacts,
