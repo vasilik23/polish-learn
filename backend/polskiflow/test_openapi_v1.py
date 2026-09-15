@@ -17,6 +17,7 @@ class OpenApiV1Tests(SimpleTestCase):
             set(document["paths"]),
             {
                 "/api/v1/catalog/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
+                "/api/v1/me/history/",
                 "/api/v1/me/lesson-results/",
                 "/api/v1/me/lesson-results/session/",
                 "/api/v1/me/reading-bookmarks/",
@@ -30,6 +31,10 @@ class OpenApiV1Tests(SimpleTestCase):
         self.assertNotIn("security", paths["/api/v1/catalog/"]["get"])
         self.assertEqual(
             paths["/api/v1/me/lesson-results/"]["post"]["security"],
+            [{"supabaseBearer": []}],
+        )
+        self.assertEqual(
+            paths["/api/v1/me/history/"]["get"]["security"],
             [{"supabaseBearer": []}],
         )
         self.assertEqual(

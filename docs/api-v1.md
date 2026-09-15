@@ -59,6 +59,8 @@ future separate client:
 - `GET /api/v1/me/sm2/` — personal dictionary review schedule, current due
   count, and the SM-2 fields required to render the learner's queue.
 - `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.
+- `GET /api/v1/me/history/?period=30&page=1` — owner-scoped завершения уроков
+  страницами по 50 записей; доступны периоды 7/30/90 дней и всё время.
 
 Native clients add or remove a saved text with `PUT` or `DELETE` at
 `/api/v1/me/reading-bookmarks/{text_id}/`. Mutations require an explicit Bearer
@@ -76,6 +78,10 @@ user access token to Supabase, so existing RLS remains the authorization
 boundary. The API never accepts a user ID from the client and never exposes
 access or refresh tokens. Progress and SM-2 remain read-only; bookmark mutations
 use idempotent set/delete semantics, while results use the event contract below.
+
+History intentionally requires an explicit Bearer token even for GET and never
+accepts a user ID. Invalid pagination returns `400`; a Data API failure returns
+`503`, never a misleading empty successful page.
 
 ## Lesson-result write contract
 

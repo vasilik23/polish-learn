@@ -36,6 +36,18 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped progress"), **private_errors},
                 }
             },
+            "/api/v1/me/history/": {
+                "get": {
+                    "operationId": "getLearnerHistory",
+                    "summary": "Get a paginated owner-scoped lesson completion history",
+                    "security": [{"supabaseBearer": []}],
+                    "parameters": [
+                        {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 500, "default": 1}},
+                        {"name": "period", "in": "query", "schema": {"type": "string", "enum": ["7", "30", "90", "all"], "default": "30"}},
+                    ],
+                    "responses": {"200": _json_response("Owner-scoped lesson history"), **{str(code): error_response for code in (400, 401, 405, 503)}},
+                }
+            },
             "/api/v1/me/sm2/": {
                 "get": {
                     "operationId": "getLearnerSm2",
