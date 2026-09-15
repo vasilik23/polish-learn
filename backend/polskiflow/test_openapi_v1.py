@@ -1,0 +1,48 @@
+import json
+
+from django.test import SimpleTestCase
+
+
+class OpenApiV1Tests(SimpleTestCase):
+    def test_document_is_public_deterministic_and_covers_live_v1_contracts(self):
+        first = self.client.get("/api/v1/openapi.json")
+        second = self.client.get("/api/v1/openapi.json")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.content, second.content)
+        self.assertIn("public", first["Cache-Control"])
+        document = first.json()
+        self.assertEqual(document["openapi"], "3.1.0")
+        self.assertEqual(
+            set(document["paths"]),
+            {
+                "/api/v1/catalog/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
+                "/api/v1/me/lesson-results/",
+                "/api/v1/me/lesson-results/session/",
+            },
+        )
+
+    def test_security_boundaries_and_offline_payload_are_explicit(self):
+        document = self.client.get("/api/v1/openapi.json").json()
+        paths = document["paths"]
+        self.assertNotIn("security", paths["/api/v1/catalog/"]["get"])
+        self.assertEqual(
+            paths["/api/v1/me/lesson-results/"]["post"]["security"],
+            [{"supabaseBearer": []}],
+        )
+        self.assertEqual(
+            paths["/api/v1/me/lesson-results/session/"]["post"]["security"],
+            [{"browserSession": [], "csrfHeader": []}],
+        )
+        request = document["components"]["schemas"]["LessonResultRequest"]
+        self.assertFalse(request["additionalProperties"])
+        serialized = json.dumps(document).lower()
+        self.assertNotIn("service_role", serialized)
+        self.assertNotIn("refresh_token", serialized)
+        self.assertNotIn("password", serialized)
+
+    def test_document_supports_head_and_rejects_mutation(self):
+        self.assertEqual(self.client.head("/api/v1/openapi.json").status_code, 200)
+        response = self.client.post("/api/v1/openapi.json")
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(response["Allow"], "GET, HEAD")
