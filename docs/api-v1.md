@@ -61,6 +61,8 @@ future separate client:
 - `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.
 - `GET /api/v1/me/history/?period=30&page=1` — owner-scoped завершения уроков
   страницами по 50 записей; доступны периоды 7/30/90 дней и всё время.
+- `GET /api/v1/me/lesson-drafts/latest/` — последний незавершённый урок или
+  `null`; временная ошибка Data API возвращает `503`, а не ложный пустой ответ.
 
 Native clients add or remove a saved text with `PUT` or `DELETE` at
 `/api/v1/me/reading-bookmarks/{text_id}/`. Mutations require an explicit Bearer
@@ -82,6 +84,13 @@ use idempotent set/delete semantics, while results use the event contract below.
 History intentionally requires an explicit Bearer token even for GET and never
 accepts a user ID. Invalid pagination returns `400`; a Data API failure returns
 `503`, never a misleading empty successful page.
+
+Native clients resume lessons through Bearer-only
+`PUT /api/v1/me/lesson-drafts/{lesson_id}/` and clear a draft with idempotent
+`DELETE` on the same path. PUT accepts exactly `step_index` and `score`; the
+server derives the owner and lesson kind, verifies the active lesson and rejects
+completed/out-of-range progress. Answers, exercise content, user IDs and tokens
+are neither accepted in the payload nor returned.
 
 ## Lesson-result write contract
 

@@ -1,12 +1,19 @@
 """Owner-scoped cross-device lesson draft persistence."""
 
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from django.conf import settings
+
+
+@dataclass(frozen=True)
+class LessonDraftLoadResult:
+    available: bool
+    draft: dict | None = None
 
 
 def load_lesson_draft(access_token, user_id, lesson_id):
@@ -22,14 +29,22 @@ def load_lesson_draft(access_token, user_id, lesson_id):
 
 def load_latest_lesson_draft(access_token, user_id):
     """Return the learner's most recently updated unfinished lesson."""
-    if not _configured(access_token): return None
+    return load_latest_lesson_draft_result(access_token, user_id).draft
+
+
+def load_latest_lesson_draft_result(access_token, user_id):
+    """Distinguish an empty draft list from an unavailable Data API."""
+    if not _configured(access_token): return LessonDraftLoadResult(False)
     query = urlencode({"select": "lesson_id,lesson_kind,step_index,score,updated_at", "user_id": f"eq.{user_id}", "order": "updated_at.desc", "limit": "1"})
     request = _request(f"lesson_drafts?{query}", access_token)
     try:
         with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
             rows = json.load(response)
-    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError): return None
-    return rows[0] if isinstance(rows, list) and rows else None
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return LessonDraftLoadResult(False)
+    if not isinstance(rows, list):
+        return LessonDraftLoadResult(False)
+    return LessonDraftLoadResult(True, rows[0] if rows else None)
 
 
 def save_lesson_draft(access_token, user_id, lesson_id, lesson_kind, step_index, score):

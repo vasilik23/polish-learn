@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from polskiflow.auth import require_supabase_user
-from polskiflow.content import public_course_catalog, reading_text
+from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, task
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
@@ -19,6 +19,7 @@ from polskiflow.domain.lesson_results import (
 )
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.learning.models import Lesson, Level
+from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
@@ -160,6 +161,66 @@ def learner_history_v1(request):
         "has_next": history.has_next,
         "completions": list(history.rows),
     })
+
+
+@require_safe
+@require_supabase_user
+def learner_latest_lesson_draft_v1(request):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    result = load_latest_lesson_draft_result(
+        request.supabase_access_token, request.supabase_user.id
+    )
+    if not result.available:
+        return _unavailable_response("learner-lesson-draft")
+    return _private_response("learner-lesson-draft", {"draft": result.draft})
+
+
+@csrf_exempt
+@require_http_methods(["PUT", "DELETE"])
+@require_supabase_user
+def learner_lesson_draft_v1(request, lesson_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    lesson = task(lesson_id)
+    if lesson is None:
+        return _error_response("lesson_not_found", "Active lesson was not found", 404)
+    token, owner = request.supabase_access_token, request.supabase_user.id
+    if request.method == "DELETE":
+        if not delete_lesson_draft(token, owner, lesson_id):
+            return _unavailable_response("learner-lesson-draft")
+        return _private_response("learner-lesson-draft", {"draft": None})
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 1024:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict) or set(payload) != {"step_index", "score"}:
+        return _error_response("validation_error", "Use exactly step_index and score", 400)
+    step_index, score = payload["step_index"], payload["score"]
+    if isinstance(step_index, bool) or isinstance(score, bool) or not isinstance(step_index, int) or not isinstance(score, int):
+        return _error_response("validation_error", "step_index and score must be integers", 400)
+    total = _lesson_step_count(lesson_id, lesson["kind"])
+    if total < 2 or not (0 < step_index < total) or not (0 <= score <= step_index):
+        return _error_response("validation_error", "Draft must describe a valid unfinished step and score", 400)
+    if not save_lesson_draft(token, owner, lesson_id, lesson["kind"], step_index, score):
+        return _unavailable_response("learner-lesson-draft")
+    return _private_response("learner-lesson-draft", {"draft": {
+        "lesson_id": lesson_id, "lesson_kind": lesson["kind"],
+        "step_index": step_index, "score": score,
+    }})
+
+
+def _lesson_step_count(lesson_id, lesson_kind):
+    if lesson_kind in {"words", "review"}:
+        return len(flashcards(lesson_id))
+    if lesson_kind == "grammar":
+        content = grammar(lesson_id)
+        return len(content["questions"]) if content else 0
+    return len(quiz(lesson_id))
 
 
 @csrf_exempt

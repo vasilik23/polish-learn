@@ -18,6 +18,8 @@ class OpenApiV1Tests(SimpleTestCase):
             {
                 "/api/v1/catalog/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
                 "/api/v1/me/history/",
+                "/api/v1/me/lesson-drafts/latest/",
+                "/api/v1/me/lesson-drafts/{lesson_id}/",
                 "/api/v1/me/lesson-results/",
                 "/api/v1/me/lesson-results/session/",
                 "/api/v1/me/reading-bookmarks/",
@@ -37,6 +39,11 @@ class OpenApiV1Tests(SimpleTestCase):
             paths["/api/v1/me/history/"]["get"]["security"],
             [{"supabaseBearer": []}],
         )
+        self.assertEqual(
+            paths["/api/v1/me/lesson-drafts/{lesson_id}/"]["put"]["security"],
+            [{"supabaseBearer": []}],
+        )
+        self.assertFalse(document["components"]["schemas"]["LessonDraftRequest"]["additionalProperties"])
         self.assertEqual(
             paths["/api/v1/me/lesson-results/session/"]["post"]["security"],
             [{"browserSession": [], "csrfHeader": []}],
