@@ -24,6 +24,7 @@ from polskiflow.auth import (
 )
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
+from polskiflow.lesson_draft_store import load_latest_lesson_draft
 from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.auth_rate_limit import consume_auth_attempt
 from polskiflow.domain.daily_plan import build_daily_plan
@@ -419,6 +420,16 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 @require_browser_user
 def home(request: HttpRequest) -> HttpResponse:
     dashboard, lesson_tasks, completed_count, progress_percent = _daily_plan(request)
+    draft = load_latest_lesson_draft(request.supabase_access_token, request.supabase_user.id)
+    lesson_map = {item["id"]: item for item in tasks()}
+    draft_lesson = lesson_map.get(draft.get("lesson_id")) if isinstance(draft, dict) else None
+    resume_lesson = None
+    if draft_lesson and draft_lesson["id"] not in dashboard.all_completed_lesson_ids:
+        try:
+            step = max(1, int(draft.get("step_index", 0)) + 1)
+        except (TypeError, ValueError):
+            step = 1
+        resume_lesson = {**draft_lesson, "step": step}
     return render(
         request,
         "home.html",
@@ -428,6 +439,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "tasks": lesson_tasks,
             "completed_count": completed_count,
             "progress_percent": progress_percent,
+            "resume_lesson": resume_lesson,
         },
     )
 

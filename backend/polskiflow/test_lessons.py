@@ -92,6 +92,20 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "Powtórka")
         self.assertContains(response, "Quiz")
 
+    @patch("polskiflow.auth_views.load_latest_lesson_draft", return_value={"lesson_id": "quiz", "step_index": 2})
+    def test_home_discovers_latest_unfinished_lesson(self, _draft):
+        response = self.client.get("/")
+        self.assertContains(response, "Незавершённый урок")
+        self.assertContains(response, "продолжим с шага 3")
+        self.assertContains(response, 'href="/lesson/quiz/">Продолжить')
+
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    @patch("polskiflow.auth_views.load_latest_lesson_draft", return_value={"lesson_id": "quiz", "step_index": 2})
+    def test_home_hides_stale_draft_for_completed_lesson(self, _draft, progress):
+        progress.return_value = DashboardProgress("Learner", "A1", 1, frozenset({"quiz"}), True, all_completed_lesson_ids=frozenset({"quiz"}))
+        response = self.client.get("/")
+        self.assertNotContains(response, "Незавершённый урок")
+
     def test_legacy_tasks_url_redirects_to_home_plan(self):
         response = self.client.get("/tasks/?source=bookmark")
 

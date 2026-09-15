@@ -13,6 +13,14 @@
     </div>
   </section>
 
+  {% if resume_lesson %}
+    <aside class="card resume-card" aria-labelledby="resume-title">
+      <span class="resume-card-icon" aria-hidden="true">{{ resume_lesson.emoji }}</span>
+      <div><p class="eyebrow">Незавершённый урок</p><h2 id="resume-title">{{ resume_lesson.title }}</h2><p class="muted">{{ resume_lesson.level }} · продолжим с шага {{ resume_lesson.step }}</p></div>
+      <a class="compact-button" href="{% url 'lesson' resume_lesson.id %}">Продолжить →</a>
+    </aside>
+  {% endif %}
+
   <div class="dashboard-grid home-plan-grid">
     <section class="card daily-card" id="daily-plan">
       <div class="progress-ring" style="--value: {{ progress_percent }}" role="progressbar" aria-label="Выполнение цели на сегодня" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_percent }}"><strong>{{ progress_percent }}%</strong></div>
