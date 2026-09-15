@@ -7,10 +7,10 @@ import json
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_safe
+from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from polskiflow.auth import require_supabase_user
-from polskiflow.content import public_course_catalog
+from polskiflow.content import public_course_catalog, reading_text
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
@@ -20,6 +20,7 @@ from polskiflow.domain.lesson_results import (
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.progress_store import load_dashboard_progress, record_lesson_result_event
+from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
 
 API_VERSION = "v1"
@@ -119,20 +120,41 @@ def learner_sm2_v1(request):
     )
 
 
+@require_safe
+@require_supabase_user
+def learner_reading_bookmarks_v1(request):
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
+    if bookmarks is None:
+        return _unavailable_response("learner-reading-bookmarks")
+    return _private_response("learner-reading-bookmarks", {"reading_text_ids": sorted(bookmarks)})
+
+
+@csrf_exempt
+@require_http_methods(["PUT", "DELETE"])
+@require_supabase_user
+def learner_reading_bookmark_v1(request, text_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if reading_text(text_id) is None:
+        return _error_response("reading_text_not_found", "Active reading text was not found", 404)
+    saved = request.method == "PUT"
+    if not set_reading_bookmark(request.supabase_access_token, request.supabase_user.id, text_id, saved):
+        return _unavailable_response("learner-reading-bookmark")
+    return _private_response("learner-reading-bookmark", {"reading_text_id": text_id, "saved": saved})
+
+
 @csrf_exempt
 @require_POST
 @require_supabase_user
 def lesson_results_v1(request):
-    authorization = request.headers.get("Authorization", "")
-    scheme, separator, bearer_token = authorization.partition(" ")
-    if (
-        scheme.lower() != "bearer"
-        or separator != " "
-        or not bearer_token
-        or bearer_token != request.supabase_access_token
-    ):
+    if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
     return _store_lesson_result(request)
+
+
+def _valid_bearer(request):
+    scheme, separator, token = request.headers.get("Authorization", "").partition(" ")
+    return scheme.lower() == "bearer" and separator == " " and bool(token) and token == request.supabase_access_token
 
 
 @require_POST

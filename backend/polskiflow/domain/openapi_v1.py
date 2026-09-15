@@ -44,6 +44,12 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped SM-2 queue"), **private_errors},
                 }
             },
+            "/api/v1/me/reading-bookmarks/": {"get": {"operationId": "getReadingBookmarks", "summary": "Get saved reading text IDs", "security": [{"supabaseBearer": []}, {"browserSession": []}], "responses": {"200": _json_response("Owner-scoped reading bookmarks"), **private_errors}}},
+            "/api/v1/me/reading-bookmarks/{text_id}/": {
+                "parameters": [{"name": "text_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 80}}],
+                "put": {"operationId": "saveReadingBookmark", "summary": "Save a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark saved"), **{str(code): error_response for code in (401, 404, 503)}}},
+                "delete": {"operationId": "deleteReadingBookmark", "summary": "Remove a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark removed"), **{str(code): error_response for code in (401, 404, 503)}}},
+            },
             "/api/v1/me/lesson-results/": {
                 "post": {
                     "operationId": "postLessonResult",

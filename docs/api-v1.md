@@ -51,13 +51,18 @@ that the catalog is permanently immutable.
 
 ## Learner contracts
 
-Two read-only endpoints provide the minimum owner-scoped state needed by a
+Three endpoints provide the minimum owner-scoped state needed by a
 future separate client:
 
 - `GET /api/v1/me/progress/` — profile level and daily goal, streak, active
   days, deterministic completed lesson IDs, and week/month aggregates;
 - `GET /api/v1/me/sm2/` — personal dictionary review schedule, current due
   count, and the SM-2 fields required to render the learner's queue.
+- `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.
+
+Native clients add or remove a saved text with `PUT` or `DELETE` at
+`/api/v1/me/reading-bookmarks/{text_id}/`. Mutations require an explicit Bearer
+token, validate the active reading and never accept a user ID.
 
 Both accept the existing Supabase access token as
 `Authorization: Bearer <access-token>`. Browser sessions may use the existing
@@ -69,9 +74,8 @@ Learner responses use contract version `1.0.0`, `Cache-Control: private,
 no-store`, and `Vary: Authorization, Cookie`. The backend forwards the same
 user access token to Supabase, so existing RLS remains the authorization
 boundary. The API never accepts a user ID from the client and never exposes
-access or refresh tokens. These contracts are intentionally read-only: result
-submission and offline synchronization need separate idempotency and conflict
-rules before they can become public API operations.
+access or refresh tokens. Progress and SM-2 remain read-only; bookmark mutations
+use idempotent set/delete semantics, while results use the event contract below.
 
 ## Lesson-result write contract
 
