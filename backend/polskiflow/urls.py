@@ -6,6 +6,7 @@ from polskiflow.api_views import catalog_v1, learner_progress_v1, learner_readin
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
 from polskiflow.diagnostic_views import diagnostic
+from polskiflow.feedback_views import feedback
 from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.interaction_views import interaction_practice
 from polskiflow.pwa_views import offline_shell, service_worker, web_app_manifest
@@ -43,6 +44,7 @@ urlpatterns = [
     path("course/", course, name="course"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
+    path("feedback/", feedback, name="feedback"),
     path("profile/export/", profile_data_export, name="profile-data-export"),
     path("writing/", writing_practice, name="writing-practice"),
     path("interaction/", interaction_practice, name="interaction-practice"),
