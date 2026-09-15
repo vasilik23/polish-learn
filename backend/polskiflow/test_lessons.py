@@ -751,7 +751,7 @@ class LessonViewsTests(TestCase):
         self.assertNotContains(response, "access_token")
 
     @patch("polskiflow.lesson_views.save_lesson_completion_result")
-    def test_quiz_failure_does_not_join_narrow_offline_pilot(self, mocked_save):
+    def test_quiz_transient_failure_joins_controlled_offline_pilot(self, mocked_save):
         mocked_save.return_value = CompletionSaveResult(saved=False, retryable=True)
 
         response = self.client.post(
@@ -759,7 +759,9 @@ class LessonViewsTests(TestCase):
             {"action": "next", "index": 4, "score": 3, "selected": 1},
         )
 
-        self.assertNotContains(response, "data-lesson-result-sync")
+        self.assertContains(response, "data-lesson-result-sync")
+        self.assertContains(response, '&quot;lesson_id&quot;:&quot;quiz&quot;')
+        self.assertNotContains(response, "access_token")
 
     @patch("polskiflow.lesson_views.save_lesson_completion_result")
     def test_review_transient_failure_joins_controlled_offline_pilot(self, mocked_save):
