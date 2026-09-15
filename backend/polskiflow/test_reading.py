@@ -78,6 +78,21 @@ class ReadingViewsTests(TestCase):
         self.news_mock = self.news_patch.start()
         self.addCleanup(self.news_patch.stop)
 
+    @patch("polskiflow.reading_views.load_reading_bookmarks", return_value={"test-story"})
+    def test_library_can_filter_saved_texts(self, _bookmarks):
+        response = self.client.get("/reading/?level=A1&saved=1")
+        self.assertContains(response, "Krótka historia")
+        self.assertNotContains(response, "Długa podróż")
+        self.assertContains(response, "Krótka historia ★")
+
+    @patch("polskiflow.reading_views.set_reading_bookmark", return_value=True)
+    def test_bookmark_write_is_csrf_protected_and_owner_scoped(self, save):
+        response = self.client.post("/reading/test-story/bookmark/", {"saved": "1"})
+        self.assertRedirects(response, "/reading/test-story/", fetch_redirect_response=False)
+        save.assert_called_once_with(
+            "access", "00000000-0000-0000-0000-000000000123", "test-story", True
+        )
+
     def test_library_lists_active_texts(self):
         response = self.client.get("/reading/")
 

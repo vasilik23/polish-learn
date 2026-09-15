@@ -4,6 +4,7 @@
   <div class="reader-layout">
     <article class="reader-article">
       <header class="lesson-header reader-header"><a class="back-button" href="{% url 'reading-library' %}" aria-label="Назад">←</a><strong>{{ text.title }}</strong><span class="level-badge">{{ text.level }}</span></header>
+      {% if bookmarks_available %}<form method="post" action="{% url 'toggle-reading-bookmark' text.id %}">{% csrf_token %}<input type="hidden" name="saved" value="{% if is_bookmarked %}0{% else %}1{% endif %}"><button class="compact-button secondary-link" type="submit">{% if is_bookmarked %}★ Убрать из сохранённых{% else %}☆ Сохранить текст{% endif %}</button></form>{% endif %}
       <div class="reader-meta"><span>{{ text.emoji }} {{ text.description }}</span><span>◷ {{ text.minutes }} мин</span></div>
       {{ text.paragraphs|json_script:"reading-audio-text" }}
       <section class="card reading-audio" data-reading-audio hidden aria-labelledby="reading-audio-title">

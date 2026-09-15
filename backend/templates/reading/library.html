@@ -35,6 +35,7 @@
         </label>
       </div>
       <div class="catalog-filter-actions">
+        <label><input type="checkbox" name="saved" value="1"{% if saved_only %} checked{% endif %}> Только сохранённые</label>
         <button class="compact-button" type="submit">Найти</button>
         {% if reading_filters_active %}<a href="?level={{ selected_reading_level }}#texts-title">Сбросить</a>{% endif %}
       </div>
@@ -44,7 +45,7 @@
     {% for text in texts %}
       <a class="reading-card" href="{% url 'reader' text.id %}">
         <span class="reading-cover">{{ text.emoji|default:"📖" }}</span>
-        <span class="reading-card-copy"><span class="level-badge">{{ text.level }}</span><strong>{{ text.title }}</strong><small>{{ text.description }}</small><span>◷ {{ text.minutes }} мин · Читать →</span></span>
+        <span class="reading-card-copy"><span class="level-badge">{{ text.level }}</span><strong>{{ text.title }}{% if text.saved %} ★{% endif %}</strong><small>{{ text.description }}</small><span>◷ {{ text.minutes }} мин · Читать →</span></span>
       </a>
     {% empty %}
       <div class="card empty-state"><span>📚</span><h3>{% if reading_filters_active %}Подходящих текстов не найдено{% else %}Для уровня {{ selected_reading_level }} тексты скоро появятся{% endif %}</h3><p class="muted">{% if reading_filters_active %}Измени запрос или сбрось фильтры.{% else %}Выбери другой уровень или загляни позже.{% endif %}</p></div>
