@@ -341,6 +341,11 @@ Owner-scoped JSON-экспорт профиля, прогресса, слова�
 
 ## Критерии готовности следующего этапа
 
+Публичные auth-формы имеют privacy-preserving application throttle с `429` и
+`Retry-After`; Supabase upstream limits остаются вторым уровнем защиты. Cache
+limiter считается best-effort и при горизонтальном росте должен перейти на
+общий distributed backend.
+
 - 100% активных текстов имеют связанный comprehension-урок и проходят coverage;
 - 100% внешних материалов имеют карточку конкретного объекта, лицензию,
   атрибуцию и дату проверки;

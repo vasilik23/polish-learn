@@ -85,6 +85,13 @@ SUPABASE_AUTH_NETWORK_ATTEMPTS = int(
 SUPABASE_AUTH_RETRY_BACKOFF = float(
     os.environ.get("SUPABASE_AUTH_RETRY_BACKOFF", "0.2")
 )
+VERCEL = os.environ.get("VERCEL", "") == "1"
+AUTH_FORM_RATE_LIMITS = {
+    "login": (int(os.environ.get("AUTH_LOGIN_ATTEMPTS", "10")), 15 * 60),
+    "register": (int(os.environ.get("AUTH_REGISTER_ATTEMPTS", "5")), 60 * 60),
+    "forgot": (int(os.environ.get("AUTH_RECOVERY_ATTEMPTS", "5")), 60 * 60),
+    "resend": (int(os.environ.get("AUTH_RESEND_ATTEMPTS", "5")), 60 * 60),
+}
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
 SESSION_COOKIE_SECURE = AUTH_COOKIE_SECURE
