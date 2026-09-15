@@ -24,6 +24,7 @@ from polskiflow.domain.reading_catalog import (
     filter_reading_texts,
 )
 from polskiflow.progress_store import load_dashboard_progress, save_lesson_completion
+from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 
 TOKEN_PATTERN = re.compile(r"([\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ-]+)", re.UNICODE)
@@ -78,6 +79,12 @@ def reading_library(request: HttpRequest) -> HttpResponse:
         topic_id=filters["topic"],
         duration=filters["duration"],
     )
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
+    saved_only = request.GET.get("saved") == "1"
+    for text in filtered_texts:
+        text["saved"] = text["id"] in (bookmarks or set())
+    if saved_only:
+        filtered_texts = [text for text in filtered_texts if text["saved"]]
     preserved_filters = {
         key: value for key, value in filters.items() if value
     }
@@ -99,6 +106,8 @@ def reading_library(request: HttpRequest) -> HttpResponse:
             "reading_topic_options": topic_options,
             "reading_result_count": len(filtered_texts),
             "reading_filters_active": any(filters.values()),
+            "saved_only": saved_only,
+            "bookmarks_available": bookmarks is not None,
         },
     )
 
@@ -139,6 +148,7 @@ def reader(request: HttpRequest, text_id: str) -> HttpResponse:
         if isinstance(comprehension_lesson_id, str) and comprehension_lesson_id
         else None
     )
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
     return render(
         request,
         "reading/reader.html",
@@ -146,8 +156,20 @@ def reader(request: HttpRequest, text_id: str) -> HttpResponse:
             "text": text,
             "paragraphs": _tokenize(text.paragraphs, text.glossary),
             "comprehension_task": comprehension_task,
+            "is_bookmarked": text_id in (bookmarks or set()),
+            "bookmarks_available": bookmarks is not None,
         },
     )
+
+
+@require_POST
+@require_browser_user
+def toggle_reading_bookmark(request: HttpRequest, text_id: str) -> HttpResponse:
+    if reading_text(text_id) is None:
+        raise Http404
+    saved = request.POST.get("saved") == "1"
+    set_reading_bookmark(request.supabase_access_token, request.supabase_user.id, text_id, saved)
+    return redirect("reader", text_id=text_id)
 
 
 @require_browser_user

@@ -17,6 +17,7 @@ from polskiflow.reading_views import (
     news_library,
     reader,
     reading_library,
+    toggle_reading_bookmark,
     remove_dictionary_word,
 )
 
@@ -57,6 +58,7 @@ urlpatterns = [
     path("reading/", reading_library, name="reading-library"),
     path("news/", news_library, name="news-library"),
     path("reading/<slug:text_id>/", reader, name="reader"),
+    path("reading/<slug:text_id>/bookmark/", toggle_reading_bookmark, name="toggle-reading-bookmark"),
     path("reading/<slug:text_id>/save/", add_dictionary_word, name="add-dictionary-word"),
     path("dictionary/", dictionary, name="dictionary"),
     path("dictionary/practice/", dictionary_practice, name="dictionary-practice"),

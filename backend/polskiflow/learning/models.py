@@ -288,3 +288,14 @@ class LessonResultEvent(models.Model):
         indexes = [
             models.Index(fields=("lesson_id",), name="result_events_lesson_idx")
         ]
+
+
+class ReadingBookmark(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()
+    reading_text_id = models.CharField(max_length=80)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reading_bookmarks"
+        managed = False
