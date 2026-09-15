@@ -96,6 +96,7 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/profile/` | профиль и прогресс пользователя |
 | `/sources/` | источники и правила атрибуции |
 | `/api/v1/catalog/` | публичный read-only каталог курса |
+| `/api/v1/openapi.json` | машинно-читаемый OpenAPI 3.1 контракт для отдельных клиентов |
 | `/api/v1/me/progress/` | owner-scoped read-only прогресс пользователя |
 | `/api/v1/me/sm2/` | owner-scoped read-only очередь SM-2 |
 | `/api/v1/me/lesson-results/` | bearer-only идемпотентная отправка результата урока |

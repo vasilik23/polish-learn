@@ -1,5 +1,11 @@
 # PolskiFlow API v1
 
+Машиночитаемый OpenAPI 3.1 контракт доступен по
+`GET /api/v1/openapi.json`. Он детерминирован, публично кэшируется и описывает
+отдельные security boundaries для native Bearer API и браузерного cookie/CSRF
+handoff. Документ не содержит credentials, пользовательские данные или ответы
+учебных заданий.
+
 `GET /api/v1/catalog/` is the first read-only contract for future mobile and
 other separate clients. `HEAD` is supported; mutation methods return `405`.
 The endpoint is public because the same active learning tables are readable by

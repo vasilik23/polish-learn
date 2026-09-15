@@ -17,6 +17,7 @@ from polskiflow.domain.lesson_results import (
     LessonResultValidationError,
     validate_lesson_result,
 )
+from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.progress_store import load_dashboard_progress, record_lesson_result_event
 
@@ -24,6 +25,13 @@ from polskiflow.progress_store import load_dashboard_progress, record_lesson_res
 API_VERSION = "v1"
 CATALOG_CONTRACT_VERSION = "1.0.0"
 LEARNER_CONTRACT_VERSION = "1.0.0"
+
+
+@require_safe
+def openapi_v1(_request):
+    response = JsonResponse(build_openapi_v1(), json_dumps_params={"ensure_ascii": False})
+    response["Cache-Control"] = "public, max-age=300, s-maxage=3600"
+    return response
 
 
 @require_safe
