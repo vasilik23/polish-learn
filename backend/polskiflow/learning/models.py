@@ -299,3 +299,17 @@ class ReadingBookmark(models.Model):
     class Meta:
         db_table = "reading_bookmarks"
         managed = False
+
+
+class UserFeedback(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()
+    category = models.CharField(max_length=24)
+    message = models.TextField()
+    page_url = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=16, default="new")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "user_feedback"
+        managed = False

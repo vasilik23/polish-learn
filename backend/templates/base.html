@@ -70,6 +70,7 @@
           <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
           <a class="user-menu-link" href="{% url 'profile' %}">Профиль</a>
           <a class="user-menu-link" href="{% url 'sources' %}">Источники</a>
+          <a class="user-menu-link" href="{% url 'feedback' %}">Обратная связь</a>
           <label class="theme-control">
             <span>Тема</span>
             <select data-theme-select aria-label="Цветовая тема">
