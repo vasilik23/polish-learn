@@ -19,6 +19,8 @@ class OpenApiV1Tests(SimpleTestCase):
                 "/api/v1/catalog/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
                 "/api/v1/me/lesson-results/",
                 "/api/v1/me/lesson-results/session/",
+                "/api/v1/me/reading-bookmarks/",
+                "/api/v1/me/reading-bookmarks/{text_id}/",
             },
         )
 
