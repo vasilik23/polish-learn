@@ -19,7 +19,7 @@ from polskiflow.domain.lesson_results import (
 )
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.learning.models import Lesson, Level
-from polskiflow.progress_store import load_dashboard_progress, record_lesson_result_event
+from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
 
@@ -127,6 +127,39 @@ def learner_reading_bookmarks_v1(request):
     if bookmarks is None:
         return _unavailable_response("learner-reading-bookmarks")
     return _private_response("learner-reading-bookmarks", {"reading_text_ids": sorted(bookmarks)})
+
+
+@require_safe
+@require_supabase_user
+def learner_history_v1(request):
+    """Return one bounded owner-scoped completion page for separate clients."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    period = request.GET.get("period", "30")
+    periods = {"7": 7, "30": 30, "90": 90, "all": None}
+    try:
+        page = int(request.GET.get("page", "1"))
+    except (TypeError, ValueError):
+        page = 0
+    if period not in periods or not 1 <= page <= 500:
+        return _error_response("invalid_pagination", "Use page 1..500 and period 7, 30, 90, or all", 400)
+    history = load_completion_history(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        page=page,
+        page_size=50,
+        days=periods[period],
+    )
+    if not history.available:
+        return _unavailable_response("learner-history")
+    return _private_response("learner-history", {
+        "period": period,
+        "page": history.page,
+        "page_size": 50,
+        "has_previous": history.has_previous,
+        "has_next": history.has_next,
+        "completions": list(history.rows),
+    })
 
 
 @csrf_exempt
