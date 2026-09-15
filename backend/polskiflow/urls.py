@@ -3,6 +3,7 @@ from django.urls import path
 from django.contrib import admin
 
 from polskiflow.api_views import catalog_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_v1, lesson_results_session_v1, lesson_results_v1, openapi_v1
+from polskiflow.account_views import account_security
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
 from polskiflow.diagnostic_views import diagnostic
@@ -45,6 +46,7 @@ urlpatterns = [
     path("course/", course, name="course"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
+    path("account/security/", account_security, name="account-security"),
     path("feedback/", feedback, name="feedback"),
     path("history/", learning_history, name="learning-history"),
     path("profile/export/", profile_data_export, name="profile-data-export"),

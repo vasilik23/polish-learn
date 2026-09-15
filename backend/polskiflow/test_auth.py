@@ -73,6 +73,19 @@ class SupabaseAuthTests(SimpleTestCase):
         self.assertEqual(json.loads(request.data), {"password": "Bezpieczne2026"})
 
     @patch("polskiflow.auth.urlopen")
+    def test_authenticated_password_change_sends_current_password(self, urlopen):
+        urlopen.return_value = _Response(b"{}")
+
+        update_password("access", "NewPassword2026", current_password="OldPassword2026")
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.method, "PUT")
+        self.assertEqual(json.loads(request.data), {
+            "password": "NewPassword2026",
+            "current_password": "OldPassword2026",
+        })
+
+    @patch("polskiflow.auth.urlopen")
     def test_valid_token_populates_current_user(self, urlopen):
         urlopen.return_value = _Response(
             json.dumps({"id": "user-123", "email": "learner@example.com"}).encode()

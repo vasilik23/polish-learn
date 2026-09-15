@@ -152,12 +152,17 @@ def resend_signup_confirmation(email: str, redirect_to: str) -> None:
     )
 
 
-def update_password(access_token: str, password: str) -> None:
-    """Replace a password using the short-lived recovery access token."""
+def update_password(
+    access_token: str, password: str, *, current_password: str | None = None
+) -> None:
+    """Replace a password for a recovery or authenticated user session."""
 
+    payload = {"password": password}
+    if current_password is not None:
+        payload["current_password"] = current_password
     _auth_request(
         "/auth/v1/user",
-        {"password": password},
+        payload,
         access_token=access_token,
         method="PUT",
     )
