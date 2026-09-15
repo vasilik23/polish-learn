@@ -140,4 +140,11 @@
       <a class="compact-button" href="{% url 'profile-data-export' %}" download>Скачать мои данные</a>
     </div>
   </section>
+  <section class="profile-settings" aria-labelledby="account-security-title">
+    <div class="section-heading"><div><p class="eyebrow">Аккаунт</p><h2 id="account-security-title">Безопасность</h2></div></div>
+    <div class="card profile-form">
+      <p>Обнови пароль и заверши текущую локальную сессию.</p>
+      <a class="compact-button secondary-link" href="{% url 'account-security' %}">Изменить пароль</a>
+    </div>
+  </section>
 {% endblock %}

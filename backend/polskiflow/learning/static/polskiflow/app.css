@@ -623,3 +623,7 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .history-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .8rem; background: var(--primary-soft); }
 .history-score { color: var(--muted); white-space: nowrap; }
 .history-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+.account-security-form { display: grid; gap: 1rem; max-width: 38rem; }
+.account-security-form label { display: grid; gap: .4rem; font-weight: 700; }
+.account-security-form label small { color: var(--muted); font-weight: 500; }
+.account-security-form input { width: 100%; min-height: 3rem; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--surface); color: var(--text); font: inherit; }
