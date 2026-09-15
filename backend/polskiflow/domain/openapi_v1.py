@@ -48,6 +48,30 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped lesson history"), **{str(code): error_response for code in (400, 401, 405, 503)}},
                 }
             },
+            "/api/v1/me/lesson-drafts/latest/": {
+                "get": {
+                    "operationId": "getLatestLessonDraft",
+                    "summary": "Get the learner's latest unfinished lesson draft",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Latest owner-scoped draft or null"), **private_errors},
+                }
+            },
+            "/api/v1/me/lesson-drafts/{lesson_id}/": {
+                "parameters": [{"name": "lesson_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "put": {
+                    "operationId": "putLessonDraft",
+                    "summary": "Save bounded progress for one unfinished lesson",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LessonDraftRequest"}}}},
+                    "responses": {"200": _json_response("Draft saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                },
+                "delete": {
+                    "operationId": "deleteLessonDraft",
+                    "summary": "Delete one owner-scoped lesson draft",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Draft removed"), **{str(code): error_response for code in (401, 404, 503)}},
+                },
+            },
             "/api/v1/me/sm2/": {
                 "get": {
                     "operationId": "getLearnerSm2",
@@ -110,6 +134,15 @@ def build_openapi_v1():
                 },
             },
             "schemas": {
+                "LessonDraftRequest": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["step_index", "score"],
+                    "properties": {
+                        "step_index": {"type": "integer", "minimum": 1},
+                        "score": {"type": "integer", "minimum": 0},
+                    },
+                },
                 "LessonResultRequest": {
                     "type": "object",
                     "additionalProperties": False,

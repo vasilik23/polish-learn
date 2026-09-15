@@ -1,9 +1,10 @@
 import json
 from unittest.mock import MagicMock, patch
+from urllib.error import URLError
 
 from django.test import SimpleTestCase, override_settings
 
-from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft, load_lesson_draft, save_lesson_draft
+from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft, load_latest_lesson_draft_result, load_lesson_draft, save_lesson_draft
 
 
 @override_settings(SUPABASE_URL="https://project.supabase.co", SUPABASE_ANON_KEY="public", SUPABASE_AUTH_TIMEOUT=2)
@@ -42,3 +43,16 @@ class LessonDraftStoreTests(SimpleTestCase):
         request = urlopen.call_args.args[0]
         self.assertIn("user_id=eq.user-1", request.full_url)
         self.assertIn("order=updated_at.desc", request.full_url)
+
+    @patch("polskiflow.lesson_draft_store.urlopen")
+    def test_latest_result_distinguishes_empty_from_failure(self, urlopen):
+        response = MagicMock(); response.read.return_value = b'[]'
+        urlopen.return_value.__enter__.return_value = response
+        empty = load_latest_lesson_draft_result("access", "user-1")
+        self.assertTrue(empty.available)
+        self.assertIsNone(empty.draft)
+
+        urlopen.side_effect = URLError("offline")
+        failed = load_latest_lesson_draft_result("access", "user-1")
+        self.assertFalse(failed.available)
+        self.assertIsNone(failed.draft)
