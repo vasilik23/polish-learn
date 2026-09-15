@@ -50,6 +50,15 @@ class CompletionSaveResult:
     retryable: bool
 
 
+@dataclass(frozen=True)
+class CompletionHistoryPage:
+    rows: tuple[dict, ...]
+    available: bool
+    has_previous: bool
+    has_next: bool
+    page: int
+
+
 def load_dashboard_progress(
     access_token: str | None,
     user_id: str,
@@ -154,6 +163,36 @@ def save_lesson_completion(
     return save_lesson_completion_result(
         access_token, user_id, lesson_id, cards_total, cards_known
     ).saved
+
+
+def load_completion_history(
+    access_token: str | None,
+    user_id: str,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    days: int | None = None,
+) -> CompletionHistoryPage:
+    """Load one owner-scoped page of lesson completion details through RLS."""
+
+    page = max(1, min(page, 500))
+    query = {
+        "select": "lesson_id,plan_date,cards_total,cards_known",
+        "user_id": f"eq.{user_id}",
+        "order": "plan_date.desc,lesson_id.asc",
+        "limit": str(page_size + 1),
+        "offset": str((page - 1) * page_size),
+    }
+    if days is not None:
+        query["plan_date"] = f"gte.{(_utc_today() - timedelta(days=days - 1)).isoformat()}"
+    if not _configured(access_token):
+        return CompletionHistoryPage((), False, page > 1, False, page)
+    rows = _get_rows("lesson_completions", query, access_token)
+    if rows is None:
+        return CompletionHistoryPage((), False, page > 1, False, page)
+    return CompletionHistoryPage(
+        tuple(rows[:page_size]), True, page > 1, len(rows) > page_size, page
+    )
 
 
 def save_lesson_completion_result(

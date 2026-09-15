@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}История занятий · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header">
+    <div><p class="eyebrow">Твой прогресс</p><h1>История занятий</h1><p class="muted">Завершённые уроки доступны только тебе.</p></div>
+    <a class="compact-button secondary-link" href="{% url 'profile' %}">К профилю</a>
+  </header>
+  <nav class="history-periods" aria-label="Период истории">
+    <a href="?period=7"{% if selected_period == "7" %} aria-current="page"{% endif %}>7 дней</a>
+    <a href="?period=30"{% if selected_period == "30" %} aria-current="page"{% endif %}>30 дней</a>
+    <a href="?period=90"{% if selected_period == "90" %} aria-current="page"{% endif %}>90 дней</a>
+    <a href="?period=all"{% if selected_period == "all" %} aria-current="page"{% endif %}>Всё время</a>
+  </nav>
+  {% if not history_available %}
+    <p class="data-notice" role="status">История временно недоступна. Попробуй обновить страницу позже.</p>
+  {% elif history_rows %}
+    <ol class="history-list" aria-label="Завершённые занятия">
+      {% for item in history_rows %}
+        <li class="card history-item">
+          <span class="history-icon" aria-hidden="true">{{ item.emoji }}</span>
+          <div><strong>{{ item.title }}</strong><small>{{ item.level }} · {{ item.plan_date }}</small></div>
+          <span class="history-score">{{ item.score }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+    <nav class="history-pagination" aria-label="Страницы истории">
+      {% if history_page.has_previous %}<a class="compact-button secondary-link" href="?period={{ selected_period }}&page={{ history_page.page|add:'-1' }}">← Новее</a>{% endif %}
+      <span>Страница {{ history_page.page }}</span>
+      {% if history_page.has_next %}<a class="compact-button secondary-link" href="?period={{ selected_period }}&page={{ history_page.page|add:'1' }}">Старее →</a>{% endif %}
+    </nav>
+  {% else %}
+    <div class="card empty-state"><h2>Пока нет завершённых занятий</h2><p>Выбери урок из дневного плана — он появится здесь после завершения.</p><a class="compact-button" href="{% url 'home' %}">Перейти к плану</a></div>
+  {% endif %}
+{% endblock %}
