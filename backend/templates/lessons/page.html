@@ -4,9 +4,10 @@
   <div class="lesson-shell">
     <header class="lesson-header"><a class="back-button" href="{% url 'home' %}" aria-label="Вернуться на главную">←</a><strong>{{ task.plan_title }}</strong><span></span></header>
     <section id="lesson-flow">
+      {% if resume_notice %}<p class="lesson-resume-notice" role="status">Продолжаем с сохранённого шага. Прогресс синхронизирован между твоими устройствами.</p>{% endif %}
       {% if lesson_kind == "words" or lesson_kind == "review" %}
         {% include "lessons/_flashcard.html" %}
-      {% elif lesson_kind == "grammar" %}
+      {% elif lesson_kind == "grammar" and not resume_practice %}
         <div class="card lesson-card theory-card">
           <p class="eyebrow">Короткая теория</p>
           <h1>{{ grammar.title }}</h1>

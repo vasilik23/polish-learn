@@ -218,6 +218,20 @@ class LessonCompletion(models.Model):
         ]
 
 
+class LessonDraft(models.Model):
+    pk = models.CompositePrimaryKey("user_id", "lesson_id")
+    user_id = models.UUIDField()
+    lesson_id = models.TextField()
+    lesson_kind = models.CharField(max_length=16)
+    step_index = models.PositiveSmallIntegerField(default=0)
+    score = models.PositiveSmallIntegerField(default=0)
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "lesson_drafts"
+        managed = False
+
+
 class FlashcardReview(models.Model):
     pk = models.CompositePrimaryKey("user_id", "card_id")
     user_id = models.UUIDField()

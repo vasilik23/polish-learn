@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 from polskiflow.auth_views import require_browser_user
 from polskiflow.content import flashcards, grammar, quiz, task
 from polskiflow.progress_store import save_lesson_completion_result
+from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
 
 
 # Expansion is release-gated by a successful offline -> online recovery smoke
@@ -27,13 +28,19 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
     if lesson_task is None:
         raise Http404
     lesson_kind = lesson_task["kind"]
-    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind}
+    draft = load_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id)
+    index, score = _valid_draft_state(draft, lesson_id, lesson_kind)
+    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind, "resume_notice": index > 0}
     if lesson_kind in {"words", "review"}:
-        context.update(_flashcard_context(lesson_id, lesson_kind, 0, 0, False))
+        context.update(_flashcard_context(lesson_id, lesson_kind, index, score, False))
     elif lesson_kind == "grammar":
-        context["grammar"] = grammar(lesson_id)
+        if index:
+            context.update(_question_context(lesson_id, lesson_kind, index, score, None))
+            context["resume_practice"] = True
+        else:
+            context["grammar"] = grammar(lesson_id)
     else:
-        context.update(_question_context(lesson_id, lesson_kind, 0, 0, None))
+        context.update(_question_context(lesson_id, lesson_kind, index, score, None))
     return render(request, "lessons/page.html", context)
 
 
@@ -64,6 +71,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
             elif index + 1 >= len(cards):
                 return _complete(request, lesson_id, next_score, len(cards))
             else:
+                save_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id, lesson_kind, index + 1, next_score)
                 context = _flashcard_context(
                     lesson_id, lesson_kind, index + 1, next_score, False
                 )
@@ -111,6 +119,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
             )
             if index + 1 >= len(questions):
                 return _complete(request, lesson_id, next_score, len(questions))
+            save_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id, lesson_kind, index + 1, next_score)
             context = _question_context(
                 lesson_id, lesson_kind, index + 1, next_score, None
             )
@@ -124,6 +133,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         next_score = score + (selected == questions[index]["correct"])
         if index + 1 >= len(questions):
             return _complete(request, lesson_id, next_score, len(questions))
+        save_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id, lesson_kind, index + 1, next_score)
         context = _question_context(
             lesson_id, lesson_kind, index + 1, next_score, None
         )
@@ -217,6 +227,17 @@ def _is_sentence_builder(question: dict, lesson_kind: str) -> bool:
     return isinstance(answer, str) and len(answer.split()) >= 4
 
 
+def _valid_draft_state(draft, lesson_id, lesson_kind):
+    if not isinstance(draft, dict) or draft.get("lesson_kind") != lesson_kind:
+        return 0, 0
+    try:
+        index, score = int(draft["step_index"]), int(draft["score"])
+    except (KeyError, TypeError, ValueError):
+        return 0, 0
+    total = len(_lesson_flashcards(lesson_id, lesson_kind)) if lesson_kind in {"words", "review"} else len((grammar(lesson_id) or {}).get("questions", [])) if lesson_kind == "grammar" else len(quiz(lesson_id))
+    return (index, score) if 0 < index < total and 0 <= score <= index else (0, 0)
+
+
 def _builder_tokens(question: dict, lesson_id: str, index: int) -> list[str]:
     answer = question["options"][question["correct"]]
     tokens = answer.split()
@@ -263,6 +284,7 @@ def _complete(request: HttpRequest, lesson_id: str, score: int, total: int) -> H
         total,
         score,
     )
+    delete_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id)
     context = {"score": score, "total": total, "saved": save_result.saved}
     # Start with one narrowly scoped flow. The browser receives an opaque,
     # stable namespace and an immutable result, never identity or auth tokens.

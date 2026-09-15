@@ -719,6 +719,24 @@ class LessonViewsTests(TestCase):
     def test_unknown_lesson_returns_404(self):
         self.assertEqual(self.client.get("/lesson/unknown/").status_code, 404)
 
+    @patch("polskiflow.lesson_views.load_lesson_draft", return_value={"lesson_kind": "quiz", "step_index": 2, "score": 1})
+    def test_lesson_resumes_valid_owner_scoped_draft(self, load):
+        response = self.client.get("/lesson/quiz/")
+        self.assertContains(response, "Продолжаем с сохранённого шага")
+        self.assertContains(response, "Вопрос 3 из 5")
+        load.assert_called_once_with("access", "user-123", "quiz")
+
+    @patch("polskiflow.lesson_views.save_lesson_draft")
+    def test_advancing_lesson_saves_next_step(self, save):
+        response = self.client.post("/lesson/quiz/step/", {"action": "next", "index": 0, "score": 0, "selected": 1})
+        self.assertContains(response, "Вопрос 2 из 5")
+        save.assert_called_once_with("access", "user-123", "quiz", "quiz", 1, 1)
+
+    @patch("polskiflow.lesson_views.delete_lesson_draft")
+    def test_completed_lesson_clears_draft(self, delete):
+        self.client.post("/lesson/quiz/step/", {"action": "next", "index": 4, "score": 3, "selected": 1})
+        delete.assert_called_once_with("access", "user-123", "quiz")
+
     def test_flashcard_can_be_revealed_and_completed(self):
         revealed = self.client.post(
             "/lesson/words/step/", {"action": "reveal", "index": 0, "score": 0}
