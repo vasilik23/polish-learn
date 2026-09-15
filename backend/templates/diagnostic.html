@@ -40,10 +40,16 @@
         </ol>
       </div>
       <div class="header-actions">
+        <form method="post" action="{% url 'diagnostic' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="apply-level">
+          <input type="hidden" name="recommended_level" value="{{ recommended_level }}">
+          <button class="compact-button" type="submit">Сохранить {{ recommended_level }} в профиле</button>
+        </form>
         <a class="compact-button" href="{% url 'course' %}?level={{ recommended_level }}">Открыть курс {{ recommended_level }}</a>
         <a class="compact-button secondary-link" href="{% url 'diagnostic' %}">Пройти заново</a>
       </div>
-      <p class="diagnostic-disclaimer">Результат основан на самооценке и восьми ответах, нигде не сохраняется и не подтверждает владение уровнем CEFR.</p>
+      <p class="diagnostic-disclaimer">Ответы не сохраняются. Рекомендованный уровень попадёт в профиль только после твоего подтверждения и не подтверждает владение уровнем CEFR.</p>
     </section>
   {% else %}
     <form class="diagnostic-form" method="post" action="{% url 'diagnostic' %}">
@@ -75,7 +81,7 @@
         {% endfor %}
       </section>
       <button class="diagnostic-submit" type="submit">Получить предварительную рекомендацию</button>
-      <p class="diagnostic-disclaimer">Ответы обрабатываются только для этого результата и не записываются в профиль или базу данных.</p>
+      <p class="diagnostic-disclaimer">Ответы обрабатываются только для этого результата и не записываются в профиль. После результата можно отдельно подтвердить сохранение рекомендованного уровня.</p>
     </form>
   {% endif %}
 {% endblock %}

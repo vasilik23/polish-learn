@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from django.test import TestCase
 
@@ -175,8 +176,42 @@ class DiagnosticViewTests(TestCase):
         self.assertContains(response, "0–2 → A1, 3–4 → A2, 5–6 → B1, 7–8 → B2")
         self.assertContains(response, "Продукция, Медиация")
         self.assertContains(response, "Среднее с округлением вниз: B1")
-        self.assertContains(response, "нигде не сохраняется")
+        self.assertContains(response, "Ответы не сохраняются")
+        self.assertContains(response, 'name="action" value="apply-level"')
+        self.assertContains(response, 'name="recommended_level" value="B1"')
         self.assertContains(response, 'href="/course/?level=B1"')
+
+    @patch("polskiflow.diagnostic_views.save_profile_settings", return_value=True)
+    @patch("polskiflow.diagnostic_views.load_dashboard_progress")
+    def test_confirmed_recommendation_updates_only_profile_level(self, load, save):
+        load.return_value = SimpleNamespace(
+            display_name="Learner", daily_goal_lessons=6
+        )
+
+        response = self.client.post(
+            "/diagnostic/",
+            {"action": "apply-level", "recommended_level": "b1"},
+        )
+
+        self.assertRedirects(
+            response,
+            "/course/?level=B1&diagnostic=applied",
+            fetch_redirect_response=False,
+        )
+        save.assert_called_once_with("access", "user-123", "Learner", "B1", 6)
+
+    @patch("polskiflow.diagnostic_views.save_profile_settings")
+    @patch("polskiflow.diagnostic_views.load_dashboard_progress")
+    def test_unknown_recommendation_is_rejected_without_profile_write(self, load, save):
+        response = self.client.post(
+            "/diagnostic/",
+            {"action": "apply-level", "recommended_level": "admin"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "Некорректный рекомендованный уровень", status_code=400)
+        load.assert_not_called()
+        save.assert_not_called()
 
     def test_incomplete_post_is_rejected_and_preserves_answer(self):
         response = self.client.post(
@@ -235,3 +270,8 @@ class DiagnosticViewTests(TestCase):
             "/login/?next=%2Fdiagnostic%2F",
             fetch_redirect_response=False,
         )
+
+    def test_course_confirms_applied_diagnostic_level(self):
+        response = self.client.get("/course/?level=B1&diagnostic=applied")
+
+        self.assertContains(response, "Уровень B1 сохранён в профиле")
