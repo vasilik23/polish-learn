@@ -20,6 +20,18 @@ def load_lesson_draft(access_token, user_id, lesson_id):
     return rows[0] if isinstance(rows, list) and rows else None
 
 
+def load_latest_lesson_draft(access_token, user_id):
+    """Return the learner's most recently updated unfinished lesson."""
+    if not _configured(access_token): return None
+    query = urlencode({"select": "lesson_id,lesson_kind,step_index,score,updated_at", "user_id": f"eq.{user_id}", "order": "updated_at.desc", "limit": "1"})
+    request = _request(f"lesson_drafts?{query}", access_token)
+    try:
+        with urlopen(request, timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+            rows = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError): return None
+    return rows[0] if isinstance(rows, list) and rows else None
+
+
 def save_lesson_draft(access_token, user_id, lesson_id, lesson_kind, step_index, score):
     if not _configured(access_token): return False
     query = urlencode({"on_conflict": "user_id,lesson_id"})

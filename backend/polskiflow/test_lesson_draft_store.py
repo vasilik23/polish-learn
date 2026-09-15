@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, override_settings
 
-from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
+from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft, load_lesson_draft, save_lesson_draft
 
 
 @override_settings(SUPABASE_URL="https://project.supabase.co", SUPABASE_ANON_KEY="public", SUPABASE_AUTH_TIMEOUT=2)
@@ -33,3 +33,12 @@ class LessonDraftStoreTests(SimpleTestCase):
         request = urlopen.call_args.args[0]
         self.assertEqual(request.method, "DELETE")
         self.assertIn("user_id=eq.user-1", request.full_url)
+
+    @patch("polskiflow.lesson_draft_store.urlopen")
+    def test_latest_draft_is_ordered_and_owner_scoped(self, urlopen):
+        response = MagicMock(); response.read.return_value = b'[{"lesson_id":"quiz","step_index":2}]'
+        urlopen.return_value.__enter__.return_value = response
+        self.assertEqual(load_latest_lesson_draft("access", "user-1")["lesson_id"], "quiz")
+        request = urlopen.call_args.args[0]
+        self.assertIn("user_id=eq.user-1", request.full_url)
+        self.assertIn("order=updated_at.desc", request.full_url)
