@@ -1,7 +1,7 @@
 """Authenticated, non-persistent CEFR self-assessment page."""
 
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
 from polskiflow.auth_views import require_browser_user
@@ -13,6 +13,7 @@ from polskiflow.domain.diagnostic import (
     score_checked_tasks,
     score_diagnostic,
 )
+from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
 
 
 @require_browser_user
@@ -46,7 +47,29 @@ def diagnostic(request: HttpRequest) -> HttpResponse:
         "error": "",
     }
     status = 200
-    if request.method == "POST":
+    if request.method == "POST" and request.POST.get("action") == "apply-level":
+        level = request.POST.get("recommended_level", "").upper()
+        if level not in LEVELS:
+            context["error"] = "Некорректный рекомендованный уровень. Пройди диагностику заново."
+            status = 400
+        else:
+            fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+            dashboard = load_dashboard_progress(
+                request.supabase_access_token,
+                request.supabase_user.id,
+                fallback_name,
+            )
+            if save_profile_settings(
+                request.supabase_access_token,
+                request.supabase_user.id,
+                dashboard.display_name,
+                level,
+                dashboard.daily_goal_lessons,
+            ):
+                return redirect(f"/course/?level={level}&diagnostic=applied")
+            context["error"] = "Не удалось сохранить уровень. Попробуй ещё раз."
+            status = 503
+    elif request.method == "POST":
         try:
             self_result = score_diagnostic(selections)
             checked_result = score_checked_tasks(checked_answers)

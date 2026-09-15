@@ -745,6 +745,7 @@ def course(request: HttpRequest) -> HttpResponse:
                 for level in levels
             ],
             "selected_level": selected_level,
+            "diagnostic_level_applied": request.GET.get("diagnostic") == "applied",
             "catalog_filters": filters,
             "catalog_topic_options": level_topics,
             "catalog_kind_options": LESSON_KINDS.items(),

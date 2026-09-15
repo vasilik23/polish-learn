@@ -5,6 +5,9 @@
     <div><p class="eyebrow">Траектория A1 → C2</p><h1>Курс польского</h1><p class="muted">Проходи темы по порядку: слова, грамматика, повторение, чтение и проверка знаний.</p></div>
     <a class="compact-button" href="{% url 'reading-library' %}">Все тексты →</a>
   </header>
+  {% if diagnostic_level_applied %}
+    <p class="save-success" role="status">Уровень {{ selected_level }} сохранён в профиле. Курс и библиотека теперь открываются с него.</p>
+  {% endif %}
   <nav class="course-levels" aria-label="Уровни курса">
     {% for level in course_levels %}
       <a href="?level={{ level.name }}"{% if level.name == selected_level %} aria-current="page"{% endif %}>
