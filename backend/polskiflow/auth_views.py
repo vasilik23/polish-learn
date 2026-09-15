@@ -25,6 +25,7 @@ from polskiflow.auth import (
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.achievements import build_achievements
+from polskiflow.domain.auth_rate_limit import consume_auth_attempt
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.daily_goal_insights import build_daily_goal_insight
 from polskiflow.domain.password_policy import password_error
@@ -291,6 +292,8 @@ def login_view(request: HttpRequest) -> HttpResponse:
         password = request.POST.get("password", "")
         if not email or not password:
             context["error"] = "Укажите email и пароль"
+        elif not (rate := consume_auth_attempt(request, "login", email))[0]:
+            return _auth_rate_limit_response(request, context, "auth/form.html", rate[1])
         else:
             try:
                 session = sign_in(email, password)
@@ -317,6 +320,8 @@ def register_view(request: HttpRequest) -> HttpResponse:
             context["error"] = "Укажите email и пароль"
         elif error := password_error(password):
             context["error"] = error
+        elif not (rate := consume_auth_attempt(request, "register", email))[0]:
+            return _auth_rate_limit_response(request, context, "auth/form.html", rate[1])
         else:
             try:
                 session = sign_up(email, password)
@@ -342,6 +347,8 @@ def forgot_password(request: HttpRequest) -> HttpResponse:
         context["email"] = email
         if not email:
             context["error"] = "Укажите email"
+        elif not (rate := consume_auth_attempt(request, "forgot", email))[0]:
+            return _auth_rate_limit_response(request, context, "auth/recovery.html", rate[1])
         else:
             try:
                 request_password_reset(email, request.build_absolute_uri(reverse("reset-password")))
@@ -386,6 +393,8 @@ def resend_confirmation(request: HttpRequest) -> HttpResponse:
         context["email"] = email
         if not email:
             context["error"] = "Укажите email"
+        elif not (rate := consume_auth_attempt(request, "resend", email))[0]:
+            return _auth_rate_limit_response(request, context, "auth/recovery.html", rate[1])
         else:
             try:
                 resend_signup_confirmation(email, request.build_absolute_uri(reverse("login")))
@@ -683,6 +692,13 @@ def _daily_plan(request: HttpRequest):
 def _no_store(response: HttpResponse) -> HttpResponse:
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+def _auth_rate_limit_response(request, context, template, retry_after):
+    context["error"] = "Слишком много попыток. Подождите и попробуйте снова."
+    response = render(request, template, context, status=429)
+    response["Retry-After"] = str(retry_after)
+    return _no_store(response)
 
 
 @require_browser_user
