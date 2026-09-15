@@ -4,7 +4,7 @@ from django.contrib import admin
 
 from polskiflow.api_views import catalog_v1, learner_progress_v1, learner_sm2_v1, lesson_results_session_v1, lesson_results_v1, openapi_v1
 from polskiflow.auth import require_supabase_user
-from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, register_view, resend_confirmation, reset_password, sources, writing_practice
+from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
 from polskiflow.diagnostic_views import diagnostic
 from polskiflow.lesson_views import lesson, lesson_step
 from polskiflow.interaction_views import interaction_practice
@@ -43,6 +43,7 @@ urlpatterns = [
     path("course/", course, name="course"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
+    path("profile/export/", profile_data_export, name="profile-data-export"),
     path("writing/", writing_practice, name="writing-practice"),
     path("interaction/", interaction_practice, name="interaction-practice"),
     path("listening/", listening_practice, name="listening-practice"),

@@ -4,7 +4,7 @@ from dataclasses import replace
 from functools import wraps
 from urllib.parse import urlencode
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -35,6 +35,7 @@ from polskiflow.domain.course_catalog import (
     filter_course_topics,
 )
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
+from polskiflow.reading_bookmark_store import load_reading_bookmarks
 
 
 PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
@@ -523,6 +524,28 @@ def profile(request: HttpRequest) -> HttpResponse:
 def sources(request: HttpRequest) -> HttpResponse:
     """Show the public attribution and content-source policy summary."""
     return render(request, "sources.html")
+
+
+@require_browser_user
+def profile_data_export(request: HttpRequest) -> HttpResponse:
+    """Download an owner-scoped, token-free learning-data snapshot."""
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(request.supabase_access_token, request.supabase_user.id, fallback_name)
+    words = load_personal_words(request.supabase_access_token, request.supabase_user.id)
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
+    if not dashboard.available or words is None or bookmarks is None:
+        response = JsonResponse({"error": "Данные временно недоступны. Попробуйте экспорт позже."}, status=503)
+    else:
+        response = JsonResponse({
+            "schema_version": "1.0", "exported_at": timezone.now().isoformat(),
+            "profile": {"email": request.supabase_user.email, "display_name": dashboard.display_name, "level": dashboard.level, "daily_goal_lessons": dashboard.daily_goal_lessons},
+            "progress": {"completed_lesson_ids": sorted(dashboard.all_completed_lesson_ids), "active_days": dashboard.active_days, "streak_days": dashboard.streak_days},
+            "personal_words": words, "saved_reading_text_ids": sorted(bookmarks),
+        }, json_dumps_params={"ensure_ascii": False, "indent": 2})
+        response["Content-Disposition"] = 'attachment; filename="polskiflow-data.json"'
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @require_browser_user

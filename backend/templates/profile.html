@@ -131,4 +131,12 @@
       <button type="submit">Сохранить профиль</button>
     </form>
   </section>
+  <section class="profile-settings" aria-labelledby="data-export-title">
+    <div class="section-heading"><div><p class="eyebrow">Твои данные</p><h2 id="data-export-title">Экспорт</h2></div></div>
+    <div class="card profile-form">
+      <p>Скачай JSON-копию профиля, прогресса, личного словаря и сохранённых текстов.</p>
+      <p class="muted">Файл не кэшируется и не содержит паролей или токенов.</p>
+      <a class="compact-button" href="{% url 'profile-data-export' %}" download>Скачать мои данные</a>
+    </div>
+  </section>
 {% endblock %}
