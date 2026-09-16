@@ -24,7 +24,7 @@ from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readi
 from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
-from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event
+from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event, save_profile_settings
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
 
@@ -119,11 +119,7 @@ def learner_progress_v1(request):
     return _private_response(
         "learner-progress",
         {
-            "profile": {
-                "display_name": progress.display_name,
-                "level": progress.level,
-                "daily_goal_lessons": progress.daily_goal_lessons,
-            },
+            "profile": {"display_name": progress.display_name, "level": progress.level, "daily_goal_lessons": progress.daily_goal_lessons},
             "streak_days": progress.streak_days,
             "active_days": progress.active_days,
             "completed_lesson_ids": sorted(progress.all_completed_lesson_ids),
@@ -134,6 +130,55 @@ def learner_progress_v1(request):
             },
         },
     )
+
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD", "PATCH"])
+@require_supabase_user
+def learner_profile_v1(request):
+    """Read or update bounded owner-scoped profile settings."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    progress = load_dashboard_progress(
+        request.supabase_access_token, user.id, (user.email or "learner").split("@", 1)[0]
+    )
+    if not progress.available:
+        return _unavailable_response("learner-profile")
+    profile = {
+        "display_name": progress.display_name,
+        "level": progress.level,
+        "daily_goal_lessons": progress.daily_goal_lessons,
+    }
+    if request.method in {"GET", "HEAD"}:
+        return _private_response("learner-profile", {"profile": profile})
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 1024:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    allowed = {"display_name", "level", "daily_goal_lessons"}
+    if not isinstance(payload, dict) or not payload or not set(payload) <= allowed:
+        return _error_response("validation_error", "Use one or more supported profile fields", 400)
+    display_name = payload.get("display_name", profile["display_name"])
+    level = payload.get("level", profile["level"])
+    daily_goal = payload.get("daily_goal_lessons", profile["daily_goal_lessons"])
+    if not isinstance(display_name, str) or not display_name.strip() or len(display_name.strip()) > 80:
+        return _error_response("validation_error", "display_name must contain 1..80 characters", 400)
+    if not isinstance(level, str) or level not in Level.values:
+        return _error_response("validation_error", "level must be A1, A2, B1, B2, C1, or C2", 400)
+    if isinstance(daily_goal, bool) or not isinstance(daily_goal, int) or not 1 <= daily_goal <= 10:
+        return _error_response("validation_error", "daily_goal_lessons must be an integer from 1 to 10", 400)
+    profile = {"display_name": display_name.strip(), "level": level, "daily_goal_lessons": daily_goal}
+    if not save_profile_settings(
+        request.supabase_access_token, user.id,
+        profile["display_name"], profile["level"], profile["daily_goal_lessons"],
+    ):
+        return _unavailable_response("learner-profile")
+    return _private_response("learner-profile", {"profile": profile})
 
 
 @require_safe
