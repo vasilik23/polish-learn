@@ -78,6 +78,9 @@ future separate client:
 
 - `GET /api/v1/me/progress/` — profile level and daily goal, streak, active
   days, deterministic completed lesson IDs, and week/month aggregates;
+- `GET /api/v1/me/profile/` and strict `PATCH` — display name, curriculum
+  target A1–C2 and daily goal from 1 to 10. Partial updates merge with the
+  current owner-scoped profile; user IDs and unknown fields are rejected;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
   point. A dictionary-review task links both the browser practice and native

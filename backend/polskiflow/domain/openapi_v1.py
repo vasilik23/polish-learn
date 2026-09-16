@@ -87,6 +87,21 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped progress"), **private_errors},
                 }
             },
+            "/api/v1/me/profile/": {
+                "get": {
+                    "operationId": "getLearnerProfile",
+                    "summary": "Get bounded owner-scoped profile settings",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Profile settings"), **private_errors},
+                },
+                "patch": {
+                    "operationId": "patchLearnerProfile",
+                    "summary": "Update display name, curriculum level, or daily goal",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProfilePatchRequest"}}}},
+                    "responses": {"200": _json_response("Updated profile settings"), **{str(code): error_response for code in (400, 401, 413, 415, 503)}},
+                },
+            },
             "/api/v1/me/today/": {
                 "get": {
                     "operationId": "getLearnerToday",
@@ -212,6 +227,14 @@ def build_openapi_v1():
                 },
             },
             "schemas": {
+                "ProfilePatchRequest": {
+                    "type": "object", "additionalProperties": False, "minProperties": 1,
+                    "properties": {
+                        "display_name": {"type": "string", "minLength": 1, "maxLength": 80},
+                        "level": {"type": "string", "enum": ["A1", "A2", "B1", "B2", "C1", "C2"]},
+                        "daily_goal_lessons": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                },
                 "GlossaryWordRequest": {
                     "type": "object", "additionalProperties": False,
                     "required": ["surface"],
