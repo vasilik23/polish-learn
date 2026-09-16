@@ -18,6 +18,7 @@ from polskiflow.domain.lesson_results import (
     validate_lesson_result,
 )
 from polskiflow.domain.openapi_v1 import build_openapi_v1
+from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event
@@ -56,6 +57,47 @@ def catalog_v1(_request):
     )
     response["Cache-Control"] = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
     return response
+
+
+@require_safe
+@require_supabase_user
+def native_lesson_v1(request, lesson_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    lesson = build_native_lesson(lesson_id)
+    if lesson is None:
+        return _error_response("lesson_not_found", "Active lesson was not found", 404)
+    return _private_response("native-lesson", {
+        "lesson": lesson.metadata,
+        "theory": lesson.theory,
+        "steps": lesson.steps,
+        "step_count": len(lesson.steps),
+    })
+
+
+@csrf_exempt
+@require_POST
+@require_supabase_user
+def native_lesson_answer_v1(request, lesson_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 2048:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict):
+        return _error_response("validation_error", "Request body must be an object", 400)
+    try:
+        evaluation = evaluate_native_answer(lesson_id, payload.get("position"), payload)
+    except NativeLessonError as error:
+        if str(error) == "lesson_not_found":
+            return _error_response("lesson_not_found", "Active lesson was not found", 404)
+        return _error_response("validation_error", str(error), 400)
+    return _private_response("native-lesson-answer", evaluation)
 
 
 @require_safe
