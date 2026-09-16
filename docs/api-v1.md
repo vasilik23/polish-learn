@@ -20,6 +20,13 @@ submits one bounded answer to `POST /api/v1/lessons/{lesson_id}/answer/`; only
 then does the server return correctness and teaching feedback. Both endpoints
 require an explicit Bearer token, accept no user ID and persist no answer.
 
+`GET /api/v1/reading/` exposes the active learning-text library in bounded
+pages with optional CEFR-level and text-query filters. Each item includes its
+owner-scoped bookmark state. `GET /api/v1/reading/{text_id}/` returns paragraphs,
+a normalized lemma-aware glossary, a conservative source/attribution card and
+the linked comprehension lesson API path when available. News feeds are not
+part of this stable learning-content contract.
+
 ## Envelope and versioning
 
 Every response is JSON with these stable top-level fields:

@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from polskiflow.auth import require_supabase_user
-from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, task, tasks
+from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, reading_texts, task, tasks
 from polskiflow.dictionary_store import load_personal_words, save_personal_word_review
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
@@ -20,6 +20,7 @@ from polskiflow.domain.lesson_results import (
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
+from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readings, serialize_reading_detail
 from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
@@ -272,6 +273,55 @@ def learner_reading_bookmarks_v1(request):
     if bookmarks is None:
         return _unavailable_response("learner-reading-bookmarks")
     return _private_response("learner-reading-bookmarks", {"reading_text_ids": sorted(bookmarks)})
+
+
+@require_safe
+@require_supabase_user
+def native_reading_library_v1(request):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    level = request.GET.get("level", "").upper()
+    query = request.GET.get("q", "").strip()
+    try:
+        page = int(request.GET.get("page", "1"))
+    except (TypeError, ValueError):
+        page = 0
+    if (level and level not in READING_LEVELS) or len(query) > 120 or not 1 <= page <= 100:
+        return _error_response("invalid_filters", "Use level A1..C2, q up to 120 characters, and page 1..100", 400)
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
+    if bookmarks is None:
+        return _unavailable_response("native-reading-library")
+    filtered = filter_native_readings(reading_texts(), level=level, query=query)
+    page_size, start = 20, (page - 1) * 20
+    rows = filtered[start:start + page_size + 1]
+    items = [
+        {**item, "level": item["level"] if item.get("level") in READING_LEVELS else "A1", "saved": item["id"] in bookmarks,
+         "path": f"/reading/{item['id']}/", "api_path": f"/api/v1/reading/{item['id']}/"}
+        for item in rows[:page_size]
+    ]
+    return _private_response("native-reading-library", {
+        "level": level or None, "query": query, "page": page, "page_size": page_size,
+        "has_previous": page > 1, "has_next": len(rows) > page_size, "texts": items,
+    })
+
+
+@require_safe
+@require_supabase_user
+def native_reading_detail_v1(request, text_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    text = reading_text(text_id)
+    if text is None:
+        return _error_response("reading_text_not_found", "Active reading text was not found", 404)
+    bookmarks = load_reading_bookmarks(request.supabase_access_token, request.supabase_user.id)
+    if bookmarks is None:
+        return _unavailable_response("native-reading-detail")
+    detail = serialize_reading_detail(text, saved=text_id in bookmarks)
+    comprehension_id = detail["comprehension_lesson_id"]
+    detail["comprehension_api_path"] = (
+        f"/api/v1/lessons/{comprehension_id}/" if comprehension_id and task(comprehension_id) else None
+    )
+    return _private_response("native-reading-detail", {"text": detail})
 
 
 @require_safe

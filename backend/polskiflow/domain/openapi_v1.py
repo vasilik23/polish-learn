@@ -47,6 +47,28 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415)}},
                 },
             },
+            "/api/v1/reading/": {
+                "get": {
+                    "operationId": "getNativeReadingLibrary",
+                    "summary": "Get a filtered page of active learning texts",
+                    "security": [{"supabaseBearer": []}],
+                    "parameters": [
+                        {"name": "level", "in": "query", "schema": {"type": "string", "enum": ["A1", "A2", "B1", "B2", "C1", "C2"]}},
+                        {"name": "q", "in": "query", "schema": {"type": "string", "maxLength": 120}},
+                        {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 1}},
+                    ],
+                    "responses": {"200": _json_response("Owner-aware reading library page"), **{str(code): error_response for code in (400, 401, 503)}},
+                }
+            },
+            "/api/v1/reading/{text_id}/": {
+                "parameters": [{"name": "text_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 80}}],
+                "get": {
+                    "operationId": "getNativeReadingText",
+                    "summary": "Get paragraphs, lemma glossary, source metadata, and comprehension link",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Active reading text detail"), **{str(code): error_response for code in (401, 404, 503)}},
+                },
+            },
             "/api/v1/me/progress/": {
                 "get": {
                     "operationId": "getLearnerProgress",
