@@ -27,6 +27,14 @@ a normalized lemma-aware glossary, a conservative source/attribution card and
 the linked comprehension lesson API path when available. News feeds are not
 part of this stable learning-content contract.
 
+The native reading-to-dictionary flow posts only a surface form to
+`POST /api/v1/reading/{text_id}/dictionary/`. The server resolves the canonical
+lemma, translation and source context from that active text's glossary and
+upserts it under the authenticated owner. Client-provided translations, lemmas,
+context and user IDs are rejected. `DELETE /api/v1/me/dictionary/{word_id}/`
+removes one owner-scoped entry; the existing personal-word RLS remains the final
+authorization boundary.
+
 ## Envelope and versioning
 
 Every response is JSON with these stable top-level fields:

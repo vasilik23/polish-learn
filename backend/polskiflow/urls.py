@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.contrib import admin
 
-from polskiflow.api_views import catalog_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_lesson_answer_v1, native_lesson_v1, native_reading_detail_v1, native_reading_library_v1, openapi_v1
+from polskiflow.api_views import catalog_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_dictionary_word_v1, native_lesson_answer_v1, native_lesson_v1, native_reading_detail_v1, native_reading_dictionary_v1, native_reading_library_v1, openapi_v1
 from polskiflow.account_views import account_security
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
@@ -78,6 +78,7 @@ urlpatterns = [
     path("api/v1/lessons/<slug:lesson_id>/answer/", native_lesson_answer_v1, name="api-v1-native-lesson-answer"),
     path("api/v1/reading/", native_reading_library_v1, name="api-v1-native-reading-library"),
     path("api/v1/reading/<slug:text_id>/", native_reading_detail_v1, name="api-v1-native-reading-detail"),
+    path("api/v1/reading/<slug:text_id>/dictionary/", native_reading_dictionary_v1, name="api-v1-native-reading-dictionary"),
     path("api/v1/openapi.json", openapi_v1, name="api-v1-openapi"),
     path("api/v1/me/progress/", learner_progress_v1, name="api-v1-learner-progress"),
     path("api/v1/me/today/", learner_today_v1, name="api-v1-learner-today"),
@@ -86,6 +87,7 @@ urlpatterns = [
     path("api/v1/me/lesson-drafts/<slug:lesson_id>/", learner_lesson_draft_v1, name="api-v1-lesson-draft"),
     path("api/v1/me/sm2/", learner_sm2_v1, name="api-v1-learner-sm2"),
     path("api/v1/me/sm2/<uuid:word_id>/review/", learner_sm2_review_v1, name="api-v1-learner-sm2-review"),
+    path("api/v1/me/dictionary/<uuid:word_id>/", native_dictionary_word_v1, name="api-v1-native-dictionary-word"),
     path("api/v1/me/reading-bookmarks/", learner_reading_bookmarks_v1, name="api-v1-reading-bookmarks"),
     path("api/v1/me/reading-bookmarks/<slug:text_id>/", learner_reading_bookmark_v1, name="api-v1-reading-bookmark"),
     path("api/v1/me/lesson-results/", lesson_results_v1, name="api-v1-lesson-results"),

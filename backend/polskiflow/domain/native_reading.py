@@ -32,6 +32,19 @@ def serialize_reading_detail(text, *, saved: bool) -> dict:
     }
 
 
+def resolve_glossary_entry(glossary, surface: str) -> dict | None:
+    """Resolve one surface form to canonical lemma and translation."""
+    if not isinstance(surface, str):
+        return None
+    needle = surface.strip().casefold()
+    if not needle:
+        return None
+    for item in _serialize_glossary(glossary):
+        if item["surface"].strip().casefold() == needle:
+            return item
+    return None
+
+
 def _serialize_glossary(glossary) -> list[dict]:
     if not isinstance(glossary, dict):
         return []

@@ -100,6 +100,8 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/lessons/{lesson_id}/answer/` | серверная проверка одного ответа мобильного клиента |
 | `/api/v1/reading/` | bearer-only библиотека учебных текстов с фильтрами и закладками |
 | `/api/v1/reading/{text_id}/` | абзацы, lemma-aware glossary, источник и comprehension-ссылка |
+| `/api/v1/reading/{text_id}/dictionary/` | сохранение проверенной леммы текста в личный словарь |
+| `/api/v1/me/dictionary/{word_id}/` | bearer-only удаление личного слова |
 | `/api/v1/openapi.json` | машинно-читаемый OpenAPI 3.1 контракт для отдельных клиентов |
 | `/api/v1/me/progress/` | owner-scoped read-only прогресс пользователя |
 | `/api/v1/me/today/` | bearer-only дневная цель, план, выполнение и продолжение урока |
