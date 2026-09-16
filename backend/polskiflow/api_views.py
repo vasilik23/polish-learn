@@ -18,6 +18,7 @@ from polskiflow.domain.lesson_results import (
     validate_lesson_result,
 )
 from polskiflow.domain.daily_plan import build_daily_plan
+from polskiflow.domain.api_rate_limit import consume_api_mutation
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
 from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readings, resolve_glossary_entry, serialize_reading_detail
@@ -84,6 +85,8 @@ def native_lesson_v1(request, lesson_id):
 def native_lesson_answer_v1(request, lesson_id):
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "answer"):
+        return limited
     if request.content_type != "application/json":
         return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
     if len(request.body) > 2048:
@@ -139,6 +142,8 @@ def learner_profile_v1(request):
     """Read or update bounded owner-scoped profile settings."""
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if request.method == "PATCH" and (limited := _mutation_rate_limit(request, "profile")):
+        return limited
     user = request.supabase_user
     progress = load_dashboard_progress(
         request.supabase_access_token, user.id, (user.email or "learner").split("@", 1)[0]
@@ -274,6 +279,8 @@ def learner_sm2_review_v1(request, word_id):
     """Schedule one owner-scoped dictionary card from a native client."""
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "sm2"):
+        return limited
     if request.content_type != "application/json":
         return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
     if len(request.body) > 512:
@@ -376,6 +383,8 @@ def native_reading_dictionary_v1(request, text_id):
     """Save only a server-verified glossary lemma from an active text."""
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "dictionary"):
+        return limited
     if request.content_type != "application/json":
         return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
     if len(request.body) > 512:
@@ -414,6 +423,8 @@ def native_reading_dictionary_v1(request, text_id):
 def native_dictionary_word_v1(request, word_id):
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "dictionary"):
+        return limited
     if not delete_personal_word(request.supabase_access_token, request.supabase_user.id, str(word_id)):
         return _unavailable_response("native-dictionary-word")
     return _private_response("native-dictionary-word", {"word_id": str(word_id), "deleted": True})
@@ -471,6 +482,8 @@ def learner_latest_lesson_draft_v1(request):
 def learner_lesson_draft_v1(request, lesson_id):
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "draft"):
+        return limited
     lesson = task(lesson_id)
     if lesson is None:
         return _error_response("lesson_not_found", "Active lesson was not found", 404)
@@ -518,6 +531,8 @@ def _lesson_step_count(lesson_id, lesson_kind):
 def learner_reading_bookmark_v1(request, text_id):
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "bookmark"):
+        return limited
     if reading_text(text_id) is None:
         return _error_response("reading_text_not_found", "Active reading text was not found", 404)
     saved = request.method == "PUT"
@@ -532,12 +547,23 @@ def learner_reading_bookmark_v1(request, text_id):
 def lesson_results_v1(request):
     if not _valid_bearer(request):
         return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "result"):
+        return limited
     return _store_lesson_result(request)
 
 
 def _valid_bearer(request):
     scheme, separator, token = request.headers.get("Authorization", "").partition(" ")
     return scheme.lower() == "bearer" and separator == " " and bool(token) and token == request.supabase_access_token
+
+
+def _mutation_rate_limit(request, action):
+    allowed, retry_after = consume_api_mutation(str(request.supabase_user.id), action)
+    if allowed:
+        return None
+    response = _error_response("rate_limited", "Too many mutation requests; retry later", 429)
+    response["Retry-After"] = str(retry_after)
+    return response
 
 
 @require_POST

@@ -92,6 +92,15 @@ AUTH_FORM_RATE_LIMITS = {
     "forgot": (int(os.environ.get("AUTH_RECOVERY_ATTEMPTS", "5")), 60 * 60),
     "resend": (int(os.environ.get("AUTH_RESEND_ATTEMPTS", "5")), 60 * 60),
 }
+API_MUTATION_RATE_LIMITS = {
+    "answer": (int(os.environ.get("API_ANSWER_ATTEMPTS", "180")), 60),
+    "profile": (int(os.environ.get("API_PROFILE_ATTEMPTS", "30")), 60),
+    "sm2": (int(os.environ.get("API_SM2_ATTEMPTS", "180")), 60),
+    "dictionary": (int(os.environ.get("API_DICTIONARY_ATTEMPTS", "90")), 60),
+    "bookmark": (int(os.environ.get("API_BOOKMARK_ATTEMPTS", "90")), 60),
+    "draft": (int(os.environ.get("API_DRAFT_ATTEMPTS", "180")), 60),
+    "result": (int(os.environ.get("API_RESULT_ATTEMPTS", "120")), 60),
+}
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
 SESSION_COOKIE_SECURE = AUTH_COOKIE_SECURE

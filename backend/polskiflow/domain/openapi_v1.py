@@ -44,7 +44,7 @@ def build_openapi_v1():
                     "summary": "Evaluate one choice or sentence-builder answer server-side",
                     "security": [{"supabaseBearer": []}],
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LessonAnswerRequest"}}}},
-                    "responses": {"200": _json_response("Answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415)}},
+                    "responses": {"200": _json_response("Answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
                 },
             },
             "/api/v1/reading/": {
@@ -76,7 +76,7 @@ def build_openapi_v1():
                     "summary": "Save a server-verified glossary lemma to the learner dictionary",
                     "security": [{"supabaseBearer": []}],
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GlossaryWordRequest"}}}},
-                    "responses": {"200": _json_response("Canonical lemma saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                    "responses": {"200": _json_response("Canonical lemma saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429, 503)}},
                 },
             },
             "/api/v1/me/progress/": {
@@ -99,7 +99,7 @@ def build_openapi_v1():
                     "summary": "Update display name, curriculum level, or daily goal",
                     "security": [{"supabaseBearer": []}],
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProfilePatchRequest"}}}},
-                    "responses": {"200": _json_response("Updated profile settings"), **{str(code): error_response for code in (400, 401, 413, 415, 503)}},
+                    "responses": {"200": _json_response("Updated profile settings"), **{str(code): error_response for code in (400, 401, 413, 415, 429, 503)}},
                 },
             },
             "/api/v1/me/today/": {
@@ -137,13 +137,13 @@ def build_openapi_v1():
                     "summary": "Save bounded progress for one unfinished lesson",
                     "security": [{"supabaseBearer": []}],
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LessonDraftRequest"}}}},
-                    "responses": {"200": _json_response("Draft saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                    "responses": {"200": _json_response("Draft saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429, 503)}},
                 },
                 "delete": {
                     "operationId": "deleteLessonDraft",
                     "summary": "Delete one owner-scoped lesson draft",
                     "security": [{"supabaseBearer": []}],
-                    "responses": {"200": _json_response("Draft removed"), **{str(code): error_response for code in (401, 404, 503)}},
+                    "responses": {"200": _json_response("Draft removed"), **{str(code): error_response for code in (401, 404, 429, 503)}},
                 },
             },
             "/api/v1/me/sm2/": {
@@ -161,14 +161,14 @@ def build_openapi_v1():
                     "summary": "Schedule one owned dictionary word with SM-2",
                     "security": [{"supabaseBearer": []}],
                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Sm2ReviewRequest"}}}},
-                    "responses": {"200": _json_response("Updated owner-scoped review schedule"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                    "responses": {"200": _json_response("Updated owner-scoped review schedule"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429, 503)}},
                 },
             },
             "/api/v1/me/reading-bookmarks/": {"get": {"operationId": "getReadingBookmarks", "summary": "Get saved reading text IDs", "security": [{"supabaseBearer": []}, {"browserSession": []}], "responses": {"200": _json_response("Owner-scoped reading bookmarks"), **private_errors}}},
             "/api/v1/me/reading-bookmarks/{text_id}/": {
                 "parameters": [{"name": "text_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 80}}],
-                "put": {"operationId": "saveReadingBookmark", "summary": "Save a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark saved"), **{str(code): error_response for code in (401, 404, 503)}}},
-                "delete": {"operationId": "deleteReadingBookmark", "summary": "Remove a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark removed"), **{str(code): error_response for code in (401, 404, 503)}}},
+                "put": {"operationId": "saveReadingBookmark", "summary": "Save a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark saved"), **{str(code): error_response for code in (401, 404, 429, 503)}}},
+                "delete": {"operationId": "deleteReadingBookmark", "summary": "Remove a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark removed"), **{str(code): error_response for code in (401, 404, 429, 503)}}},
             },
             "/api/v1/me/dictionary/{word_id}/": {
                 "parameters": [{"name": "word_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
@@ -176,7 +176,7 @@ def build_openapi_v1():
                     "operationId": "deleteLearnerDictionaryWord",
                     "summary": "Delete one owner-scoped personal dictionary word",
                     "security": [{"supabaseBearer": []}],
-                    "responses": {"200": _json_response("Dictionary word removed"), **{str(code): error_response for code in (401, 503)}},
+                    "responses": {"200": _json_response("Dictionary word removed"), **{str(code): error_response for code in (401, 429, 503)}},
                 },
             },
             "/api/v1/me/lesson-results/": {
@@ -188,7 +188,7 @@ def build_openapi_v1():
                     "responses": {
                         "200": _json_response("Duplicate event confirmed"),
                         "201": _json_response("Event created"),
-                        **{str(code): error_response for code in (400, 401, 404, 409, 413, 415, 503)},
+                        **{str(code): error_response for code in (400, 401, 404, 409, 413, 415, 429, 503)},
                     },
                 }
             },

@@ -46,6 +46,8 @@ class OpenApiV1Tests(SimpleTestCase):
         )
         self.assertEqual(paths["/api/v1/me/profile/"]["patch"]["security"], [{"supabaseBearer": []}])
         self.assertFalse(document["components"]["schemas"]["ProfilePatchRequest"]["additionalProperties"])
+        self.assertIn("429", paths["/api/v1/me/profile/"]["patch"]["responses"])
+        self.assertIn("429", paths["/api/v1/me/lesson-results/"]["post"]["responses"])
         self.assertEqual(
             paths["/api/v1/lessons/{lesson_id}/answer/"]["post"]["security"],
             [{"supabaseBearer": []}],
