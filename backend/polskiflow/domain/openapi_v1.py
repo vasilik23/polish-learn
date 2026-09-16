@@ -69,6 +69,16 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Active reading text detail"), **{str(code): error_response for code in (401, 404, 503)}},
                 },
             },
+            "/api/v1/reading/{text_id}/dictionary/": {
+                "parameters": [{"name": "text_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 80}}],
+                "post": {
+                    "operationId": "saveReadingGlossaryWord",
+                    "summary": "Save a server-verified glossary lemma to the learner dictionary",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GlossaryWordRequest"}}}},
+                    "responses": {"200": _json_response("Canonical lemma saved"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                },
+            },
             "/api/v1/me/progress/": {
                 "get": {
                     "operationId": "getLearnerProgress",
@@ -145,6 +155,15 @@ def build_openapi_v1():
                 "put": {"operationId": "saveReadingBookmark", "summary": "Save a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark saved"), **{str(code): error_response for code in (401, 404, 503)}}},
                 "delete": {"operationId": "deleteReadingBookmark", "summary": "Remove a reading text", "security": [{"supabaseBearer": []}], "responses": {"200": _json_response("Bookmark removed"), **{str(code): error_response for code in (401, 404, 503)}}},
             },
+            "/api/v1/me/dictionary/{word_id}/": {
+                "parameters": [{"name": "word_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
+                "delete": {
+                    "operationId": "deleteLearnerDictionaryWord",
+                    "summary": "Delete one owner-scoped personal dictionary word",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Dictionary word removed"), **{str(code): error_response for code in (401, 503)}},
+                },
+            },
             "/api/v1/me/lesson-results/": {
                 "post": {
                     "operationId": "postLessonResult",
@@ -193,6 +212,11 @@ def build_openapi_v1():
                 },
             },
             "schemas": {
+                "GlossaryWordRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["surface"],
+                    "properties": {"surface": {"type": "string", "minLength": 1, "maxLength": 160}},
+                },
                 "Sm2ReviewRequest": {
                     "type": "object", "additionalProperties": False,
                     "required": ["quality"],

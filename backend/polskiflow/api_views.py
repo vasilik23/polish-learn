@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 
 from polskiflow.auth import require_supabase_user
 from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, reading_texts, task, tasks
-from polskiflow.dictionary_store import load_personal_words, save_personal_word_review
+from polskiflow.dictionary_store import delete_personal_word, load_personal_words, save_personal_word, save_personal_word_review
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
     LessonResultValidationError,
@@ -20,7 +20,7 @@ from polskiflow.domain.lesson_results import (
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
-from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readings, serialize_reading_detail
+from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readings, resolve_glossary_entry, serialize_reading_detail
 from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
@@ -322,6 +322,56 @@ def native_reading_detail_v1(request, text_id):
         f"/api/v1/lessons/{comprehension_id}/" if comprehension_id and task(comprehension_id) else None
     )
     return _private_response("native-reading-detail", {"text": detail})
+
+
+@csrf_exempt
+@require_POST
+@require_supabase_user
+def native_reading_dictionary_v1(request, text_id):
+    """Save only a server-verified glossary lemma from an active text."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 512:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict) or set(payload) != {"surface"} or not isinstance(payload["surface"], str) or not payload["surface"].strip() or len(payload["surface"]) > 160:
+        return _error_response("validation_error", "Use exactly one non-empty surface string up to 160 characters", 400)
+    text = reading_text(text_id)
+    if text is None:
+        return _error_response("reading_text_not_found", "Active reading text was not found", 404)
+    entry = resolve_glossary_entry(text.glossary, payload["surface"])
+    if entry is None:
+        return _error_response("glossary_entry_not_found", "Surface form was not found in this text glossary", 404)
+    surface = entry["surface"].casefold()
+    context = next(
+        (paragraph.strip()[:500] for paragraph in text.paragraphs if isinstance(paragraph, str) and surface in paragraph.casefold()),
+        "",
+    )
+    if not save_personal_word(
+        request.supabase_access_token, request.supabase_user.id,
+        entry["lemma"].casefold(), entry["translation"], context, text.id,
+    ):
+        return _unavailable_response("native-reading-dictionary")
+    return _private_response("native-reading-dictionary", {
+        "text_id": text.id, "surface": entry["surface"], "word": entry["lemma"].casefold(),
+        "translation": entry["translation"], "part_of_speech": entry["part_of_speech"],
+    })
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@require_supabase_user
+def native_dictionary_word_v1(request, word_id):
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if not delete_personal_word(request.supabase_access_token, request.supabase_user.id, str(word_id)):
+        return _unavailable_response("native-dictionary-word")
+    return _private_response("native-dictionary-word", {"word_id": str(word_id), "deleted": True})
 
 
 @require_safe
