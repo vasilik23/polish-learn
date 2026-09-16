@@ -369,6 +369,11 @@ Owner-scoped JSON-экспорт профиля, прогресса, слова�
    Bearer-only GET/PATCH: имя, curriculum target A1–C2 и дневная цель 1–10.
    Частичный PATCH сначала читает текущий owner-scoped профиль, не принимает
    user ID и не может менять email, credentials или служебные поля.
+   Для Bearer-only mutations добавлен единый privacy-preserving per-user
+   best-effort limiter по типу операции. Превышение возвращает `429` и
+   `Retry-After` до downstream write; чтение и невалидный Bearer бюджет не
+   расходуют. Перед горизонтальным масштабированием локальный cache limiter
+   нужно перенести в общий distributed backend.
    Незавершённый урок теперь сохраняет owner-scoped текущий шаг и результат в
    Supabase и продолжает его после входа на другом устройстве; завершение урока
    удаляет черновик. Экран «Сегодня» показывает последний такой урок отдельной
