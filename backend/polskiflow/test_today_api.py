@@ -53,7 +53,7 @@ class TodayApiTests(TestCase):
         progress.assert_called_once_with("owner-token", "owner-1", "ada")
         self.assertNotIn("owner-1", str(data))
 
-    def test_due_dictionary_review_has_browser_path_and_no_lesson_api(self):
+    def test_due_dictionary_review_links_browser_and_native_sm2_flows(self):
         words = [{"next_review_date": "2026-09-01"} for _ in range(4)]
         with self._auth(), patch("polskiflow.api_views.load_dashboard_progress", return_value=self._progress()), patch(
             "polskiflow.api_views.load_personal_words", return_value=words
@@ -64,7 +64,7 @@ class TodayApiTests(TestCase):
         review = response.json()["data"]["tasks"][-1]
         self.assertEqual(review["kind"], "dictionary-review")
         self.assertEqual(review["path"], "/dictionary/practice/")
-        self.assertIsNone(review["api_path"])
+        self.assertEqual(review["api_path"], "/api/v1/me/sm2/")
 
     def test_any_owner_data_failure_returns_503_not_partial_plan(self):
         failures = (

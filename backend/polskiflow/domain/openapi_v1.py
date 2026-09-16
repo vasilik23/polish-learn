@@ -107,6 +107,16 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped SM-2 queue"), **private_errors},
                 }
             },
+            "/api/v1/me/sm2/{word_id}/review/": {
+                "parameters": [{"name": "word_id", "in": "path", "required": True, "schema": {"type": "string", "format": "uuid"}}],
+                "post": {
+                    "operationId": "reviewLearnerSm2Word",
+                    "summary": "Schedule one owned dictionary word with SM-2",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Sm2ReviewRequest"}}}},
+                    "responses": {"200": _json_response("Updated owner-scoped review schedule"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 503)}},
+                },
+            },
             "/api/v1/me/reading-bookmarks/": {"get": {"operationId": "getReadingBookmarks", "summary": "Get saved reading text IDs", "security": [{"supabaseBearer": []}, {"browserSession": []}], "responses": {"200": _json_response("Owner-scoped reading bookmarks"), **private_errors}}},
             "/api/v1/me/reading-bookmarks/{text_id}/": {
                 "parameters": [{"name": "text_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 80}}],
@@ -161,6 +171,11 @@ def build_openapi_v1():
                 },
             },
             "schemas": {
+                "Sm2ReviewRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["quality"],
+                    "properties": {"quality": {"type": "string", "enum": ["again", "hard", "good", "easy"]}},
+                },
                 "LessonAnswerRequest": {
                     "oneOf": [
                         {"type": "object", "additionalProperties": False, "required": ["position", "selected_index"], "properties": {"position": {"type": "integer", "minimum": 0}, "selected_index": {"type": "integer", "minimum": 0}}},

@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 
 from polskiflow.auth import require_supabase_user
 from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, task, tasks
-from polskiflow.dictionary_store import load_personal_words
+from polskiflow.dictionary_store import load_personal_words, save_personal_word_review
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
     LessonResultValidationError,
@@ -20,6 +20,7 @@ from polskiflow.domain.lesson_results import (
 from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
+from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event
@@ -165,7 +166,7 @@ def learner_today_v1(request):
             "emoji": item.get("emoji") or "", "level": item.get("level") or progress.level,
             "completed": bool(item["completed"]),
             "path": "/dictionary/practice/" if item["kind"] == "dictionary-review" else f"/lesson/{item['id']}/",
-            "api_path": None if item["kind"] == "dictionary-review" else f"/api/v1/lessons/{item['id']}/",
+            "api_path": "/api/v1/me/sm2/" if item["kind"] == "dictionary-review" else f"/api/v1/lessons/{item['id']}/",
         }
         for item in plan
     ]
@@ -218,6 +219,50 @@ def learner_sm2_v1(request):
             "reviews": reviews,
         },
     )
+
+
+@csrf_exempt
+@require_POST
+@require_supabase_user
+def learner_sm2_review_v1(request, word_id):
+    """Schedule one owner-scoped dictionary card from a native client."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 512:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict) or set(payload) != {"quality"} or payload["quality"] not in {"again", "hard", "good", "easy"}:
+        return _error_response("validation_error", "quality must be again, hard, good, or easy", 400)
+    words = load_personal_words(request.supabase_access_token, request.supabase_user.id)
+    if words is None:
+        return _unavailable_response("learner-sm2-review")
+    word = next((item for item in words if str(item.get("id")) == str(word_id)), None)
+    if word is None:
+        return _error_response("word_not_found", "Owned dictionary word was not found", 404)
+    try:
+        state = Sm2State(
+            ease_factor=float(word.get("ease_factor", 2.5)),
+            interval_days=int(word.get("interval_days", 0)),
+            repetitions=int(word.get("repetitions", 0)),
+        )
+    except (TypeError, ValueError):
+        return _error_response("upstream_invalid", "Stored review state is invalid", 503)
+    now = timezone.now()
+    review = sm2_next(state, payload["quality"], now.date())
+    if not save_personal_word_review(
+        request.supabase_access_token, request.supabase_user.id, str(word_id), review, now.isoformat()
+    ):
+        return _unavailable_response("learner-sm2-review")
+    return _private_response("learner-sm2-review", {
+        "word_id": str(word_id), "quality": payload["quality"],
+        "ease_factor": review.ease_factor, "interval_days": review.interval_days,
+        "repetitions": review.repetitions, "next_review_date": review.next_review_date.isoformat(),
+    })
 
 
 @require_safe
