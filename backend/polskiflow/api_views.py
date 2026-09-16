@@ -10,13 +10,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
 from polskiflow.auth import require_supabase_user
-from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, task
+from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, task, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
     LessonResultValidationError,
     validate_lesson_result,
 )
+from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
 from polskiflow.learning.models import Lesson, Level
@@ -125,21 +126,77 @@ def learner_progress_v1(request):
             "active_days": progress.active_days,
             "completed_lesson_ids": sorted(progress.all_completed_lesson_ids),
             "periods": {
-                "week": {
-                    "active_days": progress.weekly_active_days,
-                    "completed_lessons": progress.weekly_completed_count,
-                },
-                "previous_week": {
-                    "active_days": progress.previous_week_active_days,
-                    "completed_lessons": progress.previous_week_completed_count,
-                },
-                "month": {
-                    "active_days": progress.monthly_active_days,
-                    "completed_lessons": progress.monthly_completed_count,
-                },
+                "week": {"active_days": progress.weekly_active_days, "completed_lessons": progress.weekly_completed_count},
+                "previous_week": {"active_days": progress.previous_week_active_days, "completed_lessons": progress.previous_week_completed_count},
+                "month": {"active_days": progress.monthly_active_days, "completed_lessons": progress.monthly_completed_count},
             },
         },
     )
+
+
+@require_safe
+@require_supabase_user
+def learner_today_v1(request):
+    """Return one canonical daily plan for browser and separate clients."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    progress = load_dashboard_progress(
+        request.supabase_access_token, user.id, (user.email or "learner").split("@", 1)[0]
+    )
+    words = load_personal_words(request.supabase_access_token, user.id)
+    draft_result = load_latest_lesson_draft_result(request.supabase_access_token, user.id)
+    if not progress.available or words is None or not draft_result.available:
+        return _unavailable_response("learner-today")
+    lesson_rows = tasks()
+    plan = build_daily_plan(
+        lesson_rows,
+        level=progress.level,
+        completed_all_time=progress.all_completed_lesson_ids,
+        completed_today=progress.completed_lesson_ids,
+        personal_words=words,
+        today=timezone.localdate(),
+        daily_task_limit=progress.daily_goal_lessons,
+    )
+    serialized_tasks = [
+        {
+            "id": item["id"], "kind": item["kind"], "title": item["title"],
+            "description": item.get("description") or "", "minutes": item.get("minutes") or 0,
+            "emoji": item.get("emoji") or "", "level": item.get("level") or progress.level,
+            "completed": bool(item["completed"]),
+            "path": "/dictionary/practice/" if item["kind"] == "dictionary-review" else f"/lesson/{item['id']}/",
+            "api_path": None if item["kind"] == "dictionary-review" else f"/api/v1/lessons/{item['id']}/",
+        }
+        for item in plan
+    ]
+    completed_count = sum(item["completed"] for item in serialized_tasks)
+    resume = _today_resume(draft_result.draft, lesson_rows, progress.all_completed_lesson_ids)
+    return _private_response("learner-today", {
+        "date": timezone.localdate().isoformat(),
+        "level": progress.level,
+        "daily_goal_lessons": progress.daily_goal_lessons,
+        "completed_count": completed_count,
+        "task_count": len(serialized_tasks),
+        "progress_percent": round(completed_count / len(serialized_tasks) * 100) if serialized_tasks else 0,
+        "tasks": serialized_tasks,
+        "resume": resume,
+    })
+
+
+def _today_resume(draft, lesson_rows, completed_all_time):
+    if not isinstance(draft, dict) or draft.get("lesson_id") in completed_all_time:
+        return None
+    lesson = next((item for item in lesson_rows if item["id"] == draft.get("lesson_id")), None)
+    if lesson is None:
+        return None
+    try:
+        step = max(1, int(draft.get("step_index", 0)) + 1)
+    except (TypeError, ValueError):
+        step = 1
+    return {
+        "lesson_id": lesson["id"], "kind": lesson["kind"], "title": lesson["title"],
+        "step": step, "path": f"/lesson/{lesson['id']}/", "api_path": f"/api/v1/lessons/{lesson['id']}/",
+    }
 
 
 @require_safe

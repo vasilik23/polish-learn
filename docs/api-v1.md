@@ -63,6 +63,10 @@ future separate client:
 
 - `GET /api/v1/me/progress/` — profile level and daily goal, streak, active
   days, deterministic completed lesson IDs, and week/month aggregates;
+- `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
+  separate clients: goal, ordered tasks, completion percentage and safe resume
+  point. A dictionary review links to the browser flow until a native SM-2
+  exercise contract is introduced;
 - `GET /api/v1/me/sm2/` — personal dictionary review schedule, current due
   count, and the SM-2 fields required to render the learner's queue.
 - `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.
