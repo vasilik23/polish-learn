@@ -13,6 +13,13 @@ the Supabase `anon` role. It never includes profiles, progress, reviews,
 personal dictionary entries, access tokens, quiz answers, flashcards, or full
 lesson theory.
 
+Authenticated separate clients load an active lesson from
+`GET /api/v1/lessons/{lesson_id}/`. Flashcard content is returned directly;
+choice and sentence-builder steps omit `correct` and `explanation`. A client
+submits one bounded answer to `POST /api/v1/lessons/{lesson_id}/answer/`; only
+then does the server return correctness and teaching feedback. Both endpoints
+require an explicit Bearer token, accept no user ID and persist no answer.
+
 ## Envelope and versioning
 
 Every response is JSON with these stable top-level fields:

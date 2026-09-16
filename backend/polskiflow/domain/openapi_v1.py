@@ -28,6 +28,25 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Public course catalog")},
                 }
             },
+            "/api/v1/lessons/{lesson_id}/": {
+                "parameters": [{"name": "lesson_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "get": {
+                    "operationId": "getNativeLesson",
+                    "summary": "Get active lesson steps without answer keys",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Lesson content without answer keys"), **{str(code): error_response for code in (401, 404, 503)}},
+                },
+            },
+            "/api/v1/lessons/{lesson_id}/answer/": {
+                "parameters": [{"name": "lesson_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "post": {
+                    "operationId": "evaluateNativeLessonAnswer",
+                    "summary": "Evaluate one choice or sentence-builder answer server-side",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LessonAnswerRequest"}}}},
+                    "responses": {"200": _json_response("Answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415)}},
+                },
+            },
             "/api/v1/me/progress/": {
                 "get": {
                     "operationId": "getLearnerProgress",
@@ -134,6 +153,12 @@ def build_openapi_v1():
                 },
             },
             "schemas": {
+                "LessonAnswerRequest": {
+                    "oneOf": [
+                        {"type": "object", "additionalProperties": False, "required": ["position", "selected_index"], "properties": {"position": {"type": "integer", "minimum": 0}, "selected_index": {"type": "integer", "minimum": 0}}},
+                        {"type": "object", "additionalProperties": False, "required": ["position", "token_order"], "properties": {"position": {"type": "integer", "minimum": 0}, "token_order": {"type": "array", "items": {"type": "integer", "minimum": 0}}}},
+                    ]
+                },
                 "LessonDraftRequest": {
                     "type": "object",
                     "additionalProperties": False,
