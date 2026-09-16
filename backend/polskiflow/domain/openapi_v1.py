@@ -55,6 +55,14 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped progress"), **private_errors},
                 }
             },
+            "/api/v1/me/today/": {
+                "get": {
+                    "operationId": "getLearnerToday",
+                    "summary": "Get the authenticated learner's canonical daily plan",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Owner-scoped daily goal, tasks, progress, and resume point"), **private_errors},
+                }
+            },
             "/api/v1/me/history/": {
                 "get": {
                     "operationId": "getLearnerHistory",
