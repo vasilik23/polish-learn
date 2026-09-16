@@ -65,8 +65,8 @@ future separate client:
   days, deterministic completed lesson IDs, and week/month aggregates;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
-  point. A dictionary review links to the browser flow until a native SM-2
-  exercise contract is introduced;
+  point. A dictionary-review task links both the browser practice and native
+  SM-2 queue;
 - `GET /api/v1/me/sm2/` — personal dictionary review schedule, current due
   count, and the SM-2 fields required to render the learner's queue.
 - `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.
@@ -78,6 +78,12 @@ future separate client:
 Native clients add or remove a saved text with `PUT` or `DELETE` at
 `/api/v1/me/reading-bookmarks/{text_id}/`. Mutations require an explicit Bearer
 token, validate the active reading and never accept a user ID.
+
+A native client schedules an owned dictionary card with
+`POST /api/v1/me/sm2/{word_id}/review/` and one strict quality value:
+`again`, `hard`, `good`, or `easy`. The server loads the current owner-scoped
+state, calculates SM-2 and persists only scheduling fields. Client-supplied
+ownership, intervals, repetitions, ease factors and dates are rejected.
 
 Both accept the existing Supabase access token as
 `Authorization: Bearer <access-token>`. Browser sessions may use the existing
