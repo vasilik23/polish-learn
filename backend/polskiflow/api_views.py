@@ -558,7 +558,9 @@ def _valid_bearer(request):
 
 
 def _mutation_rate_limit(request, action):
-    allowed, retry_after = consume_api_mutation(str(request.supabase_user.id), action)
+    allowed, retry_after = consume_api_mutation(
+        request.supabase_access_token, str(request.supabase_user.id), action
+    )
     if allowed:
         return None
     response = _error_response("rate_limited", "Too many mutation requests; retry later", 429)

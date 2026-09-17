@@ -6,11 +6,14 @@
 handoff. Документ не содержит credentials, пользовательские данные или ответы
 учебных заданий.
 
-Bearer-only mutations use privacy-preserving per-user best-effort rate limits.
+Bearer-only mutations use privacy-preserving per-user distributed rate limits.
 An exceeded action budget returns `429 rate_limited`, `Retry-After`, private
 no-store caching and performs no downstream write. Read-only contracts and
-invalid/missing Bearer requests do not consume a mutation budget. The current
-local cache is a safety layer rather than a globally distributed quota.
+invalid/missing Bearer requests do not consume a mutation budget. The atomic
+Supabase RPC stores counters in a non-exposed `private` schema, derives the
+owner from `auth.uid()` and accepts neither a user ID nor client-selected quota.
+An instance-local cache remains only as a best-effort availability fallback
+when the limiter RPC itself is temporarily unreachable.
 
 `GET /api/v1/catalog/` is the first read-only contract for future mobile and
 other separate clients. `HEAD` is supported; mutation methods return `405`.
