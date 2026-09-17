@@ -15,12 +15,17 @@ class ApiMutationRateLimitDomainTests(SimpleTestCase):
         cache.clear()
 
     def test_limit_is_scoped_by_hashed_user_and_action(self):
-        self.assertTrue(consume_api_mutation("user-1", "profile")[0])
-        self.assertTrue(consume_api_mutation("user-1", "profile")[0])
-        self.assertFalse(consume_api_mutation("user-1", "profile")[0])
-        self.assertTrue(consume_api_mutation("user-2", "profile")[0])
-        self.assertTrue(consume_api_mutation("user-1", "sm2")[0])
-        self.assertFalse(consume_api_mutation("user-1", "sm2")[0])
+        self.assertTrue(consume_api_mutation(None, "user-1", "profile")[0])
+        self.assertTrue(consume_api_mutation(None, "user-1", "profile")[0])
+        self.assertFalse(consume_api_mutation(None, "user-1", "profile")[0])
+        self.assertTrue(consume_api_mutation(None, "user-2", "profile")[0])
+        self.assertTrue(consume_api_mutation(None, "user-1", "sm2")[0])
+        self.assertFalse(consume_api_mutation(None, "user-1", "sm2")[0])
+
+    @patch("polskiflow.domain.api_rate_limit.consume_distributed_api_mutation", return_value=(False, 17))
+    def test_distributed_result_takes_precedence_over_local_cache(self, distributed):
+        self.assertEqual(consume_api_mutation("access", "user-1", "profile"), (False, 17))
+        distributed.assert_called_once_with("access", "profile")
 
 
 @override_settings(
@@ -32,6 +37,12 @@ class ApiMutationRateLimitViewTests(TestCase):
 
     def setUp(self):
         cache.clear()
+        self.distributed = patch(
+            "polskiflow.domain.api_rate_limit.consume_distributed_api_mutation",
+            return_value=None,
+        )
+        self.distributed.start()
+        self.addCleanup(self.distributed.stop)
 
     def _auth(self):
         return patch("polskiflow.auth.authenticate_access_token", return_value=SupabaseUser(id="owner-1", email="owner@example.com"))

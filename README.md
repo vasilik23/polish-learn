@@ -172,10 +172,10 @@ RLS; приложение обращается к ним с access token пол�
 Собственный публичный домен отложен: домен пока не выбран и не приобретён.
 Технический production-адрес продолжает работать на `vercel.app`.
 
-Bearer-only операции мобильного API защищены per-user best-effort лимитами:
-при превышении возвращаются `429` и `Retry-After` без обращения к downstream
-storage. Перед горизонтальным масштабированием локальный cache limiter должен
-быть заменён общим distributed backend.
+Bearer-only операции мобильного API защищены атомарными per-user лимитами в
+Supabase: при превышении возвращаются `429` и `Retry-After` без обращения к
+целевому storage. Закрытая таблица в `private` schema недоступна Data API;
+при временной недоступности RPC остаётся instance-local best-effort fallback.
 
 Проект остаётся на Supabase Free. Платная проверка утёкших паролей через
 HaveIBeenPwned недоступна на этом тарифе, поэтому соответствующий security

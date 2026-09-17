@@ -370,10 +370,11 @@ Owner-scoped JSON-экспорт профиля, прогресса, слова�
    Частичный PATCH сначала читает текущий owner-scoped профиль, не принимает
    user ID и не может менять email, credentials или служебные поля.
    Для Bearer-only mutations добавлен единый privacy-preserving per-user
-   best-effort limiter по типу операции. Превышение возвращает `429` и
+   distributed limiter по типу операции. Превышение возвращает `429` и
    `Retry-After` до downstream write; чтение и невалидный Bearer бюджет не
-   расходуют. Перед горизонтальным масштабированием локальный cache limiter
-   нужно перенести в общий distributed backend.
+   расходуют. Атомарный Supabase RPC хранит bucket в закрытой `private` schema,
+   выводит owner из `auth.uid()` и не принимает лимит от клиента. Instance-local
+   cache остаётся только best-effort fallback при временной недоступности RPC.
    Незавершённый урок теперь сохраняет owner-scoped текущий шаг и результат в
    Supabase и продолжает его после входа на другом устройстве; завершение урока
    удаляет черновик. Экран «Сегодня» показывает последний такой урок отдельной
