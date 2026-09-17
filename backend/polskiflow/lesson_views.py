@@ -19,7 +19,7 @@ from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft
 # Expansion is release-gated by a successful offline -> online recovery smoke
 # in a production-like Preview environment. Keep this explicit so a new lesson
 # cannot silently join the persisted browser queue through a broad kind check.
-OFFLINE_RESULT_QUEUE_LESSON_IDS = frozenset({"words", "review", "quiz"})
+OFFLINE_RESULT_QUEUE_LESSON_IDS = frozenset({"words", "grammar", "review", "quiz"})
 
 
 @require_browser_user
