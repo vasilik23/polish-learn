@@ -33,8 +33,12 @@ require an explicit Bearer token, accept no user ID and persist no answer.
 pages with optional CEFR-level and text-query filters. Each item includes its
 owner-scoped bookmark state. `GET /api/v1/reading/{text_id}/` returns paragraphs,
 a normalized lemma-aware glossary, a conservative source/attribution card and
-the linked comprehension lesson API path when available. News feeds are not
-part of this stable learning-content contract.
+the linked comprehension lesson API path when available. News feeds remain
+separate from stable learning content. Public `GET /api/v1/news/` returns only
+bounded attributed headlines and validated HTTPS links from the same approved
+feeds as the web News tab. It never proxies article bodies;
+`meta.available=false` honestly represents an empty or temporarily unavailable
+feed snapshot.
 
 The native reading-to-dictionary flow posts only a surface form to
 `POST /api/v1/reading/{text_id}/dictionary/`. The server resolves the canonical

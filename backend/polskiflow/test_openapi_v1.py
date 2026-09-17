@@ -16,7 +16,7 @@ class OpenApiV1Tests(SimpleTestCase):
         self.assertEqual(
             set(document["paths"]),
             {
-                "/api/v1/catalog/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
+                "/api/v1/catalog/", "/api/v1/news/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
                 "/api/v1/me/profile/",
                 "/api/v1/me/today/",
                 "/api/v1/me/sm2/{word_id}/review/",
@@ -40,6 +40,7 @@ class OpenApiV1Tests(SimpleTestCase):
         document = self.client.get("/api/v1/openapi.json").json()
         paths = document["paths"]
         self.assertNotIn("security", paths["/api/v1/catalog/"]["get"])
+        self.assertNotIn("security", paths["/api/v1/news/"]["get"])
         self.assertEqual(
             paths["/api/v1/me/lesson-results/"]["post"]["security"],
             [{"supabaseBearer": []}],

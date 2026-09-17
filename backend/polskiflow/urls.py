@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.contrib import admin
 
-from polskiflow.api_views import catalog_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_profile_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_dictionary_word_v1, native_lesson_answer_v1, native_lesson_v1, native_reading_detail_v1, native_reading_dictionary_v1, native_reading_library_v1, openapi_v1
+from polskiflow.api_views import catalog_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_profile_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_dictionary_word_v1, native_lesson_answer_v1, native_lesson_v1, native_reading_detail_v1, native_reading_dictionary_v1, native_reading_library_v1, news_v1, openapi_v1
 from polskiflow.account_views import account_security
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
@@ -74,6 +74,7 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/auth/me/", current_user, name="current-user"),
     path("api/v1/catalog/", catalog_v1, name="api-v1-catalog"),
+    path("api/v1/news/", news_v1, name="api-v1-news"),
     path("api/v1/lessons/<slug:lesson_id>/", native_lesson_v1, name="api-v1-native-lesson"),
     path("api/v1/lessons/<slug:lesson_id>/answer/", native_lesson_answer_v1, name="api-v1-native-lesson-answer"),
     path("api/v1/reading/", native_reading_library_v1, name="api-v1-native-reading-library"),

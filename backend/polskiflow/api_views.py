@@ -25,6 +25,7 @@ from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readi
 from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
+from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event, save_profile_settings
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
@@ -56,6 +57,50 @@ def catalog_v1(_request):
                 "course_count": len(courses),
             },
             "data": {"courses": courses},
+        },
+        json_dumps_params={"ensure_ascii": False},
+    )
+    response["Cache-Control"] = "public, max-age=60, s-maxage=300, stale-while-revalidate=600"
+    return response
+
+
+@require_safe
+def news_v1(request):
+    """Expose bounded, attributed headlines without proxying article content."""
+    category = request.GET.get("category", "")
+    try:
+        limit = int(request.GET.get("limit", "12"))
+    except (TypeError, ValueError):
+        limit = 0
+    if (category and category not in CATEGORY_IDS) or not 1 <= limit <= 12:
+        return _error_response(
+            "invalid_filters", "Use a supported category and limit from 1 to 12", 400
+        )
+    items = latest_official_news(limit=limit, category=category or None)
+    response = JsonResponse(
+        {
+            "api_version": API_VERSION,
+            "meta": {
+                "contract": "public-news-headlines",
+                "contract_version": "1.0.0",
+                "generated_at": timezone.now().isoformat(),
+                "available": bool(items),
+                "external_content": True,
+            },
+            "data": {
+                "category": category or None,
+                "categories": list(CATEGORIES),
+                "headlines": [
+                    {
+                        key: item.get(key, "")
+                        for key in (
+                            "title", "url", "source", "category",
+                            "category_label", "published",
+                        )
+                    }
+                    for item in items
+                ],
+            },
         },
         json_dumps_params={"ensure_ascii": False},
     )
