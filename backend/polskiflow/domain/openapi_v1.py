@@ -28,6 +28,17 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Public course catalog")},
                 }
             },
+            "/api/v1/news/": {
+                "get": {
+                    "operationId": "getNewsHeadlines",
+                    "summary": "Get bounded attributed headlines from approved Polish feeds",
+                    "parameters": [
+                        {"name": "category", "in": "query", "schema": {"type": "string", "enum": ["politics", "sport", "culture", "economy"]}},
+                        {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 12, "default": 12}},
+                    ],
+                    "responses": {"200": _json_response("Public attributed headline snapshot"), "400": error_response},
+                }
+            },
             "/api/v1/lessons/{lesson_id}/": {
                 "parameters": [{"name": "lesson_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
                 "get": {
