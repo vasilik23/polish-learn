@@ -796,6 +796,27 @@ class LessonViewsTests(TestCase):
         self.assertNotContains(response, "access_token")
 
     @patch("polskiflow.lesson_views.save_lesson_completion_result")
+    def test_grammar_transient_failure_joins_controlled_offline_pilot(self, mocked_save):
+        mocked_save.return_value = CompletionSaveResult(saved=False, retryable=True)
+
+        response = self.client.post(
+            "/lesson/grammar/step/",
+            {
+                "action": "next",
+                "index": 3,
+                "score": 2,
+                "answer_order": "[0,1,2,3,4]",
+            },
+        )
+
+        self.assertContains(response, "data-lesson-result-sync")
+        self.assertContains(response, '&quot;lesson_id&quot;:&quot;grammar&quot;')
+        self.assertContains(response, '&quot;cards_total&quot;:4')
+        self.assertNotContains(response, "user-123")
+        self.assertNotContains(response, "learner@example.com")
+        self.assertNotContains(response, "access_token")
+
+    @patch("polskiflow.lesson_views.save_lesson_completion_result")
     def test_review_transient_failure_joins_controlled_offline_pilot(self, mocked_save):
         mocked_save.return_value = CompletionSaveResult(saved=False, retryable=True)
 
