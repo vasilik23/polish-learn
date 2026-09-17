@@ -1,6 +1,7 @@
 """Versioned API contracts for separate clients."""
 
 from datetime import date
+from functools import wraps
 
 import json
 
@@ -9,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
-from polskiflow.auth import require_supabase_user
+from polskiflow.auth import require_supabase_user as require_authenticated_user
 from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, reading_texts, task, tasks
 from polskiflow.dictionary_store import delete_personal_word, load_personal_words, save_personal_word, save_personal_word_review
 from polskiflow.domain.lesson_results import (
@@ -34,6 +35,23 @@ from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_readin
 API_VERSION = "v1"
 CATALOG_CONTRACT_VERSION = "1.0.0"
 LEARNER_CONTRACT_VERSION = "1.0.0"
+
+
+def require_supabase_user(view):
+    """Keep every v1 authentication failure inside the private API envelope."""
+    @wraps(view)
+    @require_authenticated_user
+    def protected(request, *args, **kwargs):
+        return view(request, *args, **kwargs)
+
+    def api_protected(request, *args, **kwargs):
+        if request.supabase_user is None:
+            return _error_response(
+                "authentication_required", "Authentication is required", 401
+            )
+        return protected(request, *args, **kwargs)
+
+    return wraps(view)(api_protected)
 
 
 @require_safe

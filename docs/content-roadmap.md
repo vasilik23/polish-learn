@@ -380,6 +380,8 @@ Owner-scoped JSON-экспорт профиля, прогресса, слова�
    расходуют. Атомарный Supabase RPC хранит bucket в закрытой `private` schema,
    выводит owner из `auth.uid()` и не принимает лимит от клиента. Instance-local
    cache остаётся только best-effort fallback при временной недоступности RPC.
+   Ранние auth-отказы private v1 routes унифицированы: один error envelope,
+   `private, no-store` и `X-Request-ID`; публичные API сохраняют отдельный cache boundary.
    Незавершённый урок теперь сохраняет owner-scoped текущий шаг и результат в
    Supabase и продолжает его после входа на другом устройстве; завершение урока
    удаляет черновик. Экран «Сегодня» показывает последний такой урок отдельной

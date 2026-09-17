@@ -6,6 +6,11 @@
 handoff. Документ не содержит credentials, пользовательские данные или ответы
 учебных заданий.
 
+Все ранние auth-отказы private v1 routes имеют тот же error envelope,
+`401 authentication_required`, `Cache-Control: private, no-store` и
+privacy-safe `X-Request-ID`. Публичные catalog, news и OpenAPI
+сохраняют отдельную public cache-политику.
+
 Bearer-only mutations use privacy-preserving per-user distributed rate limits.
 An exceeded action budget returns `429 rate_limited`, `Retry-After`, private
 no-store caching and performs no downstream write. Read-only contracts and
