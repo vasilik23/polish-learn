@@ -58,6 +58,24 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
                 },
             },
+            "/api/v1/listening/": {
+                "get": {
+                    "operationId": "getNativeListeningExercises",
+                    "summary": "Get listening transcripts, fragments, and questions without answer keys",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Listening exercises without answer keys"), **{str(code): error_response for code in (401, 503)}},
+                }
+            },
+            "/api/v1/listening/{exercise_id}/answer/": {
+                "parameters": [{"name": "exercise_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "post": {
+                    "operationId": "evaluateNativeListeningAnswer",
+                    "summary": "Evaluate one listening choice without persistence",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ListeningAnswerRequest"}}}},
+                    "responses": {"200": _json_response("Listening answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
+                },
+            },
             "/api/v1/reading/": {
                 "get": {
                     "operationId": "getNativeReadingLibrary",
@@ -261,6 +279,14 @@ def build_openapi_v1():
                         {"type": "object", "additionalProperties": False, "required": ["position", "selected_index"], "properties": {"position": {"type": "integer", "minimum": 0}, "selected_index": {"type": "integer", "minimum": 0}}},
                         {"type": "object", "additionalProperties": False, "required": ["position", "token_order"], "properties": {"position": {"type": "integer", "minimum": 0}, "token_order": {"type": "array", "items": {"type": "integer", "minimum": 0}}}},
                     ]
+                },
+                "ListeningAnswerRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["question_id", "selected_index"],
+                    "properties": {
+                        "question_id": {"type": "string", "minLength": 1, "maxLength": 80},
+                        "selected_index": {"type": "integer", "minimum": 0},
+                    },
                 },
                 "LessonDraftRequest": {
                     "type": "object",

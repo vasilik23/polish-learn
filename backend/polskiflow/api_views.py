@@ -21,6 +21,7 @@ from polskiflow.domain.daily_plan import build_daily_plan
 from polskiflow.domain.api_rate_limit import consume_api_mutation
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
+from polskiflow.domain.native_listening import NativeListeningError, build_native_listening, evaluate_native_listening_answer
 from polskiflow.domain.native_reading import READING_LEVELS, filter_native_readings, resolve_glossary_entry, serialize_reading_detail
 from polskiflow.domain.sm2 import Sm2State, sm2_next
 from polskiflow.learning.models import Lesson, Level
@@ -149,6 +150,54 @@ def native_lesson_answer_v1(request, lesson_id):
             return _error_response("lesson_not_found", "Active lesson was not found", 404)
         return _error_response("validation_error", str(error), 400)
     return _private_response("native-lesson-answer", evaluation)
+
+
+@require_safe
+@require_supabase_user
+def native_listening_v1(request):
+    """Return bounded listening exercises without answer keys."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    exercises = build_native_listening()
+    return _private_response(
+        "native-listening",
+        {"exercises": exercises, "exercise_count": len(exercises)},
+    )
+
+
+@csrf_exempt
+@require_POST
+@require_supabase_user
+def native_listening_answer_v1(request, exercise_id):
+    """Evaluate one listening choice without persisting learner state."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "answer"):
+        return limited
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 512:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict) or set(payload) != {"question_id", "selected_index"}:
+        return _error_response(
+            "validation_error", "Use exactly question_id and selected_index", 400
+        )
+    question_id = payload["question_id"]
+    if not isinstance(question_id, str) or not question_id or len(question_id) > 80:
+        return _error_response("validation_error", "question_id must contain 1..80 characters", 400)
+    try:
+        evaluation = evaluate_native_listening_answer(
+            exercise_id, question_id, payload["selected_index"]
+        )
+    except NativeListeningError as error:
+        if str(error) == "exercise_not_found":
+            return _error_response("listening_exercise_not_found", "Listening exercise was not found", 404)
+        return _error_response("validation_error", str(error), 400)
+    return _private_response("native-listening-answer", evaluation)
 
 
 @require_safe
