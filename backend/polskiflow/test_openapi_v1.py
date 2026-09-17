@@ -22,6 +22,8 @@ class OpenApiV1Tests(SimpleTestCase):
                 "/api/v1/me/sm2/{word_id}/review/",
                 "/api/v1/lessons/{lesson_id}/",
                 "/api/v1/lessons/{lesson_id}/answer/",
+                "/api/v1/listening/",
+                "/api/v1/listening/{exercise_id}/answer/",
                 "/api/v1/reading/",
                 "/api/v1/reading/{text_id}/",
                 "/api/v1/reading/{text_id}/dictionary/",
@@ -54,6 +56,8 @@ class OpenApiV1Tests(SimpleTestCase):
             [{"supabaseBearer": []}],
         )
         self.assertEqual(paths["/api/v1/reading/{text_id}/"]["get"]["security"], [{"supabaseBearer": []}])
+        self.assertEqual(paths["/api/v1/listening/"]["get"]["security"], [{"supabaseBearer": []}])
+        self.assertEqual(paths["/api/v1/listening/{exercise_id}/answer/"]["post"]["security"], [{"supabaseBearer": []}])
         self.assertEqual(paths["/api/v1/reading/{text_id}/dictionary/"]["post"]["security"], [{"supabaseBearer": []}])
         self.assertFalse(document["components"]["schemas"]["GlossaryWordRequest"]["additionalProperties"])
         self.assertEqual(
