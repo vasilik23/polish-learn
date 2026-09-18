@@ -27,6 +27,8 @@ class OpenApiV1Tests(SimpleTestCase):
                 "/api/v1/listening/{exercise_id}/answer/",
                 "/api/v1/interaction/",
                 "/api/v1/interaction/{scenario_id}/answer/",
+                "/api/v1/diagnostic/",
+                "/api/v1/diagnostic/evaluate/",
                 "/api/v1/reading/",
                 "/api/v1/reading/{text_id}/",
                 "/api/v1/reading/{text_id}/dictionary/",
