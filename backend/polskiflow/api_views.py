@@ -472,8 +472,16 @@ def learner_today_v1(request):
     )
     words = load_personal_words(request.supabase_access_token, user.id)
     draft_result = load_latest_lesson_draft_result(request.supabase_access_token, user.id)
-    if not progress.available or words is None or not draft_result.available:
+    data = _build_today_data(progress, words, draft_result)
+    if data is None:
         return _unavailable_response("learner-today")
+    return _private_response("learner-today", data)
+
+
+def _build_today_data(progress, words, draft_result):
+    """Build the canonical plan from already loaded owner-scoped state."""
+    if not progress.available or words is None or not draft_result.available:
+        return None
     lesson_rows = tasks()
     plan = build_daily_plan(
         lesson_rows,
@@ -497,7 +505,7 @@ def learner_today_v1(request):
     ]
     completed_count = sum(item["completed"] for item in serialized_tasks)
     resume = _today_resume(draft_result.draft, lesson_rows, progress.all_completed_lesson_ids)
-    return _private_response("learner-today", {
+    return {
         "date": timezone.localdate().isoformat(),
         "level": progress.level,
         "daily_goal_lessons": progress.daily_goal_lessons,
@@ -506,7 +514,54 @@ def learner_today_v1(request):
         "progress_percent": round(completed_count / len(serialized_tasks) * 100) if serialized_tasks else 0,
         "tasks": serialized_tasks,
         "resume": resume,
-    })
+    }
+
+
+@require_safe
+@require_supabase_user
+def learner_bootstrap_v1(request):
+    """Return one consistent initial owner-scoped snapshot for native clients."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    fallback_name = (user.email or "learner").split("@", 1)[0]
+    progress = load_dashboard_progress(
+        request.supabase_access_token, user.id, fallback_name
+    )
+    words = load_personal_words(request.supabase_access_token, user.id)
+    draft_result = load_latest_lesson_draft_result(
+        request.supabase_access_token, user.id
+    )
+    today = _build_today_data(progress, words, draft_result)
+    if today is None:
+        return _unavailable_response("learner-bootstrap")
+    return _private_response(
+        "learner-bootstrap",
+        {
+            "profile": {
+                "display_name": progress.display_name,
+                "level": progress.level,
+                "daily_goal_lessons": progress.daily_goal_lessons,
+            },
+            "progress": {
+                "streak_days": progress.streak_days,
+                "active_days": progress.active_days,
+                "completed_lesson_count": len(progress.all_completed_lesson_ids),
+                "week": {
+                    "active_days": progress.weekly_active_days,
+                    "completed_lessons": progress.weekly_completed_count,
+                },
+            },
+            "today": today,
+            "links": {
+                "catalog": "/api/v1/catalog/",
+                "profile": "/api/v1/me/profile/",
+                "history": "/api/v1/me/history/",
+                "sm2": "/api/v1/me/sm2/",
+                "reading": "/api/v1/reading/",
+            },
+        },
+    )
 
 
 def _today_resume(draft, lesson_rows, completed_all_time):

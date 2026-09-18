@@ -20,6 +20,7 @@ class OpenApiV1Tests(SimpleTestCase):
                 "/api/v1/me/profile/",
                 "/api/v1/me/feedback/",
                 "/api/v1/me/today/",
+                "/api/v1/me/bootstrap/",
                 "/api/v1/me/sm2/{word_id}/review/",
                 "/api/v1/lessons/{lesson_id}/",
                 "/api/v1/lessons/{lesson_id}/answer/",
