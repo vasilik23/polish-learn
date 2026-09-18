@@ -439,10 +439,11 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, 'id="main-content"')
         self.assertContains(response, 'tabindex="-1"')
 
+    @patch("polskiflow.auth_views.load_reminder_preferences", return_value={"daily_reminder_enabled": False, "reminder_time": "19:00", "timezone": "Europe/Warsaw"})
     @patch("polskiflow.auth_views.load_personal_words")
     @patch("polskiflow.auth_views.load_dashboard_progress")
     def test_profile_shows_identity_progress_and_settings(
-        self, mocked_progress, mocked_words
+        self, mocked_progress, mocked_words, _mocked_reminders
     ):
         mocked_progress.return_value = DashboardProgress(
             display_name="Василий",
@@ -497,6 +498,40 @@ class LessonViewsTests(TestCase):
         self.assertContains(response, "плане на день, курсе и библиотеке")
         self.assertNotContains(response, "Сейчас используется светлая тема")
         self.assertNotContains(response, 'class="settings-list"')
+        self.assertContains(response, "Напоминания")
+        self.assertContains(response, "ещё ничего не отправляем")
+        self.assertContains(response, 'name="daily_reminder_enabled"')
+        self.assertNotContains(response, 'name="daily_reminder_enabled" type="checkbox" checked')
+
+    @patch("polskiflow.auth_views.save_reminder_preferences", return_value=True)
+    @patch("polskiflow.auth_views.load_reminder_preferences", return_value={"daily_reminder_enabled": False, "reminder_time": "19:00", "timezone": "Europe/Warsaw"})
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_explicitly_opts_into_daily_reminder(self, mocked_progress, _words, _load, save):
+        mocked_progress.return_value = DashboardProgress("Learner", "A1", 0, frozenset(), True)
+
+        response = self.client.post("/profile/", {
+            "form_action": "reminders",
+            "daily_reminder_enabled": "on",
+            "reminder_time": "08:30",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        save.assert_called_once_with("access", "user-123", True, "08:30", "Europe/Warsaw")
+        self.assertContains(response, "Настройки напоминаний сохранены")
+        self.assertContains(response, 'name="daily_reminder_enabled" type="checkbox" checked')
+
+    @patch("polskiflow.auth_views.save_reminder_preferences")
+    @patch("polskiflow.auth_views.load_reminder_preferences", return_value={"daily_reminder_enabled": False, "reminder_time": "19:00", "timezone": "Europe/Warsaw"})
+    @patch("polskiflow.auth_views.load_personal_words", return_value=[])
+    @patch("polskiflow.auth_views.load_dashboard_progress")
+    def test_profile_rejects_invalid_reminder_time(self, mocked_progress, _words, _load, save):
+        mocked_progress.return_value = DashboardProgress("Learner", "A1", 0, frozenset(), True)
+
+        response = self.client.post("/profile/", {"form_action": "reminders", "reminder_time": "25:90"})
+
+        self.assertContains(response, "Укажите корректное время напоминания")
+        save.assert_not_called()
 
     def test_profile_requires_authentication(self):
         self.auth_patch.stop()

@@ -327,3 +327,15 @@ class UserFeedback(models.Model):
     class Meta:
         db_table = "user_feedback"
         managed = False
+
+
+class ReminderPreference(models.Model):
+    user_id = models.UUIDField(primary_key=True)
+    daily_reminder_enabled = models.BooleanField(default=False)
+    reminder_time = models.TimeField(default="19:00")
+    timezone = models.CharField(max_length=64, default="Europe/Warsaw")
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "reminder_preferences"
+        managed = False

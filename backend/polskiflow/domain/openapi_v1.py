@@ -215,6 +215,14 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped native client bootstrap snapshot"), **private_errors},
                 }
             },
+            "/api/v1/me/achievements/": {
+                "get": {
+                    "operationId": "getLearnerAchievements",
+                    "summary": "Get deterministic achievement progress derived from owner-scoped state",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Owner-scoped achievement progress"), **private_errors},
+                }
+            },
             "/api/v1/me/history/": {
                 "get": {
                     "operationId": "getLearnerHistory",

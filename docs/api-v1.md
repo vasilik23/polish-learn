@@ -97,9 +97,13 @@ that the catalog is permanently immutable.
 
 ## Learner contracts
 
-Three endpoints provide the minimum owner-scoped state needed by a
-future separate client:
+The owner-scoped learner API provides the state needed by a separate client:
 
+- `GET /api/v1/me/bootstrap/` — one cold-start snapshot with profile settings,
+  aggregate progress, canonical daily plan, resume point and stable API links;
+  failure of any required upstream returns `503`, never partial state;
+- `GET /api/v1/me/achievements/` — seven deterministic milestones derived from
+  current progress and dictionary state without duplicate mutable records;
 - `GET /api/v1/me/progress/` — profile level and daily goal, streak, active
   days, deterministic completed lesson IDs, and week/month aggregates;
 - `GET /api/v1/me/profile/` and strict `PATCH` — display name, curriculum

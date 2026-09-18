@@ -1,6 +1,7 @@
 """Browser views for the transitional Django authentication flow."""
 
 from dataclasses import replace
+from datetime import datetime
 from functools import wraps
 from urllib.parse import urlencode
 
@@ -38,6 +39,7 @@ from polskiflow.domain.course_catalog import (
 )
 from polskiflow.progress_store import load_dashboard_progress, save_profile_settings
 from polskiflow.reading_bookmark_store import load_reading_bookmarks
+from polskiflow.reminder_preference_store import load_reminder_preferences, save_reminder_preferences
 
 
 PROFILE_LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
@@ -486,7 +488,44 @@ def profile(request: HttpRequest) -> HttpResponse:
     }
     profile_message = ""
     profile_error = ""
-    if request.method == "POST":
+    reminder_preferences = load_reminder_preferences(
+        request.supabase_access_token,
+        request.supabase_user.id,
+    )
+    reminder_available = reminder_preferences is not None
+    if reminder_preferences is None:
+        reminder_preferences = {
+            "daily_reminder_enabled": False,
+            "reminder_time": "19:00",
+            "timezone": "Europe/Warsaw",
+        }
+    reminder_message = ""
+    reminder_error = ""
+    form_action = request.POST.get("form_action") if request.method == "POST" else None
+    if request.method == "POST" and form_action == "reminders":
+        reminder_time = request.POST.get("reminder_time", "")
+        try:
+            datetime.strptime(reminder_time, "%H:%M")
+        except ValueError:
+            reminder_error = "Укажите корректное время напоминания"
+        else:
+            reminder_preferences = {
+                "daily_reminder_enabled": request.POST.get("daily_reminder_enabled") == "on",
+                "reminder_time": reminder_time,
+                "timezone": "Europe/Warsaw",
+            }
+            if save_reminder_preferences(
+                request.supabase_access_token,
+                request.supabase_user.id,
+                reminder_preferences["daily_reminder_enabled"],
+                reminder_preferences["reminder_time"],
+                reminder_preferences["timezone"],
+            ):
+                reminder_message = "Настройки напоминаний сохранены"
+                reminder_available = True
+            else:
+                reminder_error = "Не удалось сохранить настройки напоминаний. Попробуйте ещё раз."
+    elif request.method == "POST":
         profile_form = {
             "display_name": request.POST.get("display_name", "").strip(),
             "level": request.POST.get("level", "").upper(),
@@ -538,6 +577,10 @@ def profile(request: HttpRequest) -> HttpResponse:
             "profile_message": profile_message,
             "profile_error": profile_error,
             "daily_goal_insight": daily_goal_insight,
+            "reminder_preferences": reminder_preferences,
+            "reminder_available": reminder_available,
+            "reminder_message": reminder_message,
+            "reminder_error": reminder_error,
         },
     )
 
