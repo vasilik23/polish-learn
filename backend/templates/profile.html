@@ -103,6 +103,7 @@
     <div class="section-heading"><div><p class="eyebrow">Персонализация</p><h2 id="settings-title">Настройки</h2></div></div>
     <form class="card profile-form" method="post">
       {% csrf_token %}
+      <input type="hidden" name="form_action" value="profile">
       {% if profile_message %}<p class="form-message" role="status">{{ profile_message }}</p>{% endif %}
       {% if profile_error %}<p class="form-error" role="alert">{{ profile_error }}</p>{% endif %}
       <div class="profile-form-fields">
@@ -130,6 +131,26 @@
         </label>
       </div>
       <button type="submit">Сохранить профиль</button>
+    </form>
+  </section>
+  <section class="profile-settings" aria-labelledby="reminders-title">
+    <div class="section-heading"><div><p class="eyebrow">Ритм занятий</p><h2 id="reminders-title">Напоминания</h2></div></div>
+    <form class="card profile-form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="form_action" value="reminders">
+      {% if reminder_message %}<p class="form-message" role="status">{{ reminder_message }}</p>{% endif %}
+      {% if reminder_error %}<p class="form-error" role="alert">{{ reminder_error }}</p>{% endif %}
+      {% if not reminder_available %}<p class="data-notice" role="status">Настройки напоминаний временно недоступны.</p>{% endif %}
+      <label>
+        <span><input name="daily_reminder_enabled" type="checkbox"{% if reminder_preferences.daily_reminder_enabled %} checked{% endif %}> Напоминать о занятиях каждый день</span>
+        <small>Напоминания выключены, пока ты сам их не включишь. На этом этапе мы только сохраняем выбор и ещё ничего не отправляем.</small>
+      </label>
+      <label>
+        <span>Время</span>
+        <input name="reminder_time" type="time" value="{{ reminder_preferences.reminder_time }}" required aria-describedby="reminder-time-help">
+        <small id="reminder-time-help">Часовой пояс: Europe/Warsaw.</small>
+      </label>
+      <button type="submit">Сохранить напоминания</button>
     </form>
   </section>
   <section class="profile-settings" aria-labelledby="data-export-title">

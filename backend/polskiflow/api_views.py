@@ -20,6 +20,7 @@ from polskiflow.domain.lesson_results import (
     validate_lesson_result,
 )
 from polskiflow.domain.daily_plan import build_daily_plan
+from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.api_rate_limit import consume_api_mutation
 from polskiflow.domain.openapi_v1 import build_openapi_v1
 from polskiflow.domain.native_lessons import NativeLessonError, build_native_lesson, evaluate_native_answer
@@ -560,6 +561,50 @@ def learner_bootstrap_v1(request):
                 "sm2": "/api/v1/me/sm2/",
                 "reading": "/api/v1/reading/",
             },
+        },
+    )
+
+
+@require_safe
+@require_supabase_user
+def learner_achievements_v1(request):
+    """Derive stable milestones from current owner-scoped learner state."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    fallback_name = (user.email or "learner").split("@", 1)[0]
+    progress = load_dashboard_progress(
+        request.supabase_access_token, user.id, fallback_name
+    )
+    words = load_personal_words(request.supabase_access_token, user.id)
+    if not progress.available or words is None:
+        return _unavailable_response("learner-achievements")
+    lesson_ids = {item["id"] for item in tasks()}
+    achievements = build_achievements(
+        completed_lessons=len(progress.all_completed_lesson_ids & lesson_ids),
+        streak_days=progress.streak_days,
+        dictionary_count=len(words),
+        active_days=progress.active_days,
+    )
+    items = [
+        {
+            "id": item.id,
+            "icon": item.icon,
+            "title": item.title,
+            "description": item.description,
+            "current": item.current,
+            "target": item.target,
+            "progress_percent": item.progress_percent,
+            "unlocked": item.unlocked,
+        }
+        for item in achievements
+    ]
+    return _private_response(
+        "learner-achievements",
+        {
+            "unlocked_count": sum(item["unlocked"] for item in items),
+            "achievement_count": len(items),
+            "achievements": items,
         },
     )
 
