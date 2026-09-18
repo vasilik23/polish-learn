@@ -76,6 +76,24 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Listening answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
                 },
             },
+            "/api/v1/interaction/": {
+                "get": {
+                    "operationId": "getNativeInteractionScenarios",
+                    "summary": "Get interaction and mediation prompts without answer keys",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Interaction scenarios without answer keys"), **{str(code): error_response for code in (401, 503)}},
+                }
+            },
+            "/api/v1/interaction/{scenario_id}/answer/": {
+                "parameters": [{"name": "scenario_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "post": {
+                    "operationId": "evaluateNativeInteractionAnswer",
+                    "summary": "Evaluate one interaction choice or sequence without persistence",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/InteractionAnswerRequest"}}}},
+                    "responses": {"200": _json_response("Interaction answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
+                },
+            },
             "/api/v1/reading/": {
                 "get": {
                     "operationId": "getNativeReadingLibrary",
@@ -311,6 +329,12 @@ def build_openapi_v1():
                         "question_id": {"type": "string", "minLength": 1, "maxLength": 80},
                         "selected_index": {"type": "integer", "minimum": 0},
                     },
+                },
+                "InteractionAnswerRequest": {
+                    "oneOf": [
+                        {"type": "object", "additionalProperties": False, "required": ["option_id"], "properties": {"option_id": {"type": "string", "minLength": 1, "maxLength": 40}}},
+                        {"type": "object", "additionalProperties": False, "required": ["block_ids"], "properties": {"block_ids": {"type": "array", "minItems": 1, "maxItems": 10, "uniqueItems": True, "items": {"type": "string", "minLength": 1, "maxLength": 40}}}},
+                    ]
                 },
                 "LessonDraftRequest": {
                     "type": "object",

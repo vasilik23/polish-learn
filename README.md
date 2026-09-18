@@ -100,6 +100,8 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/lessons/{lesson_id}/answer/` | серверная проверка одного ответа мобильного клиента |
 | `/api/v1/listening/` | bearer-only аудирование A1–B2 без ключей ответов |
 | `/api/v1/listening/{exercise_id}/answer/` | stateless-проверка одного ответа аудирования |
+| `/api/v1/interaction/` | bearer-only сценарии взаимодействия и медиации без ключей ответов |
+| `/api/v1/interaction/{scenario_id}/answer/` | stateless-проверка выбора или последовательности |
 | `/api/v1/reading/` | bearer-only библиотека учебных текстов с фильтрами и закладками |
 | `/api/v1/reading/{text_id}/` | абзацы, lemma-aware glossary, источник и comprehension-ссылка |
 | `/api/v1/reading/{text_id}/dictionary/` | сохранение проверенной леммы текста в личный словарь |
