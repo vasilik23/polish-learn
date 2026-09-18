@@ -131,6 +131,21 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Updated profile settings"), **{str(code): error_response for code in (400, 401, 413, 415, 429, 503)}},
                 },
             },
+            "/api/v1/me/feedback/": {
+                "get": {
+                    "operationId": "getLearnerFeedback",
+                    "summary": "List owner-scoped feedback and statuses",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Owner-scoped feedback history"), **private_errors},
+                },
+                "post": {
+                    "operationId": "createLearnerFeedback",
+                    "summary": "Create one owner-scoped feedback report",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FeedbackRequest"}}}},
+                    "responses": {"201": _json_response("Feedback accepted"), **{str(code): error_response for code in (400, 401, 413, 415, 429, 503)}},
+                },
+            },
             "/api/v1/me/today/": {
                 "get": {
                     "operationId": "getLearnerToday",
@@ -262,6 +277,15 @@ def build_openapi_v1():
                         "display_name": {"type": "string", "minLength": 1, "maxLength": 80},
                         "level": {"type": "string", "enum": ["A1", "A2", "B1", "B2", "C1", "C2"]},
                         "daily_goal_lessons": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                },
+                "FeedbackRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["category", "message"],
+                    "properties": {
+                        "category": {"type": "string", "enum": ["content", "translation", "interface", "technical", "idea"]},
+                        "message": {"type": "string", "minLength": 20, "maxLength": 2000},
+                        "page_url": {"type": "string", "maxLength": 300},
                     },
                 },
                 "GlossaryWordRequest": {

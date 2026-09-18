@@ -20,6 +20,12 @@ owner from `auth.uid()` and accepts neither a user ID nor client-selected quota.
 An instance-local cache remains only as a best-effort availability fallback
 when the limiter RPC itself is temporarily unreachable.
 
+`GET/POST /api/v1/me/feedback/` extends the existing owner-scoped feedback
+channel to separate clients. The server derives the owner from the Bearer
+session, accepts only five known categories, a 20–2000 character message and an
+optional internal path. Client-provided user IDs and external URLs are rejected;
+POST uses its own distributed mutation budget.
+
 `GET /api/v1/catalog/` is the first read-only contract for future mobile and
 other separate clients. `HEAD` is supported; mutation methods return `405`.
 The endpoint is public because the same active learning tables are readable by

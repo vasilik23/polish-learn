@@ -13,6 +13,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 from polskiflow.auth import require_supabase_user as require_authenticated_user
 from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, reading_texts, task, tasks
 from polskiflow.dictionary_store import delete_personal_word, load_personal_words, save_personal_word, save_personal_word_review
+from polskiflow.feedback_store import load_feedback, save_feedback
 from polskiflow.domain.lesson_results import (
     MAX_REQUEST_BYTES,
     LessonResultValidationError,
@@ -35,6 +36,7 @@ from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_readin
 API_VERSION = "v1"
 CATALOG_CONTRACT_VERSION = "1.0.0"
 LEARNER_CONTRACT_VERSION = "1.0.0"
+FEEDBACK_CATEGORIES = frozenset({"content", "translation", "interface", "technical", "idea"})
 
 
 def require_supabase_user(view):
@@ -296,6 +298,54 @@ def learner_profile_v1(request):
     ):
         return _unavailable_response("learner-profile")
     return _private_response("learner-profile", {"profile": profile})
+
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD", "POST"])
+@require_supabase_user
+def learner_feedback_v1(request):
+    """List or create feedback owned by the authenticated learner."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    if request.method in {"GET", "HEAD"}:
+        items = load_feedback(request.supabase_access_token, user.id)
+        if items is None:
+            return _unavailable_response("learner-feedback")
+        return _private_response("learner-feedback", {"items": items})
+    if limited := _mutation_rate_limit(request, "feedback"):
+        return limited
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 4096:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if not isinstance(payload, dict) or set(payload) not in (
+        {"category", "message"}, {"category", "message", "page_url"}
+    ):
+        return _error_response(
+            "validation_error", "Use category, message, and optional page_url", 400
+        )
+    category, message = payload.get("category"), payload.get("message")
+    page_url = payload.get("page_url", "")
+    if category not in FEEDBACK_CATEGORIES:
+        return _error_response("validation_error", "Unsupported feedback category", 400)
+    if not isinstance(message, str) or not 20 <= len(message.strip()) <= 2000:
+        return _error_response("validation_error", "message must contain 20..2000 characters", 400)
+    if not isinstance(page_url, str) or len(page_url) > 300 or (
+        page_url and (not page_url.startswith("/") or page_url.startswith("//"))
+    ):
+        return _error_response("validation_error", "page_url must be an internal path up to 300 characters", 400)
+    if not save_feedback(
+        request.supabase_access_token, user.id, category, message.strip(), page_url
+    ):
+        return _unavailable_response("learner-feedback")
+    return _private_response(
+        "learner-feedback", {"created": True, "status": "new"}, status=201
+    )
 
 
 @require_safe
@@ -751,7 +801,7 @@ def _serialize_review(word: dict, today: date) -> dict:
     }
 
 
-def _private_response(contract: str, data: dict) -> JsonResponse:
+def _private_response(contract: str, data: dict, *, status: int = 200) -> JsonResponse:
     response = JsonResponse(
         {
             "api_version": API_VERSION,
@@ -762,6 +812,7 @@ def _private_response(contract: str, data: dict) -> JsonResponse:
             },
             "data": data,
         },
+        status=status,
         json_dumps_params={"ensure_ascii": False},
     )
     response["Cache-Control"] = "private, no-store"
