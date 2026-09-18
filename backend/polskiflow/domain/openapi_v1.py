@@ -111,6 +111,24 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Preliminary recommendation and feedback"), **{str(code): error_response for code in (400, 401, 413, 415, 429)}},
                 }
             },
+            "/api/v1/writing/": {
+                "get": {
+                    "operationId": "getNativeWritingPrompts",
+                    "summary": "Get B1/B2 writing prompts and structural criteria",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Writing prompts and honest criteria"), **{str(code): error_response for code in (401, 503)}},
+                }
+            },
+            "/api/v1/writing/{prompt_id}/check/": {
+                "parameters": [{"name": "prompt_id", "in": "path", "required": True, "schema": {"type": "string", "maxLength": 100}}],
+                "post": {
+                    "operationId": "checkNativeWritingDraft",
+                    "summary": "Check observable draft structure without persistence or language grading",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WritingCheckRequest"}}}},
+                    "responses": {"200": _json_response("Observable structural checks"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
+                },
+            },
             "/api/v1/reading/": {
                 "get": {
                     "operationId": "getNativeReadingLibrary",
@@ -368,6 +386,11 @@ def build_openapi_v1():
                             "properties": {f"check_{index}": {"type": "string", "enum": ["a", "b", "c"]} for index in range(1, 9)},
                         },
                     },
+                },
+                "WritingCheckRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["text"],
+                    "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 16000}},
                 },
                 "LessonDraftRequest": {
                     "type": "object",
