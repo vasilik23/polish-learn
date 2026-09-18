@@ -101,6 +101,7 @@ API_MUTATION_RATE_LIMITS = {
     "bookmark": (int(os.environ.get("API_BOOKMARK_ATTEMPTS", "90")), 60),
     "draft": (int(os.environ.get("API_DRAFT_ATTEMPTS", "180")), 60),
     "result": (int(os.environ.get("API_RESULT_ATTEMPTS", "120")), 60),
+    "feedback": (int(os.environ.get("API_FEEDBACK_ATTEMPTS", "20")), 60),
 }
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
