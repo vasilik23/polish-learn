@@ -94,6 +94,23 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Interaction answer feedback"), **{str(code): error_response for code in (400, 401, 404, 413, 415, 429)}},
                 },
             },
+            "/api/v1/diagnostic/": {
+                "get": {
+                    "operationId": "getNativeDiagnostic",
+                    "summary": "Get a preliminary diagnostic without answer keys",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Diagnostic form without answer keys"), **{str(code): error_response for code in (401, 503)}},
+                }
+            },
+            "/api/v1/diagnostic/evaluate/": {
+                "post": {
+                    "operationId": "evaluateNativeDiagnostic",
+                    "summary": "Evaluate a complete diagnostic without persistence",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DiagnosticRequest"}}}},
+                    "responses": {"200": _json_response("Preliminary recommendation and feedback"), **{str(code): error_response for code in (400, 401, 413, 415, 429)}},
+                }
+            },
             "/api/v1/reading/": {
                 "get": {
                     "operationId": "getNativeReadingLibrary",
@@ -335,6 +352,22 @@ def build_openapi_v1():
                         {"type": "object", "additionalProperties": False, "required": ["option_id"], "properties": {"option_id": {"type": "string", "minLength": 1, "maxLength": 40}}},
                         {"type": "object", "additionalProperties": False, "required": ["block_ids"], "properties": {"block_ids": {"type": "array", "minItems": 1, "maxItems": 10, "uniqueItems": True, "items": {"type": "string", "minLength": 1, "maxLength": 40}}}},
                     ]
+                },
+                "DiagnosticRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["self_ratings", "answers"],
+                    "properties": {
+                        "self_ratings": {
+                            "type": "object", "additionalProperties": False,
+                            "required": ["reception", "production", "interaction", "mediation"],
+                            "properties": {key: {"type": "string", "enum": ["0", "1", "2", "3", "4", "5"]} for key in ("reception", "production", "interaction", "mediation")},
+                        },
+                        "answers": {
+                            "type": "object", "additionalProperties": False,
+                            "required": [f"check_{index}" for index in range(1, 9)],
+                            "properties": {f"check_{index}": {"type": "string", "enum": ["a", "b", "c"]} for index in range(1, 9)},
+                        },
+                    },
                 },
                 "LessonDraftRequest": {
                     "type": "object",
