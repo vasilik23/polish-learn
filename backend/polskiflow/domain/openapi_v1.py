@@ -207,6 +207,14 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Owner-scoped daily goal, tasks, progress, and resume point"), **private_errors},
                 }
             },
+            "/api/v1/me/bootstrap/": {
+                "get": {
+                    "operationId": "getLearnerBootstrap",
+                    "summary": "Get profile, progress, daily plan, resume point, and API links in one snapshot",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Owner-scoped native client bootstrap snapshot"), **private_errors},
+                }
+            },
             "/api/v1/me/history/": {
                 "get": {
                     "operationId": "getLearnerHistory",

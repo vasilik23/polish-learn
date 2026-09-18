@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.contrib import admin
 
-from polskiflow.api_views import catalog_v1, learner_feedback_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_profile_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_diagnostic_evaluate_v1, native_diagnostic_v1, native_dictionary_word_v1, native_interaction_answer_v1, native_interaction_v1, native_lesson_answer_v1, native_lesson_v1, native_listening_answer_v1, native_listening_v1, native_reading_detail_v1, native_reading_dictionary_v1, native_reading_library_v1, native_writing_check_v1, native_writing_v1, news_v1, openapi_v1
+from polskiflow.api_views import catalog_v1, learner_bootstrap_v1, learner_feedback_v1, learner_history_v1, learner_latest_lesson_draft_v1, learner_lesson_draft_v1, learner_profile_v1, learner_progress_v1, learner_reading_bookmark_v1, learner_reading_bookmarks_v1, learner_sm2_review_v1, learner_sm2_v1, learner_today_v1, lesson_results_session_v1, lesson_results_v1, native_diagnostic_evaluate_v1, native_diagnostic_v1, native_dictionary_word_v1, native_interaction_answer_v1, native_interaction_v1, native_lesson_answer_v1, native_lesson_v1, native_listening_answer_v1, native_listening_v1, native_reading_detail_v1, native_reading_dictionary_v1, native_reading_library_v1, native_writing_check_v1, native_writing_v1, news_v1, openapi_v1
 from polskiflow.account_views import account_security
 from polskiflow.auth import require_supabase_user
 from polskiflow.auth_views import course, daily_tasks, forgot_password, home, listening_practice, login_view, logout_view, profile, profile_data_export, register_view, resend_confirmation, reset_password, sources, writing_practice
@@ -93,6 +93,7 @@ urlpatterns = [
     path("api/v1/me/profile/", learner_profile_v1, name="api-v1-learner-profile"),
     path("api/v1/me/feedback/", learner_feedback_v1, name="api-v1-learner-feedback"),
     path("api/v1/me/today/", learner_today_v1, name="api-v1-learner-today"),
+    path("api/v1/me/bootstrap/", learner_bootstrap_v1, name="api-v1-learner-bootstrap"),
     path("api/v1/me/history/", learner_history_v1, name="api-v1-learner-history"),
     path("api/v1/me/lesson-drafts/latest/", learner_latest_lesson_draft_v1, name="api-v1-latest-lesson-draft"),
     path("api/v1/me/lesson-drafts/<slug:lesson_id>/", learner_lesson_draft_v1, name="api-v1-lesson-draft"),
