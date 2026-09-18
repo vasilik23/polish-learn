@@ -104,6 +104,8 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/interaction/{scenario_id}/answer/` | stateless-проверка выбора или последовательности |
 | `/api/v1/diagnostic/` | bearer-only предварительная диагностика без ключей ответов |
 | `/api/v1/diagnostic/evaluate/` | stateless-рекомендация старта без сохранения ответов |
+| `/api/v1/writing/` | bearer-only письменные задания B1/B2 и жанровые критерии |
+| `/api/v1/writing/{prompt_id}/check/` | stateless-проверка только наблюдаемой структуры черновика |
 | `/api/v1/reading/` | bearer-only библиотека учебных текстов с фильтрами и закладками |
 | `/api/v1/reading/{text_id}/` | абзацы, lemma-aware glossary, источник и comprehension-ссылка |
 | `/api/v1/reading/{text_id}/dictionary/` | сохранение проверенной леммы текста в личный словарь |
