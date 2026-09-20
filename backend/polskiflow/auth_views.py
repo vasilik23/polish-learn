@@ -590,6 +590,13 @@ def sources(request: HttpRequest) -> HttpResponse:
     return render(request, "sources.html")
 
 
+def privacy(request: HttpRequest) -> HttpResponse:
+    """Show a public, factual inventory of current data handling."""
+    response = render(request, "privacy.html")
+    response["Cache-Control"] = "public, max-age=300"
+    return response
+
+
 @require_browser_user
 def profile_data_export(request: HttpRequest) -> HttpResponse:
     """Download an owner-scoped, token-free learning-data snapshot."""
