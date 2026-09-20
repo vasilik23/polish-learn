@@ -61,3 +61,42 @@ class AccountSecurityTests(SimpleTestCase):
         self.client.cookies.clear()
         response = self.client.get("/login/?password_changed=1")
         self.assertContains(response, "Пароль обновлён. Теперь войдите с новым паролем.")
+
+    def test_delete_page_requires_authentication_and_is_not_cached(self):
+        response = self.client.get("/account/delete/")
+        self.assertContains(response, "Удаление аккаунта")
+        self.assertContains(response, "Введите УДАЛИТЬ")
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+        self.client.cookies.clear()
+        self.assertEqual(self.client.get("/account/delete/").status_code, 302)
+
+    @patch("polskiflow.account_views.delete_account")
+    def test_delete_requires_password_and_exact_confirmation(self, delete):
+        response = self.client.post("/account/delete/", {
+            "current_password": "CurrentPassword2026",
+            "confirmation": "удалить",
+        })
+        self.assertContains(response, "Введите УДАЛИТЬ без кавычек")
+        delete.assert_not_called()
+
+    @patch("polskiflow.account_views.delete_account")
+    def test_valid_delete_clears_cookies_and_confirms_on_login(self, delete):
+        response = self.client.post("/account/delete/", {
+            "current_password": "CurrentPassword2026",
+            "confirmation": "УДАЛИТЬ",
+        })
+        delete.assert_called_once_with("access", "user-1", "CurrentPassword2026")
+        self.assertRedirects(response, "/login/?account_deleted=1", fetch_redirect_response=False)
+        self.assertEqual(response.cookies[ACCESS_COOKIE]["max-age"], 0)
+        self.assertEqual(response.cookies[REFRESH_COOKIE]["max-age"], 0)
+        self.client.cookies.clear()
+        self.assertContains(self.client.get("/login/?account_deleted=1"), "Аккаунт и связанные учебные данные удалены.")
+
+    @patch("polskiflow.account_views.delete_account", side_effect=SupabaseAuthError("secret detail"))
+    def test_delete_error_is_neutral(self, _delete):
+        response = self.client.post("/account/delete/", {
+            "current_password": "WrongPassword2026",
+            "confirmation": "УДАЛИТЬ",
+        })
+        self.assertContains(response, "Проверьте пароль или повторите позже")
+        self.assertNotContains(response, "secret detail")
