@@ -145,7 +145,7 @@ Directory `backend`; платформа автоматически опреде�
 а основной production-адрес — `https://polish-learn.vercel.app`.
 
 Обязательные переменные для Preview и Production перечислены в `.env.example`.
-Секреты (`DJANGO_SECRET_KEY`, `DATABASE_URL`) задаются только в Vercel Dashboard.
+Секреты (`DJANGO_SECRET_KEY`, `DATABASE_URL`) задаются только в Vercel Dashboard. Привилегированное удаление аккаунта выполняет JWT-защищённая Supabase Edge Function; service-role credential не хранится в Vercel и не передаётся в HTML или клиентский JavaScript.
 Production migrations уже применены, а служебные Django-таблицы защищены от
 браузерных ролей миграцией `007_protect_django_internal_tables.sql`. Для нового
 окружения перед первым входом в `/admin/` выполните Django migrations и создайте

@@ -593,7 +593,9 @@ def sources(request: HttpRequest) -> HttpResponse:
 def privacy(request: HttpRequest) -> HttpResponse:
     """Show a public, factual inventory of current data handling."""
     response = render(request, "privacy.html")
-    response["Cache-Control"] = "public, max-age=300"
+    response["Cache-Control"] = (
+        "private, no-store" if request.supabase_user else "public, max-age=300"
+    )
     return response
 
 

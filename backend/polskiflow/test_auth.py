@@ -12,6 +12,7 @@ from polskiflow.auth import (
     SupabaseSession,
     SupabaseUser,
     authenticate_access_token,
+    delete_account,
     request_password_reset,
     resend_signup_confirmation,
     sign_in,
@@ -37,6 +38,23 @@ class _Response(io.BytesIO):
     SUPABASE_AUTH_RETRY_BACKOFF=0.01,
 )
 class SupabaseAuthTests(SimpleTestCase):
+    @patch("polskiflow.auth.urlopen")
+    def test_account_deletion_uses_user_jwt_and_password_only(self, urlopen):
+        urlopen.return_value = _Response(b'{"deleted_user_id":"user-123"}')
+        delete_account("user-access", "user-123", "CurrentPassword2026")
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.method, "POST")
+        self.assertTrue(request.full_url.endswith("/functions/v1/delete-account"))
+        self.assertEqual(request.get_header("Apikey"), "public-anon-key")
+        self.assertEqual(request.get_header("Authorization"), "Bearer user-access")
+        self.assertEqual(json.loads(request.data), {"password": "CurrentPassword2026"})
+
+    @patch("polskiflow.auth.urlopen")
+    def test_account_deletion_rejects_mismatched_worker_result(self, urlopen):
+        urlopen.return_value = _Response(b'{"deleted_user_id":"another-user"}')
+        with self.assertRaises(SupabaseAuthError):
+            delete_account("user-access", "user-123", "CurrentPassword2026")
+
     @patch("polskiflow.auth.urlopen")
     def test_password_recovery_uses_allowed_redirect(self, urlopen):
         urlopen.return_value = _Response(b"{}")

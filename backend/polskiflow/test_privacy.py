@@ -1,4 +1,8 @@
+from unittest.mock import patch
+
 from django.test import SimpleTestCase
+
+from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
 
 
 class PrivacyPageTests(SimpleTestCase):
@@ -9,7 +13,7 @@ class PrivacyPageTests(SimpleTestCase):
         self.assertContains(response, "Supabase")
         self.assertContains(response, "Vercel")
         self.assertContains(response, "Черновики письма")
-        self.assertContains(response, "Автоматическое удаление Auth-аккаунта ещё не запущено")
+        self.assertContains(response, "самостоятельно удалить аккаунт")
         self.assertContains(response, "юридическое имя контролёра")
         self.assertContains(response, "https://commission.europa.eu/")
         self.assertContains(response, "https://uodo.gov.pl/")
@@ -19,3 +23,10 @@ class PrivacyPageTests(SimpleTestCase):
         response = self.client.get("/privacy/")
         self.assertNotContains(response, "Скачать мои данные")
         self.assertContains(response, 'href="/login/"')
+
+    @patch("polskiflow.auth.authenticate_access_token", return_value=SupabaseUser("user-1", "learner@example.com"))
+    def test_authenticated_controls_are_private_and_not_cached(self, _authenticate):
+        self.client.cookies[ACCESS_COOKIE] = "access"
+        response = self.client.get("/privacy/")
+        self.assertContains(response, 'href="/account/delete/"')
+        self.assertEqual(response["Cache-Control"], "private, no-store")

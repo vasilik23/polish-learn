@@ -180,6 +180,18 @@ def sign_out(access_token: str) -> None:
     _auth_request("/auth/v1/logout", {}, access_token=access_token)
 
 
+def delete_account(access_token: str, user_id: str, password: str) -> None:
+    """Ask the JWT-protected Supabase worker to reauthenticate and delete its caller."""
+
+    payload = _auth_request(
+        "/functions/v1/delete-account",
+        {"password": password},
+        access_token=access_token,
+    )
+    if payload.get("deleted_user_id") != user_id:
+        raise SupabaseAuthError("Не удалось подтвердить удаление аккаунта")
+
+
 def set_auth_cookies(response, session: SupabaseSession) -> None:
     cookie_options = {
         "httponly": True,
@@ -260,6 +272,8 @@ def _auth_request(
     if not isinstance(result, dict):
         raise SupabaseAuthError("Некорректный ответ сервиса авторизации")
     return result
+
+
 
 
 def _http_error_message(error: HTTPError) -> str:

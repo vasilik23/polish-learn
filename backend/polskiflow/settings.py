@@ -92,6 +92,7 @@ AUTH_FORM_RATE_LIMITS = {
     "register": (int(os.environ.get("AUTH_REGISTER_ATTEMPTS", "5")), 60 * 60),
     "forgot": (int(os.environ.get("AUTH_RECOVERY_ATTEMPTS", "5")), 60 * 60),
     "resend": (int(os.environ.get("AUTH_RESEND_ATTEMPTS", "5")), 60 * 60),
+    "delete": (int(os.environ.get("AUTH_DELETE_ATTEMPTS", "5")), 60 * 60),
 }
 API_MUTATION_RATE_LIMITS = {
     "answer": (int(os.environ.get("API_ANSWER_ATTEMPTS", "180")), 60),

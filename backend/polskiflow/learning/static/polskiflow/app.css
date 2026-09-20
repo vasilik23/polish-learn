@@ -628,6 +628,9 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .account-security-form label { display: grid; gap: .4rem; font-weight: 700; }
 .account-security-form label small { color: var(--muted); font-weight: 500; }
 .account-security-form input { width: 100%; min-height: 3rem; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--surface); color: var(--text); font: inherit; }
+.danger-zone { border-color: var(--red); }
+.danger-zone .danger-button { background: var(--red); color: #fff; }
+.danger-zone .danger-button:hover { filter: brightness(.9); }
 .lesson-resume-notice { margin: 0 0 1rem; padding: .75rem 1rem; border-radius: .8rem; background: var(--primary-soft); color: var(--primary-dark); font-size: .86rem; font-weight: 700; }
 .resume-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem; align-items: center; margin-bottom: 1.25rem; }
 .resume-card h2, .resume-card p { margin: 0; }
