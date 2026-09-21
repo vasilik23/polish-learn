@@ -40,6 +40,10 @@ class SupabaseSession:
 class SupabaseAuthError(Exception):
     """A safe, user-facing Supabase Auth failure."""
 
+    def __init__(self, message: str, *, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+
 
 class SupabaseAuthMiddleware:
     """Resolve an optional Bearer token through Supabase Auth.
@@ -252,7 +256,9 @@ def _auth_request(
                     return {}
                 result = json.load(response)
         except HTTPError as error:
-            raise SupabaseAuthError(_http_error_message(error)) from error
+            raise SupabaseAuthError(
+                _http_error_message(error), status_code=error.code
+            ) from error
         except json.JSONDecodeError as error:
             raise SupabaseAuthError("Сервис авторизации вернул некорректный ответ") from error
         except (URLError, TimeoutError) as error:

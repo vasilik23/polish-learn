@@ -49,8 +49,9 @@ Production: [polish-learn.vercel.app](https://polish-learn.vercel.app)
 | Данные и Auth | Supabase Postgres, Auth, RLS |
 | Доставка | GitHub Actions, Vercel |
 
-Отдельный Next.js-клиент удалён после успешного переноса production. Для сборки
-и локальной разработки Node.js не требуется.
+Отдельный Next.js-клиент удалён после успешного переноса production. Runtime и
+сборка остаются Python-only; полный test suite дополнительно использует Node.js
+только для изолированного regression-теста браузерной offline-очереди.
 
 ## Быстрый запуск
 
@@ -94,8 +95,12 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/listening/` | пилот заданий на аудирование |
 | `/news/` | новости из нескольких источников и тематические фильтры |
 | `/profile/` | профиль и прогресс пользователя |
+| `/history/` | постраничная история завершённых уроков |
+| `/feedback/` | обратная связь и история её статусов |
+| `/profile/export/` | owner-scoped JSON-экспорт учебных данных |
+| `/account/security/` | смена пароля с повторной проверкой |
 | `/sources/` | источники и правила атрибуции |
-| `/privacy/` | публичный инвентарь данных, инфраструктуры и способов управления |
+| `/privacy/` | фактический публичный инвентарь данных; не замена финальной юридической политике |
 | `/account/delete/` | повторная проверка пароля и необратимое удаление аккаунта и связанных данных |
 | `/api/v1/catalog/` | публичный read-only каталог курса |
 | `/api/v1/lessons/{lesson_id}/` | bearer-only шаги урока без ключей ответов |
@@ -116,6 +121,7 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/openapi.json` | машинно-читаемый OpenAPI 3.1 контракт для отдельных клиентов |
 | `/api/v1/me/progress/` | owner-scoped read-only прогресс пользователя |
 | `/api/v1/me/profile/` | bearer-only настройки имени, уровня A1–C2 и дневной цели |
+| `/api/v1/me/account/` | bearer-only необратимое удаление аккаунта с повторной проверкой пароля |
 | `/api/v1/me/feedback/` | owner-scoped отправка обратной связи и история статусов |
 | `/api/v1/me/today/` | bearer-only дневная цель, план, выполнение и продолжение урока |
 | `/api/v1/me/bootstrap/` | единый owner-scoped стартовый snapshot для мобильного клиента |
@@ -123,6 +129,8 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/me/sm2/` | owner-scoped read-only очередь SM-2 |
 | `/api/v1/me/sm2/{word_id}/review/` | bearer-only оценка карточки и пересчёт SM-2 |
 | `/api/v1/me/reading-bookmarks/` | owner-scoped API сохранённых текстов |
+| `/api/v1/me/reading-bookmarks/{text_id}/` | bearer-only добавление или удаление сохранённого текста |
+| `/api/v1/me/history/` | bearer-only постраничная история завершённых уроков |
 | `/api/v1/me/lesson-drafts/latest/` | bearer-only чтение последнего незавершённого урока |
 | `/api/v1/me/lesson-drafts/{lesson_id}/` | bearer-only сохранение и удаление безопасного черновика |
 | `/api/v1/me/lesson-results/` | bearer-only идемпотентная отправка результата урока |
@@ -182,6 +190,9 @@ RLS; приложение обращается к ним с access token пол�
   Поиск уже работает в курсе, библиотеке и личном словаре; «Сегодня» объединяет
   цель и дневной план, а профиль открывает постраничную историю завершённых
   занятий за выбранный период.
+  Следующий внутренний продуктовый срез — адаптивное закрепление: не более
+  одного слабого недавнего урока в плане «Сегодня» с прозрачной причиной,
+  без AI/CEFR-диагноза и без вытеснения основного движения по курсу.
 - **Shipped foundation:** offline-очередь подключена к урокам слов, повторения, quiz и grammar через
   cookie-only CSRF-protected handoff к идемпотентному API. Полный offline → online
   recovery успешно проверен в production. API уже покрывает каталог, уроки и
