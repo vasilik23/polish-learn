@@ -28,3 +28,24 @@ curl --fail --max-time 10 https://polish-learn.vercel.app/ready/
 Use the returned `X-Request-ID` to correlate a failed client request with Vercel
 runtime logs. These probes do not replace synthetic user-flow monitoring,
 database backups, or alerts.
+
+## Read-only synthetic release smoke
+
+The `production_smoke` management command verifies the public probes, OpenAPI,
+catalog, authenticated bootstrap and complete data-export contracts. It only
+uses `GET`, checks request IDs and the private/no-store boundary, and never
+prints the access token or response data.
+
+Use a short-lived token belonging to a dedicated non-privileged smoke account:
+
+```shell
+export POLSKIFLOW_SMOKE_ACCESS_TOKEN='short-lived-token'
+backend/.venv/bin/python backend/manage.py production_smoke \
+  https://polskiflow-python.vercel.app
+```
+
+The token is accepted only through an environment variable, not a CLI argument.
+Do not store it in Git, workflow logs or long-lived repository variables. The
+command is a release/synthetic building block; continuous scheduling and alerts
+remain pending until secure token rotation for the dedicated account is in
+place.
