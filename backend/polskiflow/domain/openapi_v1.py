@@ -38,6 +38,21 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Complete portable learner snapshot"), **private_errors},
                 }
             },
+            "/api/v1/me/reminder-preferences/": {
+                "get": {
+                    "operationId": "getLearnerReminderPreferences",
+                    "summary": "Get explicit opt-in reminder settings and delivery status",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Owner-scoped reminder preferences"), **private_errors},
+                },
+                "patch": {
+                    "operationId": "patchLearnerReminderPreferences",
+                    "summary": "Enable, configure, or disable reminder preferences",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ReminderPreferencesPatchRequest"}}}},
+                    "responses": {"200": _json_response("Updated reminder preferences"), **{str(code): error_response for code in (400, 401, 413, 415, 429, 503)}},
+                },
+            },
             "/api/v1/catalog/": {
                 "get": {
                     "operationId": "getCatalog",
@@ -363,6 +378,13 @@ def build_openapi_v1():
                         "display_name": {"type": "string", "minLength": 1, "maxLength": 80},
                         "level": {"type": "string", "enum": ["A1", "A2", "B1", "B2", "C1", "C2"]},
                         "daily_goal_lessons": {"type": "integer", "minimum": 1, "maximum": 10},
+                    },
+                },
+                "ReminderPreferencesPatchRequest": {
+                    "type": "object", "additionalProperties": False, "minProperties": 1,
+                    "properties": {
+                        "daily_reminder_enabled": {"type": "boolean"},
+                        "reminder_time": {"type": "string", "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"},
                     },
                 },
                 "FeedbackRequest": {
