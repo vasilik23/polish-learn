@@ -533,6 +533,7 @@ def _build_today_data(progress, words, draft_result):
         personal_words=words,
         today=timezone.localdate(),
         daily_task_limit=progress.daily_goal_lessons,
+        recent_completion_results=progress.recent_completion_results,
     )
     serialized_tasks = [
         {
@@ -540,6 +541,8 @@ def _build_today_data(progress, words, draft_result):
             "description": item.get("description") or "", "minutes": item.get("minutes") or 0,
             "emoji": item.get("emoji") or "", "level": item.get("level") or progress.level,
             "completed": bool(item["completed"]),
+            "plan_type": item.get("plan_type", "lesson"),
+            "reinforcement_reason": item.get("reinforcement_reason"),
             "path": "/dictionary/practice/" if item["kind"] == "dictionary-review" else f"/lesson/{item['id']}/",
             "api_path": "/api/v1/me/sm2/" if item["kind"] == "dictionary-review" else f"/api/v1/lessons/{item['id']}/",
         }

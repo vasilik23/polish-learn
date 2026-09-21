@@ -30,6 +30,7 @@ class DashboardProgress:
     monthly_completed_count: int = 0
     daily_goal_lessons: int = 4
     recent_daily_completion_counts: tuple[int, ...] = ()
+    recent_completion_results: tuple[dict, ...] = ()
 
     @property
     def completed_count(self) -> int:
@@ -77,7 +78,7 @@ def load_dashboard_progress(
     completions = _get_rows(
         "lesson_completions",
         {
-            "select": "lesson_id,plan_date",
+            "select": "lesson_id,plan_date,cards_total,cards_known",
             "user_id": f"eq.{user_id}",
             "order": "plan_date.desc",
             "limit": "1500",
@@ -96,6 +97,7 @@ def load_dashboard_progress(
     monthly_lesson_ids = set()
     completed_today = set()
     completed_all_time = set()
+    recent_completion_results = []
     recent_lessons_by_date = {
         today - timedelta(days=offset): set() for offset in range(28)
     }
@@ -124,6 +126,25 @@ def load_dashboard_progress(
             completed_all_time.add(lesson_id)
             if plan_date == today:
                 completed_today.add(lesson_id)
+            if today - timedelta(days=29) <= plan_date < today:
+                cards_total = completion.get("cards_total")
+                cards_known = completion.get("cards_known")
+                if (
+                    isinstance(cards_total, int)
+                    and not isinstance(cards_total, bool)
+                    and cards_total > 0
+                    and isinstance(cards_known, int)
+                    and not isinstance(cards_known, bool)
+                    and 0 <= cards_known <= cards_total
+                ):
+                    recent_completion_results.append(
+                        {
+                            "lesson_id": lesson_id,
+                            "plan_date": plan_date.isoformat(),
+                            "cards_total": cards_total,
+                            "cards_known": cards_known,
+                        }
+                    )
 
     return DashboardProgress(
         display_name=profile_row.get("display_name") or fallback_name,
@@ -144,6 +165,7 @@ def load_dashboard_progress(
             len(recent_lessons_by_date[today - timedelta(days=offset)])
             for offset in range(27, -1, -1)
         ),
+        recent_completion_results=tuple(recent_completion_results),
     )
 
 

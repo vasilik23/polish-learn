@@ -115,8 +115,10 @@ The owner-scoped learner API provides the state needed by a separate client:
   return `403`, while worker outages return `503`;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
-  point. A dictionary-review task links both the browser practice and native
-  SM-2 queue;
+  point. At most one task can have `plan_type=reinforcement` with a transparent
+  `reinforcement_reason` (`cards_known`, `cards_total`, threshold), while the
+  normal forward lesson remains first. A dictionary-review task links both the
+  browser practice and native SM-2 queue;
 - `GET /api/v1/me/sm2/` — personal dictionary review schedule, current due
   count, and the SM-2 fields required to render the learner's queue.
 - `GET /api/v1/me/reading-bookmarks/` — deterministic IDs of saved texts.

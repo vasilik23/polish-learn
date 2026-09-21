@@ -745,6 +745,7 @@ def _daily_plan(request: HttpRequest):
         personal_words=personal_words,
         today=timezone.localdate(),
         daily_task_limit=dashboard.daily_goal_lessons,
+        recent_completion_results=dashboard.recent_completion_results,
     )
     completed_count = sum(task["completed"] for task in lesson_tasks)
     progress_percent = (

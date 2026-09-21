@@ -105,3 +105,54 @@ class DailyPlanTests(SimpleTestCase):
             daily_task_limit=2,
         )
         self.assertEqual(len(plan), 2)
+
+    def test_low_recent_result_adds_one_transparent_reinforcement(self):
+        plan = build_daily_plan(
+            self.lessons,
+            level="A2",
+            completed_all_time=frozenset({"a2-one"}),
+            completed_today=frozenset(),
+            personal_words=[],
+            today=date(2026, 8, 28),
+            recent_completion_results=(
+                {"lesson_id": "a2-one", "plan_date": "2026-08-27", "cards_total": 5, "cards_known": 3},
+            ),
+        )
+        self.assertEqual(plan[0]["id"], "a2-two")
+        self.assertEqual(plan[1]["id"], "a2-one")
+        self.assertEqual(plan[1]["plan_type"], "reinforcement")
+        self.assertEqual(plan[1]["title"], "Закрепить: a2-one")
+        self.assertEqual(plan[1]["description"], "Результат 3 из 5 — стоит закрепить")
+        self.assertEqual(plan[1]["reinforcement_reason"]["threshold_percent"], 70)
+        self.assertEqual(len(plan), 4)
+
+    def test_reinforcement_is_not_added_for_high_score_today_or_goal_one(self):
+        cases = (
+            ({"lesson_id": "a2-one", "plan_date": "2026-08-27", "cards_total": 5, "cards_known": 4}, frozenset(), 4),
+            ({"lesson_id": "a2-one", "plan_date": "2026-08-27", "cards_total": 5, "cards_known": 2}, frozenset({"a2-one"}), 4),
+            ({"lesson_id": "a2-one", "plan_date": "2026-08-27", "cards_total": 5, "cards_known": 2}, frozenset(), 1),
+        )
+        for result, completed_today, goal in cases:
+            with self.subTest(result=result, completed_today=completed_today, goal=goal):
+                plan = build_daily_plan(
+                    self.lessons, level="A2",
+                    completed_all_time=frozenset({"a2-one"}),
+                    completed_today=completed_today, personal_words=[],
+                    today=date(2026, 8, 28), daily_task_limit=goal,
+                    recent_completion_results=(result,),
+                )
+                self.assertFalse(any(task.get("plan_type") == "reinforcement" for task in plan))
+
+    def test_reinforcement_keeps_dictionary_review_and_daily_limit(self):
+        plan = build_daily_plan(
+            self.lessons, level="A2",
+            completed_all_time=frozenset({"a2-one"}), completed_today=frozenset(),
+            personal_words=[{"next_review_date": "2026-08-27"}] * 4,
+            today=date(2026, 8, 28), daily_task_limit=3,
+            recent_completion_results=(
+                {"lesson_id": "a2-one", "plan_date": "2026-08-27", "cards_total": 10, "cards_known": 2},
+            ),
+        )
+        self.assertEqual(len(plan), 3)
+        self.assertEqual(plan[1]["plan_type"], "reinforcement")
+        self.assertEqual(plan[-1]["kind"], "dictionary-review")

@@ -66,6 +66,31 @@ class TodayApiTests(TestCase):
         self.assertEqual(review["path"], "/dictionary/practice/")
         self.assertEqual(review["api_path"], "/api/v1/me/sm2/")
 
+    def test_low_recent_result_is_identical_transparent_reinforcement(self):
+        progress = DashboardProgress(
+            "Ada", "A2", 3, frozenset(), True,
+            all_completed_lesson_ids=frozenset({"lesson-done"}), daily_goal_lessons=3,
+            recent_completion_results=(
+                {"lesson_id": "lesson-done", "plan_date": "2026-09-15", "cards_total": 5, "cards_known": 2},
+            ),
+        )
+        lessons = [
+            {"id": "lesson-done", "kind": "words", "title": "Słowa", "level": "A2"},
+            {"id": "lesson-next", "kind": "quiz", "title": "Quiz", "level": "A2"},
+            {"id": "lesson-later", "kind": "grammar", "title": "Gramatyka", "level": "A2"},
+        ]
+        with self._auth(), patch("polskiflow.api_views.load_dashboard_progress", return_value=progress), patch(
+            "polskiflow.api_views.load_personal_words", return_value=[]
+        ), patch("polskiflow.api_views.load_latest_lesson_draft_result", return_value=LessonDraftLoadResult(True)), patch(
+            "polskiflow.api_views.tasks", return_value=lessons
+        ), patch("polskiflow.api_views.timezone.localdate", return_value=date(2026, 9, 16)):
+            response = self.client.get("/api/v1/me/today/", **self.authorization)
+        reinforcement = response.json()["data"]["tasks"][1]
+        self.assertEqual(reinforcement["id"], "lesson-done")
+        self.assertEqual(reinforcement["plan_type"], "reinforcement")
+        self.assertEqual(reinforcement["reinforcement_reason"]["cards_known"], 2)
+        self.assertEqual(reinforcement["description"], "Результат 2 из 5 — стоит закрепить")
+
     def test_any_owner_data_failure_returns_503_not_partial_plan(self):
         failures = (
             (self._progress(False), [], LessonDraftLoadResult(True)),

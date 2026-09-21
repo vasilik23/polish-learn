@@ -150,7 +150,7 @@ class ProgressStoreTests(SimpleTestCase):
             [
                 {"lesson_id": "words", "plan_date": "2026-08-17"},
                 {"lesson_id": "quiz", "plan_date": "2026-08-17"},
-                {"lesson_id": "grammar", "plan_date": "2026-08-16"},
+                {"lesson_id": "grammar", "plan_date": "2026-08-16", "cards_total": 5, "cards_known": 2},
             ]
         ).encode()
         mocked_urlopen.return_value.__enter__.side_effect = [
@@ -174,6 +174,10 @@ class ProgressStoreTests(SimpleTestCase):
         self.assertEqual(dashboard.monthly_completed_count, 3)
         self.assertEqual(len(dashboard.recent_daily_completion_counts), 28)
         self.assertEqual(dashboard.recent_daily_completion_counts[-2:], (1, 2))
+        self.assertEqual(
+            dashboard.recent_completion_results,
+            ({"lesson_id": "grammar", "plan_date": "2026-08-16", "cards_total": 5, "cards_known": 2},),
+        )
         self.assertTrue(dashboard.available)
         for call in mocked_urlopen.call_args_list:
             request = call.args[0]

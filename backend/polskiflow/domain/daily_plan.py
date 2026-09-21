@@ -15,6 +15,7 @@ def build_daily_plan(
     personal_words: list[dict] | None,
     today: date,
     daily_task_limit: int = DAILY_TASK_LIMIT,
+    recent_completion_results: tuple[dict, ...] = (),
 ) -> list[dict]:
     """Choose the next lessons and, when useful, an SM-2 review."""
 
@@ -45,6 +46,17 @@ def build_daily_plan(
     lesson_limit = max(1, min(10, daily_task_limit)) - int(can_review)
     plan = [dict(lesson) for lesson in ordered[:lesson_limit]]
 
+    reinforcement = _reinforcement_task(
+        candidates,
+        recent_completion_results,
+        completed_today=completed_today,
+        today=today,
+    )
+    if reinforcement is not None and lesson_limit >= 2:
+        plan = [task for task in plan if task["id"] != reinforcement["id"]]
+        plan.insert(min(1, len(plan)), reinforcement)
+        plan = plan[:lesson_limit]
+
     if can_review:
         plan.append(
             {
@@ -63,6 +75,57 @@ def build_daily_plan(
     for task in plan:
         task["completed"] = task["id"] in completed_today
     return plan
+
+
+def _reinforcement_task(
+    lessons: list[dict],
+    results: tuple[dict, ...],
+    *,
+    completed_today: frozenset[str],
+    today: date,
+) -> dict | None:
+    lesson_by_id = {lesson["id"]: lesson for lesson in lessons}
+    candidates = []
+    for result in results:
+        lesson_id = result.get("lesson_id")
+        lesson = lesson_by_id.get(lesson_id)
+        total, known = result.get("cards_total"), result.get("cards_known")
+        try:
+            plan_date = date.fromisoformat(result.get("plan_date", ""))
+        except (TypeError, ValueError):
+            continue
+        if (
+            lesson is None
+            or lesson_id in completed_today
+            or not isinstance(total, int)
+            or isinstance(total, bool)
+            or total <= 0
+            or not isinstance(known, int)
+            or isinstance(known, bool)
+            or not 0 <= known <= total
+            or known / total >= 0.7
+            or plan_date >= today
+            or (today - plan_date).days > 29
+        ):
+            continue
+        candidates.append((known / total, -plan_date.toordinal(), lesson_id, lesson, known, total))
+    if not candidates:
+        return None
+    _, _, _, lesson, known, total = min(candidates)
+    task = dict(lesson)
+    task.update(
+        {
+            "title": f"Закрепить: {lesson['title']}",
+            "description": f"Результат {known} из {total} — стоит закрепить",
+            "plan_type": "reinforcement",
+            "reinforcement_reason": {
+                "cards_known": known,
+                "cards_total": total,
+                "threshold_percent": 70,
+            },
+        }
+    )
+    return task
 
 
 def _due_word_count(words: list[dict] | None, today: date) -> int:
