@@ -4,6 +4,7 @@ from datetime import date
 from functools import wraps
 
 import json
+import re
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -36,6 +37,7 @@ from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event, save_profile_settings
 from polskiflow.privacy_export_store import load_privacy_export
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
+from polskiflow.reminder_preference_store import load_reminder_preferences, save_reminder_preferences
 
 
 API_VERSION = "v1"
@@ -474,6 +476,59 @@ def learner_profile_v1(request):
     ):
         return _unavailable_response("learner-profile")
     return _private_response("learner-profile", {"profile": profile})
+
+
+@csrf_exempt
+@require_http_methods(["GET", "HEAD", "PATCH"])
+@require_supabase_user
+def learner_reminder_preferences_v1(request):
+    """Read or update explicit opt-in reminder settings; delivery is not implied."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    user = request.supabase_user
+    preferences = load_reminder_preferences(request.supabase_access_token, user.id)
+    if preferences is None:
+        return _unavailable_response("learner-reminder-preferences")
+    if request.method in {"GET", "HEAD"}:
+        return _private_response(
+            "learner-reminder-preferences",
+            {"preferences": preferences, "delivery_active": False},
+        )
+    if limited := _mutation_rate_limit(request, "profile"):
+        return limited
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 512:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    allowed = {"daily_reminder_enabled", "reminder_time"}
+    if not isinstance(payload, dict) or not payload or not set(payload) <= allowed:
+        return _error_response("validation_error", "Use one or more supported reminder fields", 400)
+    enabled = payload.get("daily_reminder_enabled", preferences["daily_reminder_enabled"])
+    reminder_time = payload.get("reminder_time", preferences["reminder_time"])
+    if not isinstance(enabled, bool):
+        return _error_response("validation_error", "daily_reminder_enabled must be boolean", 400)
+    if not isinstance(reminder_time, str) or not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", reminder_time):
+        return _error_response("validation_error", "reminder_time must use HH:MM", 400)
+    timezone_name = "Europe/Warsaw"
+    if not save_reminder_preferences(
+        request.supabase_access_token, user.id, enabled, reminder_time, timezone_name
+    ):
+        return _unavailable_response("learner-reminder-preferences")
+    return _private_response(
+        "learner-reminder-preferences",
+        {
+            "preferences": {
+                "daily_reminder_enabled": enabled,
+                "reminder_time": reminder_time,
+                "timezone": timezone_name,
+            },
+            "delivery_active": False,
+        },
+    )
 
 
 @csrf_exempt

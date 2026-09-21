@@ -116,6 +116,10 @@ The owner-scoped learner API provides the state needed by a separate client:
 - `GET /api/v1/me/export/` — complete schema-versioned portable snapshot of
   supported owner-scoped data. It shares the browser export source, paginates
   every dataset and returns `503` instead of a partial archive;
+- `GET` and strict `PATCH /api/v1/me/reminder-preferences/` — owner-scoped
+  opt-in, Warsaw time and complete disable control. The response explicitly
+  reports `delivery_active=false` until a separately reviewed delivery channel
+  exists;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
   point. At most one task can have `plan_type=reinforcement` with a transparent
