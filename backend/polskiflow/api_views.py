@@ -34,6 +34,7 @@ from polskiflow.learning.models import Lesson, Level
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_latest_lesson_draft_result, save_lesson_draft
 from polskiflow.news_feed import CATEGORIES, CATEGORY_IDS, latest_official_news
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress, record_lesson_result_event, save_profile_settings
+from polskiflow.privacy_export_store import load_privacy_export
 from polskiflow.reading_bookmark_store import load_reading_bookmarks, set_reading_bookmark
 
 
@@ -99,6 +100,27 @@ def learner_account_v1(request):
             status,
         )
     return _private_response("learner-account", {"deleted": True})
+
+
+@require_safe
+@require_supabase_user
+def learner_data_export_v1(request):
+    """Return a complete portable snapshot for the authenticated owner."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    export = load_privacy_export(
+        request.supabase_access_token, str(request.supabase_user.id)
+    )
+    if not export.available:
+        return _unavailable_response("learner-data-export")
+    return _private_response(
+        "learner-data-export",
+        {
+            "schema_version": "2.0",
+            "account": {"email": request.supabase_user.email},
+            **export.datasets,
+        },
+    )
 
 
 @require_safe

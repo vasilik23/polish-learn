@@ -19,6 +19,7 @@ class OpenApiV1Tests(SimpleTestCase):
                 "/api/v1/catalog/", "/api/v1/news/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
                 "/api/v1/me/profile/",
                 "/api/v1/me/account/",
+                "/api/v1/me/export/",
                 "/api/v1/me/feedback/",
                 "/api/v1/me/today/",
                 "/api/v1/me/bootstrap/",

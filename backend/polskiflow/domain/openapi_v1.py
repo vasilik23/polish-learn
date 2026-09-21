@@ -30,6 +30,14 @@ def build_openapi_v1():
                     "responses": {"200": _json_response("Account deleted"), **{str(code): error_response for code in (400, 401, 403, 405, 413, 415, 429, 503)}},
                 }
             },
+            "/api/v1/me/export/": {
+                "get": {
+                    "operationId": "exportLearnerData",
+                    "summary": "Export all supported owner-scoped learner data",
+                    "security": [{"supabaseBearer": []}],
+                    "responses": {"200": _json_response("Complete portable learner snapshot"), **private_errors},
+                }
+            },
             "/api/v1/catalog/": {
                 "get": {
                     "operationId": "getCatalog",
