@@ -122,6 +122,7 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/me/progress/` | owner-scoped read-only прогресс пользователя |
 | `/api/v1/me/profile/` | bearer-only настройки имени, уровня A1–C2 и дневной цели |
 | `/api/v1/me/account/` | bearer-only необратимое удаление аккаунта с повторной проверкой пароля |
+| `/api/v1/me/export/` | bearer-only полный переносимый экспорт owner-scoped данных |
 | `/api/v1/me/feedback/` | owner-scoped отправка обратной связи и история статусов |
 | `/api/v1/me/today/` | bearer-only дневная цель, план, выполнение и продолжение урока |
 | `/api/v1/me/bootstrap/` | единый owner-scoped стартовый snapshot для мобильного клиента |

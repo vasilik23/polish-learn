@@ -113,6 +113,9 @@ The owner-scoped learner API provides the state needed by a separate client:
   caller after password reauthentication. The strict payload contains only
   `password`; ownership comes from the verified Bearer token. Wrong credentials
   return `403`, while worker outages return `503`;
+- `GET /api/v1/me/export/` — complete schema-versioned portable snapshot of
+  supported owner-scoped data. It shares the browser export source, paginates
+  every dataset and returns `503` instead of a partial archive;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
   point. At most one task can have `plan_type=reinforcement` with a transparent
