@@ -21,6 +21,15 @@ def build_openapi_v1():
         },
         "servers": [{"url": "/", "description": "Same-origin deployment"}],
         "paths": {
+            "/api/v1/me/account/": {
+                "delete": {
+                    "operationId": "deleteLearnerAccount",
+                    "summary": "Permanently delete the authenticated account after password reauthentication",
+                    "security": [{"supabaseBearer": []}],
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountDeletionRequest"}}}},
+                    "responses": {"200": _json_response("Account deleted"), **{str(code): error_response for code in (400, 401, 403, 405, 413, 415, 429, 503)}},
+                }
+            },
             "/api/v1/catalog/": {
                 "get": {
                     "operationId": "getCatalog",
@@ -407,6 +416,11 @@ def build_openapi_v1():
                     "type": "object", "additionalProperties": False,
                     "required": ["text"],
                     "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 16000}},
+                },
+                "AccountDeletionRequest": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["password"],
+                    "properties": {"password": {"type": "string", "minLength": 1, "maxLength": 1024, "format": "password"}},
                 },
                 "LessonDraftRequest": {
                     "type": "object",

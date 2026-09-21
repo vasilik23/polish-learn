@@ -1,4 +1,5 @@
 import uuid
+from unittest.mock import patch
 
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase
@@ -36,3 +37,30 @@ class RequestIdMiddlewareTests(SimpleTestCase):
             response = middleware(request)
         self.assertIn(f"request_id={response['X-Request-ID']}", captured.output[0])
         self.assertIn("path=/health/", captured.output[0])
+        self.assertIn("duration_ms=", captured.output[0])
+
+    @patch("polskiflow.request_id.time.monotonic", side_effect=(10, 12))
+    def test_slow_request_is_logged_without_query_string(self, _monotonic):
+        middleware = RequestIdMiddleware(lambda _request: HttpResponse(status=200))
+        request = RequestFactory().get("/reading/?token=secret")
+        with self.assertLogs("polskiflow.request", level="WARNING") as captured:
+            middleware(request)
+
+        self.assertIn("request_slow", captured.output[0])
+        self.assertIn("path=/reading/", captured.output[0])
+        self.assertNotIn("token", captured.output[0])
+
+    def test_uncaught_exception_is_logged_and_reraised(self):
+        def fail(_request):
+            raise RuntimeError("boom")
+
+        middleware = RequestIdMiddleware(fail)
+        request = RequestFactory().get("/health/")
+        with self.assertLogs("polskiflow.request", level="ERROR") as captured:
+            with self.assertRaises(RuntimeError):
+                middleware(request)
+
+        self.assertIn("request_exception", captured.output[0])
+        self.assertIn("request_id=", captured.output[0])
+        self.assertIn("exception_type=RuntimeError", captured.output[0])
+        self.assertNotIn("boom", captured.output[0])

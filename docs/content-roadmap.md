@@ -227,7 +227,7 @@ distributed mutation budget.
    кодом при регрессии release budgets. Отдельный ручной Preview job теперь
    последовательно собирает по три performance/accessibility отчёта публичных
    `/login/` и `/sources/`, проверяет медианы и сохраняет JSON-артефакты.
-   Workflow переведены на Node 24-совместимые GitHub Actions. Следующий шаг — добавить
+   GitHub Actions workflows переведены на Node 24-совместимые версии. Следующий шаг — добавить
    безопасный авторизованный маршрут и field INP после накопления достаточного
    объёма real-user данных; lab TBT не выдаётся за INP.
 5. ✅ Первый аудит основных сценариев по WCAG 2.2 AA проведён и зафиксирован:

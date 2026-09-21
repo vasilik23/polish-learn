@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods, require_POST, require_safe
 
-from polskiflow.auth import require_supabase_user as require_authenticated_user
+from polskiflow.auth import SupabaseAuthError, delete_account, require_supabase_user as require_authenticated_user
 from polskiflow.content import flashcards, grammar, public_course_catalog, quiz, reading_text, reading_texts, task, tasks
 from polskiflow.dictionary_store import delete_personal_word, load_personal_words, save_personal_word, save_personal_word_review
 from polskiflow.feedback_store import load_feedback, save_feedback
@@ -58,6 +58,47 @@ def require_supabase_user(view):
         return protected(request, *args, **kwargs)
 
     return wraps(view)(api_protected)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@require_supabase_user
+def learner_account_v1(request):
+    """Permanently delete the authenticated caller after password reauthentication."""
+    if not _valid_bearer(request):
+        return _error_response("bearer_required", "A valid Bearer token is required", 401)
+    if limited := _mutation_rate_limit(request, "account"):
+        return limited
+    if request.content_type != "application/json":
+        return _error_response("unsupported_media_type", "Content-Type must be application/json", 415)
+    if len(request.body) > 2048:
+        return _error_response("payload_too_large", "Request body is too large", 413)
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error_response("invalid_json", "Request body must be valid JSON", 400)
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != {"password"}
+        or not isinstance(payload["password"], str)
+        or not payload["password"]
+        or len(payload["password"]) > 1024
+    ):
+        return _error_response("validation_error", "Use exactly one non-empty password string", 400)
+    try:
+        delete_account(
+            request.supabase_access_token,
+            str(request.supabase_user.id),
+            payload["password"],
+        )
+    except SupabaseAuthError as error:
+        status = 403 if error.status_code == 403 else 503
+        return _error_response(
+            "password_verification_failed" if status == 403 else "account_deletion_unavailable",
+            "Password verification failed or account deletion is temporarily unavailable",
+            status,
+        )
+    return _private_response("learner-account", {"deleted": True})
 
 
 @require_safe

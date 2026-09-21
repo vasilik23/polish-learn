@@ -18,6 +18,7 @@ class OpenApiV1Tests(SimpleTestCase):
             {
                 "/api/v1/catalog/", "/api/v1/news/", "/api/v1/me/progress/", "/api/v1/me/sm2/",
                 "/api/v1/me/profile/",
+                "/api/v1/me/account/",
                 "/api/v1/me/feedback/",
                 "/api/v1/me/today/",
                 "/api/v1/me/bootstrap/",
@@ -89,7 +90,10 @@ class OpenApiV1Tests(SimpleTestCase):
         serialized = json.dumps(document).lower()
         self.assertNotIn("service_role", serialized)
         self.assertNotIn("refresh_token", serialized)
-        self.assertNotIn("password", serialized)
+        deletion = document["components"]["schemas"]["AccountDeletionRequest"]
+        self.assertEqual(deletion["required"], ["password"])
+        self.assertFalse(deletion["additionalProperties"])
+        self.assertEqual(deletion["properties"]["password"]["format"], "password")
 
     def test_document_supports_head_and_rejects_mutation(self):
         self.assertEqual(self.client.head("/api/v1/openapi.json").status_code, 200)

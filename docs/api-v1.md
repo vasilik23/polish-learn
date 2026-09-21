@@ -109,6 +109,10 @@ The owner-scoped learner API provides the state needed by a separate client:
 - `GET /api/v1/me/profile/` and strict `PATCH` — display name, curriculum
   target A1–C2 and daily goal from 1 to 10. Partial updates merge with the
   current owner-scoped profile; user IDs and unknown fields are rejected;
+- `DELETE /api/v1/me/account/` — permanently deletes only the authenticated
+  caller after password reauthentication. The strict payload contains only
+  `password`; ownership comes from the verified Bearer token. Wrong credentials
+  return `403`, while worker outages return `503`;
 - `GET /api/v1/me/today/` — canonical owner-scoped daily plan shared by
   separate clients: goal, ordered tasks, completion percentage and safe resume
   point. A dictionary-review task links both the browser practice and native

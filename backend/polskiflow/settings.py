@@ -87,6 +87,7 @@ SUPABASE_AUTH_RETRY_BACKOFF = float(
     os.environ.get("SUPABASE_AUTH_RETRY_BACKOFF", "0.2")
 )
 VERCEL = os.environ.get("VERCEL", "") == "1"
+REQUEST_SLOW_THRESHOLD_MS = int(os.environ.get("REQUEST_SLOW_THRESHOLD_MS", "1500"))
 AUTH_FORM_RATE_LIMITS = {
     "login": (int(os.environ.get("AUTH_LOGIN_ATTEMPTS", "10")), 15 * 60),
     "register": (int(os.environ.get("AUTH_REGISTER_ATTEMPTS", "5")), 60 * 60),
@@ -103,6 +104,7 @@ API_MUTATION_RATE_LIMITS = {
     "draft": (int(os.environ.get("API_DRAFT_ATTEMPTS", "180")), 60),
     "result": (int(os.environ.get("API_RESULT_ATTEMPTS", "120")), 60),
     "feedback": (int(os.environ.get("API_FEEDBACK_ATTEMPTS", "20")), 60),
+    "account": (int(os.environ.get("API_ACCOUNT_ATTEMPTS", "5")), 60 * 60),
 }
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", str(not DEBUG)).lower() == "true"
 CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
