@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LoginScreen } from './src/components/LoginScreen';
 import { TodayScreen } from './src/components/TodayScreen';
 import { LessonScreen } from './src/components/LessonScreen';
+import { FeedbackScreen } from './src/components/FeedbackScreen';
 import { supabase } from './src/lib/supabase';
 import { palette } from './src/theme';
 
@@ -15,6 +16,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonLaunch, setLessonLaunch] = useState<{ lessonId: string; stepIndex: number; score: number } | null>(null);
+  const [screen, setScreen] = useState<'today' | 'feedback'>('today');
 
   useEffect(() => {
     let mounted = true;
@@ -39,7 +41,9 @@ export default function App() {
       <StatusBar style={dark ? 'light' : 'dark'} />
       {session ? (lessonLaunch
         ? <LessonScreen {...lessonLaunch} session={session} colors={colors} onClose={() => setLessonLaunch(null)} />
-        : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} />
+        : screen === 'feedback'
+          ? <FeedbackScreen session={session} colors={colors} onClose={() => setScreen('today')} />
+          : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} />
       ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );
