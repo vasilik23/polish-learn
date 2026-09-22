@@ -14,7 +14,7 @@ export default function App() {
   const colors = palette(dark);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lessonId, setLessonId] = useState<string | null>(null);
+  const [lessonLaunch, setLessonLaunch] = useState<{ lessonId: string; stepIndex: number; score: number } | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -37,9 +37,9 @@ export default function App() {
   return (
     <SafeAreaView style={[styles.shell, { backgroundColor: colors.background }]}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      {session ? (lessonId
-        ? <LessonScreen lessonId={lessonId} session={session} colors={colors} onClose={() => setLessonId(null)} />
-        : <TodayScreen session={session} colors={colors} onOpenLesson={setLessonId} />
+      {session ? (lessonLaunch
+        ? <LessonScreen {...lessonLaunch} session={session} colors={colors} onClose={() => setLessonLaunch(null)} />
+        : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} />
       ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );

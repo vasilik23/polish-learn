@@ -244,8 +244,9 @@
 2. **Общий мобильный клиент iOS/Android:** 🟡 Expo/React Native foundation,
    безопасный Supabase login/token storage, bootstrap, Today и
    lesson → answer → idempotent result реализованы в `mobile/`; typecheck и
-   Android production bundle проверяются отдельным CI. Следующий срез — resume
-   и закрытая device beta. Полный
+   Android production bundle проверяются отдельным CI. Cross-device resume
+   незавершённого урока использует существующий owner-scoped draft API.
+   Следующий срез — закрытая device beta. Полный
    offline-кэш не включать до threat model и наблюдения существующей очереди.
 3. **Аудио следующего качества:** заменить системный TTS для B1–B2 проверенными
    студийными или лицензированными записями с отдельной карточкой происхождения
