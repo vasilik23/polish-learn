@@ -3,13 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
-import { checkAnswer, loadLesson, saveLessonResult, type AnswerResult, type NativeLesson } from '../lib/api';
+import { checkAnswer, deleteLessonDraft, loadLesson, saveLessonDraft, saveLessonResult, type AnswerResult, type NativeLesson } from '../lib/api';
 import type { Colors } from '../theme';
 
-export function LessonScreen({ lessonId, session, colors, onClose }: { lessonId: string; session: Session; colors: Colors; onClose: () => void }) {
+export function LessonScreen({ lessonId, stepIndex, score, session, colors, onClose }: { lessonId: string; stepIndex: number; score: number; session: Session; colors: Colors; onClose: () => void }) {
   const [lesson, setLesson] = useState<NativeLesson | null>(null);
-  const [position, setPosition] = useState(0);
-  const [known, setKnown] = useState(0);
+  const [position, setPosition] = useState(stepIndex);
+  const [known, setKnown] = useState(score);
   const [selected, setSelected] = useState<number | null>(null);
   const [tokenOrder, setTokenOrder] = useState<number[]>([]);
   const [feedback, setFeedback] = useState<AnswerResult | null>(null);
@@ -20,7 +20,11 @@ export function LessonScreen({ lessonId, session, colors, onClose }: { lessonId:
 
   const open = useCallback(async () => {
     setBusy(true); setError('');
-    try { setLesson(await loadLesson(lessonId, session.access_token)); }
+    try {
+      const loaded = await loadLesson(lessonId, session.access_token);
+      if (stepIndex < 0 || stepIndex >= loaded.steps.length || score < 0 || score > stepIndex) throw new Error('Черновик урока устарел. Откройте урок заново.');
+      setLesson(loaded);
+    }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось открыть урок.'); }
     finally { setBusy(false); }
   }, [lessonId, session.access_token]);
@@ -44,9 +48,21 @@ export function LessonScreen({ lessonId, session, colors, onClose }: { lessonId:
   async function advance(cardKnown?: boolean) {
     const nextKnown = known + (cardKnown ? 1 : 0);
     if (cardKnown) setKnown(nextKnown);
-    if (position + 1 < stepCount) { setPosition(position + 1); setSelected(null); setTokenOrder([]); setFeedback(null); return; }
+    if (position + 1 < stepCount) {
+      setBusy(true); setError('');
+      try {
+        await saveLessonDraft(lessonId, position + 1, nextKnown, session.access_token);
+        setPosition(position + 1); setSelected(null); setTokenOrder([]); setFeedback(null);
+      } catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось сохранить позицию урока.'); }
+      finally { setBusy(false); }
+      return;
+    }
     setBusy(true); setError('');
-    try { await saveLessonResult(lessonId, stepCount, nextKnown, randomUUID(), session.access_token); setFinalKnown(nextKnown); setSaved(true); }
+    try {
+      await saveLessonResult(lessonId, stepCount, nextKnown, randomUUID(), session.access_token);
+      try { await deleteLessonDraft(lessonId, session.access_token); } catch { /* completion hides stale drafts; cleanup can retry later */ }
+      setFinalKnown(nextKnown); setSaved(true);
+    }
     catch (reason) { setError(reason instanceof Error ? reason.message : 'Результат не сохранён.'); }
     finally { setBusy(false); }
   }
