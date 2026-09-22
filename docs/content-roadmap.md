@@ -246,7 +246,9 @@
    lesson → answer → idempotent result реализованы в `mobile/`; typecheck и
    Android production bundle проверяются отдельным CI. Cross-device resume
    незавершённого урока использует существующий owner-scoped draft API.
-   Следующий срез — закрытая device beta. Полный
+   EAS internal/store build-профили и воспроизводимый device acceptance runbook
+   добавлены без signing secrets в Git. Следующий срез — первый подписанный
+   build и закрытая device beta на физических iOS/Android устройствах. Полный
    offline-кэш не включать до threat model и наблюдения существующей очереди.
 3. **Аудио следующего качества:** заменить системный TTS для B1–B2 проверенными
    студийными или лицензированными записями с отдельной карточкой происхождения

@@ -21,7 +21,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "config:check": "node scripts/validate-beta-config.mjs",
+    "verify": "npm run config:check && npm run typecheck"
   },
   "private": true
 }

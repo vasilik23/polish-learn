@@ -5,7 +5,7 @@
 ```bash
 cp .env.example .env
 npm ci
-npm run typecheck
+npm run verify
 npm start
 ```
 
@@ -16,3 +16,7 @@ npm start
 результат идемпотентным событием. Персональные данные offline пока не кэшируются.
 Позиция и текущий счёт незавершённого урока сохраняются owner-scoped на сервере,
 поэтому урок можно продолжить после перезапуска или на другом устройстве.
+
+Installable closed-beta profiles and the physical-device acceptance gate are
+documented in [`docs/mobile-beta.md`](../docs/mobile-beta.md). Running an EAS
+build requires a separately authenticated Expo account and signing setup.
