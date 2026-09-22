@@ -32,6 +32,11 @@ export function deleteLessonDraft(lessonId: string, accessToken: string) {
   return apiRequest(`/api/v1/me/lesson-drafts/${encodeURIComponent(lessonId)}/`, accessToken, undefined, 'DELETE');
 }
 
+export type FeedbackCategory = 'content' | 'translation' | 'interface' | 'technical' | 'idea';
+export function sendFeedback(category: FeedbackCategory, message: string, accessToken: string) {
+  return apiRequest<{ created: boolean; status: string }>('/api/v1/me/feedback/', accessToken, { category, message, page_url: '/mobile/today/' }, 'POST');
+}
+
 export function checkAnswer(lessonId: string, position: number, answer: { selected_index: number } | { token_order: number[] }, accessToken: string): Promise<AnswerResult> {
   return apiRequest(`/api/v1/lessons/${encodeURIComponent(lessonId)}/answer/`, accessToken, { position, ...answer }, 'POST');
 }

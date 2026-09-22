@@ -246,6 +246,8 @@
    lesson → answer → idempotent result реализованы в `mobile/`; typecheck и
    Android production bundle проверяются отдельным CI. Cross-device resume
    незавершённого урока использует существующий owner-scoped draft API.
+   Категоризированный feedback отправляется через существующий owner-scoped
+   API без автоматического прикладывания токенов или device data.
    EAS internal/store build-профили и воспроизводимый device acceptance runbook
    добавлены без signing secrets в Git. Следующий срез — первый подписанный
    build и закрытая device beta на физических iOS/Android устройствах. Полный
