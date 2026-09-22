@@ -37,6 +37,15 @@ export function sendFeedback(category: FeedbackCategory, message: string, access
   return apiRequest<{ created: boolean; status: string }>('/api/v1/me/feedback/', accessToken, { category, message, page_url: '/mobile/today/' }, 'POST');
 }
 
+export type Sm2Quality = 'again' | 'hard' | 'good' | 'easy';
+export type Sm2Review = { id: string; word: string; translation: string; context: string; source_text_id: string; next_review_date: string | null; due: boolean };
+export async function loadSm2Reviews(accessToken: string): Promise<{ as_of: string; due_count: number; reviews: Sm2Review[] }> {
+  return apiRequest('/api/v1/me/sm2/', accessToken);
+}
+export function gradeSm2Review(wordId: string, quality: Sm2Quality, accessToken: string) {
+  return apiRequest<{ word_id: string; quality: Sm2Quality; next_review_date: string }>(`/api/v1/me/sm2/${encodeURIComponent(wordId)}/review/`, accessToken, { quality }, 'POST');
+}
+
 export function checkAnswer(lessonId: string, position: number, answer: { selected_index: number } | { token_order: number[] }, accessToken: string): Promise<AnswerResult> {
   return apiRequest(`/api/v1/lessons/${encodeURIComponent(lessonId)}/answer/`, accessToken, { position, ...answer }, 'POST');
 }

@@ -248,6 +248,8 @@
    незавершённого урока использует существующий owner-scoped draft API.
    Категоризированный feedback отправляется через существующий owner-scoped
    API без автоматического прикладывания токенов или device data.
+   Личная SM‑2 очередь доступна из задания Today: клиент показывает только
+   due-слова и отправляет `again/hard/good/easy` после раскрытия ответа.
    EAS internal/store build-профили и воспроизводимый device acceptance runbook
    добавлены без signing secrets в Git. Следующий срез — первый подписанный
    build и закрытая device beta на физических iOS/Android устройствах. Полный

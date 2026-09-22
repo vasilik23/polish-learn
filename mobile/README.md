@@ -18,6 +18,8 @@ npm start
 поэтому урок можно продолжить после перезапуска или на другом устройстве.
 Beta-пользователь может отправить категоризированную обратную связь через
 существующий owner-scoped API; приложение не прикладывает токены и device data.
+Задание словаря в Today открывает только due-карточки личной SM‑2 очереди;
+ответ нужно показать до оценки, а расписание обновляется owner-scoped на сервере.
 
 Installable closed-beta profiles and the physical-device acceptance gate are
 documented in [`docs/mobile-beta.md`](../docs/mobile-beta.md). Running an EAS
