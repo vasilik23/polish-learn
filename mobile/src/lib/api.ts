@@ -46,6 +46,24 @@ export function gradeSm2Review(wordId: string, quality: Sm2Quality, accessToken:
   return apiRequest<{ word_id: string; quality: Sm2Quality; next_review_date: string }>(`/api/v1/me/sm2/${encodeURIComponent(wordId)}/review/`, accessToken, { quality }, 'POST');
 }
 
+export type ReadingSummary = { id: string; title: string; description: string; level: string; minutes: number; emoji: string; saved: boolean };
+export type GlossaryEntry = { surface: string; lemma: string; translation: string; part_of_speech: string };
+export type ReadingDetail = ReadingSummary & { paragraphs: string[]; glossary: GlossaryEntry[]; comprehension_lesson_id: string | null; comprehension_api_path: string | null };
+export async function loadReadingLibrary(level: string, accessToken: string): Promise<ReadingSummary[]> {
+  const result = await apiRequest<{ texts: ReadingSummary[] }>(`/api/v1/reading/?level=${encodeURIComponent(level)}`, accessToken);
+  return result.texts;
+}
+export async function loadReadingDetail(textId: string, accessToken: string): Promise<ReadingDetail> {
+  const result = await apiRequest<{ text: ReadingDetail }>(`/api/v1/reading/${encodeURIComponent(textId)}/`, accessToken);
+  return result.text;
+}
+export function setReadingBookmark(textId: string, saved: boolean, accessToken: string) {
+  return apiRequest<{ reading_text_id: string; saved: boolean }>(`/api/v1/me/reading-bookmarks/${encodeURIComponent(textId)}/`, accessToken, undefined, saved ? 'PUT' : 'DELETE');
+}
+export function addReadingWord(textId: string, surface: string, accessToken: string) {
+  return apiRequest<{ text_id: string; surface: string; word: string; translation: string; part_of_speech: string }>(`/api/v1/reading/${encodeURIComponent(textId)}/dictionary/`, accessToken, { surface }, 'POST');
+}
+
 export function checkAnswer(lessonId: string, position: number, answer: { selected_index: number } | { token_order: number[] }, accessToken: string): Promise<AnswerResult> {
   return apiRequest(`/api/v1/lessons/${encodeURIComponent(lessonId)}/answer/`, accessToken, { position, ...answer }, 'POST');
 }

@@ -20,6 +20,8 @@ Beta-пользователь может отправить категоризи
 существующий owner-scoped API; приложение не прикладывает токены и device data.
 Задание словаря в Today открывает только due-карточки личной SM‑2 очереди;
 ответ нужно показать до оценки, а расписание обновляется owner-scoped на сервере.
+Раздел «Читать» показывает учебные тексты A1–C2, синхронизирует закладки,
+добавляет только проверенные glossary-леммы в словарь и открывает comprehension.
 
 Installable closed-beta profiles and the physical-device acceptance gate are
 documented in [`docs/mobile-beta.md`](../docs/mobile-beta.md). Running an EAS
