@@ -185,7 +185,9 @@ RLS; приложение обращается к ним с access token пол�
   A1–A2; assistive-technology/user audit и field performance после появления
   достаточного согласованного трафика.
 - **P1 — следующий продуктовый этап:** закрытая beta с измеримыми release
-  thresholds; первый общий мобильный vertical slice iOS/Android; лицензированное
+  thresholds; первый Expo/React Native vertical slice уже включает безопасный
+  Supabase login, bootstrap и экран Today, следующий шаг — lesson/answer/result;
+  лицензированное
   или студийное аудио B1–B2; безопасный канал opt-in напоминаний; первый ручной
   выпуск контента по уже готовому promotion receipt.
 - **P2:** ограниченный авторизованный offline-кэш после threat model, развитие
