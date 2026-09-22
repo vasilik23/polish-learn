@@ -64,6 +64,17 @@ export function addReadingWord(textId: string, surface: string, accessToken: str
   return apiRequest<{ text_id: string; surface: string; word: string; translation: string; part_of_speech: string }>(`/api/v1/reading/${encodeURIComponent(textId)}/dictionary/`, accessToken, { surface }, 'POST');
 }
 
+export type ListeningQuestion = { id: string; prompt: string; options: string[] };
+export type ListeningExercise = { id: string; title: string; level: string; delivery: 'device_tts' | 'audio_files'; transcript: string; fragments: { id: string; transcript: string; audio_path?: string }[]; questions: ListeningQuestion[] };
+export type ListeningAnswer = { question_id: string; correct: boolean; correct_index: number; explanation: string };
+export async function loadListening(accessToken: string): Promise<ListeningExercise[]> {
+  const result = await apiRequest<{ exercises: ListeningExercise[] }>('/api/v1/listening/', accessToken);
+  return result.exercises;
+}
+export function checkListeningAnswer(exerciseId: string, questionId: string, selectedIndex: number, accessToken: string) {
+  return apiRequest<ListeningAnswer>(`/api/v1/listening/${encodeURIComponent(exerciseId)}/answer/`, accessToken, { question_id: questionId, selected_index: selectedIndex }, 'POST');
+}
+
 export function checkAnswer(lessonId: string, position: number, answer: { selected_index: number } | { token_order: number[] }, accessToken: string): Promise<AnswerResult> {
   return apiRequest(`/api/v1/lessons/${encodeURIComponent(lessonId)}/answer/`, accessToken, { position, ...answer }, 'POST');
 }

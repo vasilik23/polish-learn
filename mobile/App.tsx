@@ -9,6 +9,7 @@ import { LessonScreen } from './src/components/LessonScreen';
 import { FeedbackScreen } from './src/components/FeedbackScreen';
 import { ReviewScreen } from './src/components/ReviewScreen';
 import { ReadingScreen } from './src/components/ReadingScreen';
+import { ListeningScreen } from './src/components/ListeningScreen';
 import { supabase } from './src/lib/supabase';
 import { palette } from './src/theme';
 
@@ -18,7 +19,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonLaunch, setLessonLaunch] = useState<{ lessonId: string; stepIndex: number; score: number } | null>(null);
-  const [screen, setScreen] = useState<'today' | 'feedback' | 'review' | 'reading'>('today');
+  const [screen, setScreen] = useState<'today' | 'feedback' | 'review' | 'reading' | 'listening'>('today');
 
   useEffect(() => {
     let mounted = true;
@@ -49,7 +50,9 @@ export default function App() {
             ? <ReviewScreen session={session} colors={colors} onClose={() => setScreen('today')} />
             : screen === 'reading'
               ? <ReadingScreen session={session} colors={colors} onClose={() => setScreen('today')} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} />
-              : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenReading={() => setScreen('reading')} />
+              : screen === 'listening'
+                ? <ListeningScreen session={session} colors={colors} onClose={() => setScreen('today')} />
+                : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenReading={() => setScreen('reading')} onOpenListening={() => setScreen('listening')} />
       ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );
