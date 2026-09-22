@@ -242,9 +242,10 @@
    отслеживать feedback, ошибки, latency и прохождение Today → lesson → result;
    сформировать измеримые release thresholds.
 2. **Общий мобильный клиент iOS/Android:** 🟡 Expo/React Native foundation,
-   безопасный Supabase login/token storage, bootstrap и Today реализованы в
-   `mobile/`; typecheck и Android production bundle проверяются отдельным CI.
-   Следующий срез — lesson → answer → idempotent result → resume. Полный
+   безопасный Supabase login/token storage, bootstrap, Today и
+   lesson → answer → idempotent result реализованы в `mobile/`; typecheck и
+   Android production bundle проверяются отдельным CI. Следующий срез — resume
+   и закрытая device beta. Полный
    offline-кэш не включать до threat model и наблюдения существующей очереди.
 3. **Аудио следующего качества:** заменить системный TTS для B1–B2 проверенными
    студийными или лицензированными записями с отдельной карточкой происхождения

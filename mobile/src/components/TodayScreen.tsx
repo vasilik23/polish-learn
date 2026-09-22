@@ -5,7 +5,7 @@ import { loadBootstrap, type BootstrapData } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import type { Colors } from '../theme';
 
-export function TodayScreen({ session, colors }: { session: Session; colors: Colors }) {
+export function TodayScreen({ session, colors, onOpenLesson }: { session: Session; colors: Colors; onOpenLesson: (lessonId: string) => void }) {
   const [data, setData] = useState<BootstrapData | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const refresh = useCallback(async () => {
     setLoading(true); setError('');
@@ -19,7 +19,7 @@ export function TodayScreen({ session, colors }: { session: Session; colors: Col
     {data && <><Text style={[styles.greeting, { color: colors.text }]}>Привет, {data.profile.display_name}</Text><Text style={[styles.sub, { color: colors.muted }]}>Уровень {data.profile.level} · серия {data.progress.streak_days} дн.</Text>
       <View style={[styles.goal, { backgroundColor: colors.primary }]}><Text style={styles.goalLabel}>Цель на сегодня</Text><Text style={styles.goalValue}>{data.today.completed_count} / {data.today.task_count}</Text><View style={styles.track}><View style={[styles.fill, { width: `${data.today.progress_percent}%` }]} /></View></View>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>План</Text>
-      {data.today.tasks.map((task) => <View key={`${task.plan_type}:${task.id}`} style={[styles.task, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={styles.emoji}>{task.emoji || '📘'}</Text><View style={styles.taskBody}><Text style={[styles.taskTitle, { color: colors.text }]}>{task.completed ? '✓ ' : ''}{task.title}</Text><Text style={[styles.taskCopy, { color: colors.muted }]}>{task.reinforcement_reason || task.description}</Text><Text style={[styles.meta, { color: colors.primary }]}>{task.minutes} мин.</Text></View></View>)}
+      {data.today.tasks.map((task) => <Pressable accessibilityRole="button" disabled={task.plan_type === 'dictionary-review'} onPress={() => onOpenLesson(task.id)} key={`${task.plan_type}:${task.id}`} style={({ pressed }) => [styles.task, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? .7 : 1 }]}><Text style={styles.emoji}>{task.emoji || '📘'}</Text><View style={styles.taskBody}><Text style={[styles.taskTitle, { color: colors.text }]}>{task.completed ? '✓ ' : ''}{task.title}</Text><Text style={[styles.taskCopy, { color: colors.muted }]}>{task.reinforcement_reason || task.description}</Text><Text style={[styles.meta, { color: colors.primary }]}>{task.plan_type === 'dictionary-review' ? 'Словарь — в следующем срезе' : `${task.minutes} мин. · Открыть`}</Text></View></Pressable>)}
       <Text style={[styles.boundary, { color: colors.muted }]}>Сейчас доступны просмотр плана и обновление. Выполнение уроков и offline-режим появятся в следующих мобильных итерациях.</Text></>}
   </ScrollView>;
 }
