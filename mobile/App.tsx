@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { LoginScreen } from './src/components/LoginScreen';
 import { TodayScreen } from './src/components/TodayScreen';
+import { LessonScreen } from './src/components/LessonScreen';
 import { supabase } from './src/lib/supabase';
 import { palette } from './src/theme';
 
@@ -13,6 +14,7 @@ export default function App() {
   const colors = palette(dark);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lessonId, setLessonId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -35,7 +37,10 @@ export default function App() {
   return (
     <SafeAreaView style={[styles.shell, { backgroundColor: colors.background }]}>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      {session ? <TodayScreen session={session} colors={colors} /> : <LoginScreen colors={colors} booting={loading} />}
+      {session ? (lessonId
+        ? <LessonScreen lessonId={lessonId} session={session} colors={colors} onClose={() => setLessonId(null)} />
+        : <TodayScreen session={session} colors={colors} onOpenLesson={setLessonId} />
+      ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );
 }
