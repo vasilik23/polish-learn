@@ -22,6 +22,8 @@ Beta-пользователь может отправить категоризи
 ответ нужно показать до оценки, а расписание обновляется owner-scoped на сервере.
 Раздел «Читать» показывает учебные тексты A1–C2, синхронизирует закладки,
 добавляет только проверенные glossary-леммы в словарь и открывает comprehension.
+Аудирование A1–B2 использует системный `pl-PL` TTS с тремя скоростями,
+фрагментами, постоянным транскриптом и stateless проверкой ответов на сервере.
 
 Installable closed-beta profiles and the physical-device acceptance gate are
 documented in [`docs/mobile-beta.md`](../docs/mobile-beta.md). Running an EAS

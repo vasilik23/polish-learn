@@ -187,8 +187,8 @@ RLS; приложение обращается к ним с access token пол�
 - **P1 — следующий продуктовый этап:** закрытая beta с измеримыми release
   thresholds; первый Expo/React Native vertical slice уже включает безопасный
   Supabase login, bootstrap, Today и поток lesson/answer/idempotent result;
-  cross-device resume, reading→lemma→dictionary→SM‑2, feedback и проверенные
-  EAS build-профили;
+  cross-device resume, reading→lemma→dictionary→SM‑2, listening A1–B2,
+  feedback и проверенные EAS build-профили;
   следующий шаг — первый
   подписанный build и acceptance-smoke на физических iOS/Android устройствах;
   лицензированное

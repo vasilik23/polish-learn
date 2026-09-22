@@ -252,6 +252,9 @@
    due-слова и отправляет `again/hard/good/easy` после раскрытия ответа.
    Нативная библиотека разделена по A1–C2, поддерживает owner-scoped закладки,
    чтение полного текста, glossary lemma → dictionary и comprehension lesson.
+   Нативное listening A1–B2 использует системный `pl-PL` TTS, скорости
+   0.75/1/1.15×, фрагменты, постоянный транскрипт и stateless answer API;
+   граница «не студийная запись» остаётся видимой.
    EAS internal/store build-профили и воспроизводимый device acceptance runbook
    добавлены без signing secrets в Git. Следующий срез — первый подписанный
    build и закрытая device beta на физических iOS/Android устройствах. Полный
