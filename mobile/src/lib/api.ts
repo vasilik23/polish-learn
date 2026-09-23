@@ -12,6 +12,17 @@ export type BootstrapData = {
 export type LessonDraft = { lesson_id: string; lesson_kind: string; step_index: number; score: number };
 export type LearnerProfile = { display_name: string; level: string; daily_goal_lessons: number };
 export type ReminderPreferences = { daily_reminder_enabled: boolean; reminder_time: string; timezone: string };
+export type Achievement = {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  current: number;
+  target: number;
+  progress_percent: number;
+  unlocked: boolean;
+};
+export type AchievementsData = { unlocked_count: number; achievement_count: number; achievements: Achievement[] };
 
 export async function loadBootstrap(accessToken: string): Promise<BootstrapData> {
   return apiRequest('/api/v1/me/bootstrap/', accessToken);
@@ -33,6 +44,10 @@ export async function loadReminderPreferences(accessToken: string): Promise<{ pr
 
 export function updateReminderPreferences(preferences: Pick<ReminderPreferences, 'daily_reminder_enabled' | 'reminder_time'>, accessToken: string) {
   return apiRequest<{ preferences: ReminderPreferences; delivery_active: boolean }>('/api/v1/me/reminder-preferences/', accessToken, preferences, 'PATCH');
+}
+
+export function loadAchievements(accessToken: string): Promise<AchievementsData> {
+  return apiRequest('/api/v1/me/achievements/', accessToken);
 }
 
 export function loadLesson(lessonId: string, accessToken: string): Promise<NativeLesson> {

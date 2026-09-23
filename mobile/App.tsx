@@ -11,6 +11,8 @@ import { ReviewScreen } from './src/components/ReviewScreen';
 import { ReadingScreen } from './src/components/ReadingScreen';
 import { ListeningScreen } from './src/components/ListeningScreen';
 import { ProfileScreen } from './src/components/ProfileScreen';
+import { AchievementsScreen } from './src/components/AchievementsScreen';
+import { HistoryScreen } from './src/components/HistoryScreen';
 import { supabase } from './src/lib/supabase';
 import { palette } from './src/theme';
 
@@ -20,7 +22,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonLaunch, setLessonLaunch] = useState<{ lessonId: string; stepIndex: number; score: number } | null>(null);
-  const [screen, setScreen] = useState<'today' | 'feedback' | 'review' | 'reading' | 'listening' | 'profile'>('today');
+  const [screen, setScreen] = useState<'today' | 'feedback' | 'review' | 'reading' | 'listening' | 'profile' | 'achievements' | 'history'>('today');
 
   useEffect(() => {
     let mounted = true;
@@ -55,7 +57,11 @@ export default function App() {
                 ? <ListeningScreen session={session} colors={colors} onClose={() => setScreen('today')} />
                 : screen === 'profile'
                   ? <ProfileScreen session={session} colors={colors} onClose={() => setScreen('today')} />
-                  : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenReading={() => setScreen('reading')} onOpenListening={() => setScreen('listening')} onOpenProfile={() => setScreen('profile')} />
+                  : screen === 'achievements'
+                    ? <AchievementsScreen session={session} colors={colors} onClose={() => setScreen('today')} />
+                    : screen === 'history'
+                      ? <HistoryScreen session={session} colors={colors} onClose={() => setScreen('today')} />
+                      : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenReading={() => setScreen('reading')} onOpenListening={() => setScreen('listening')} onOpenProfile={() => setScreen('profile')} onOpenAchievements={() => setScreen('achievements')} onOpenHistory={() => setScreen('history')} />
       ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );
