@@ -243,7 +243,7 @@
    сформировать измеримые release thresholds.
 2. **Общий мобильный клиент iOS/Android:** 🟡 Expo/React Native foundation,
    безопасный Supabase login/token storage, bootstrap, Today и
-   lesson → answer → idempotent result реализованы в `mobile/`; typecheck и
+   lesson → answer → idempotent result и stateless diagnostic реализованы в `mobile/`; typecheck и
    Android production bundle проверяются отдельным CI. Cross-device resume
    незавершённого урока использует существующий owner-scoped draft API.
    Категоризированный feedback отправляется через существующий owner-scoped
@@ -260,6 +260,9 @@
    что канал доставки push пока не активирован. Выход перенесён в профиль.
    Достижения и постраничная история обучения доступны нативно и используют
    те же детерминированные owner-scoped данные, что и web/API.
+   Нативная диагностическая проба сохраняет осторожную границу «не экзамен и
+   не сертификат CEFR»; writing B1–B2 отправляет текст только по явной команде,
+   не хранит его и проверяет лишь наблюдаемую структуру.
    Семь детерминированных достижений доступны в нативном экране и считаются
    из синхронизированных уроков, серии, активных дней и личного словаря.
    EAS internal/store build-профили и воспроизводимый device acceptance runbook
