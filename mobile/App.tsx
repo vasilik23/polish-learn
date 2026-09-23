@@ -16,6 +16,7 @@ import { HistoryScreen } from './src/components/HistoryScreen';
 import { DiagnosticScreen } from './src/components/DiagnosticScreen';
 import { WritingScreen } from './src/components/WritingScreen';
 import { InteractionScreen } from './src/components/InteractionScreen';
+import { PracticeScreen } from './src/components/PracticeScreen';
 import { supabase } from './src/lib/supabase';
 import { palette } from './src/theme';
 
@@ -25,7 +26,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonLaunch, setLessonLaunch] = useState<{ lessonId: string; stepIndex: number; score: number } | null>(null);
-  const [screen, setScreen] = useState<'today' | 'feedback' | 'review' | 'reading' | 'listening' | 'profile' | 'achievements' | 'history' | 'diagnostic' | 'writing' | 'interaction'>('today');
+  const [screen, setScreen] = useState<'today' | 'practice' | 'feedback' | 'review' | 'reading' | 'listening' | 'profile' | 'achievements' | 'history' | 'diagnostic' | 'writing' | 'interaction'>('today');
 
   useEffect(() => {
     let mounted = true;
@@ -52,6 +53,8 @@ export default function App() {
         ? <LessonScreen {...lessonLaunch} session={session} colors={colors} onClose={() => setLessonLaunch(null)} />
         : screen === 'feedback'
           ? <FeedbackScreen session={session} colors={colors} onClose={() => setScreen('today')} />
+          : screen === 'practice'
+            ? <PracticeScreen colors={colors} onClose={() => setScreen('today')} onOpen={setScreen} />
           : screen === 'review'
             ? <ReviewScreen session={session} colors={colors} onClose={() => setScreen('today')} />
             : screen === 'reading'
@@ -70,7 +73,7 @@ export default function App() {
                           ? <WritingScreen session={session} colors={colors} onClose={() => setScreen('today')} />
                           : screen === 'interaction'
                             ? <InteractionScreen session={session} colors={colors} onClose={() => setScreen('today')} />
-                            : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenReading={() => setScreen('reading')} onOpenListening={() => setScreen('listening')} onOpenProfile={() => setScreen('profile')} onOpenAchievements={() => setScreen('achievements')} onOpenHistory={() => setScreen('history')} onOpenDiagnostic={() => setScreen('diagnostic')} onOpenWriting={() => setScreen('writing')} onOpenInteraction={() => setScreen('interaction')} />
+                            : <TodayScreen session={session} colors={colors} onOpenLesson={(lessonId) => setLessonLaunch({ lessonId, stepIndex: 0, score: 0 })} onResumeLesson={setLessonLaunch} onOpenFeedback={() => setScreen('feedback')} onOpenReview={() => setScreen('review')} onOpenProfile={() => setScreen('profile')} onOpenPractice={() => setScreen('practice')} />
       ) : <LoginScreen colors={colors} booting={loading} />}
     </SafeAreaView>
   );
