@@ -10,9 +10,29 @@ export type BootstrapData = {
   today: { date: string; completed_count: number; task_count: number; progress_percent: number; tasks: TodayTask[]; resume: { lesson_id: string; title: string; kind: string; step: number } | null };
 };
 export type LessonDraft = { lesson_id: string; lesson_kind: string; step_index: number; score: number };
+export type LearnerProfile = { display_name: string; level: string; daily_goal_lessons: number };
+export type ReminderPreferences = { daily_reminder_enabled: boolean; reminder_time: string; timezone: string };
 
 export async function loadBootstrap(accessToken: string): Promise<BootstrapData> {
   return apiRequest('/api/v1/me/bootstrap/', accessToken);
+}
+
+export async function loadLearnerProfile(accessToken: string): Promise<LearnerProfile> {
+  const result = await apiRequest<{ profile: LearnerProfile }>('/api/v1/me/profile/', accessToken);
+  return result.profile;
+}
+
+export async function updateLearnerProfile(profile: LearnerProfile, accessToken: string): Promise<LearnerProfile> {
+  const result = await apiRequest<{ profile: LearnerProfile }>('/api/v1/me/profile/', accessToken, profile, 'PATCH');
+  return result.profile;
+}
+
+export async function loadReminderPreferences(accessToken: string): Promise<{ preferences: ReminderPreferences; delivery_active: boolean }> {
+  return apiRequest('/api/v1/me/reminder-preferences/', accessToken);
+}
+
+export function updateReminderPreferences(preferences: Pick<ReminderPreferences, 'daily_reminder_enabled' | 'reminder_time'>, accessToken: string) {
+  return apiRequest<{ preferences: ReminderPreferences; delivery_active: boolean }>('/api/v1/me/reminder-preferences/', accessToken, preferences, 'PATCH');
 }
 
 export function loadLesson(lessonId: string, accessToken: string): Promise<NativeLesson> {
@@ -87,7 +107,7 @@ export function saveLessonResult(lessonId: string, cardsTotal: number, cardsKnow
   }, 'POST');
 }
 
-async function apiRequest<T>(path: string, accessToken: string, body?: object, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET'): Promise<T> {
+async function apiRequest<T>(path: string, accessToken: string, body?: object, method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET'): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
@@ -97,7 +117,7 @@ async function apiRequest<T>(path: string, accessToken: string, body?: object, m
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(response.status === 401 ? 'Сессия истекла. Войдите снова.' : 'Не удалось загрузить план.');
+    if (!response.ok) throw new Error(response.status === 401 ? 'Сессия истекла. Войдите снова.' : 'Не удалось выполнить запрос.');
     const payload = (await response.json()) as { data: T };
     if (!payload || !('data' in payload)) throw new Error('Сервер вернул неполный ответ.');
     return payload.data;

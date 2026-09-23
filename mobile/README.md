@@ -24,6 +24,9 @@ Beta-пользователь может отправить категоризи
 добавляет только проверенные glossary-леммы в словарь и открывает comprehension.
 Аудирование A1–B2 использует системный `pl-PL` TTS с тремя скоростями,
 фрагментами, постоянным транскриптом и stateless проверкой ответов на сервере.
+Профиль синхронизирует имя, уровень A1–C2 и дневную цель. Там же находится
+выход из аккаунта и opt-in будущих напоминаний; интерфейс явно сообщает, что
+push-доставка ещё не активирована.
 
 Installable closed-beta profiles and the physical-device acceptance gate are
 documented in [`docs/mobile-beta.md`](../docs/mobile-beta.md). Running an EAS
