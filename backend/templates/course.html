@@ -76,11 +76,11 @@
         </div>
         <div class="task-list">
           {% for task in topic.lessons %}
-            <a class="task-card" href="{% url 'lesson' task.id %}">
+            <div class="task-card-row"><a class="task-card" href="{% url 'lesson' task.id %}">
               <span class="task-icon">{{ task.emoji }}</span>
               <span class="task-copy"><strong>{{ task.title }}{% if task.completed %} <span class="task-complete">✓</span>{% endif %}</strong><small>{{ task.description }} · ~{{ task.minutes }} мин</small></span>
               <span class="task-arrow" aria-hidden="true">→</span>
-            </a>
+            </a>{% if lesson_bookmarks_available %}<form method="post" action="{% url 'toggle-lesson-bookmark' task.id %}">{% csrf_token %}<input type="hidden" name="saved" value="{% if task.saved %}0{% else %}1{% endif %}"><input type="hidden" name="next" value="{{ request.get_full_path }}#topic-{{ topic.id }}"><button class="bookmark-icon-button{% if task.saved %} is-saved{% endif %}" type="submit" aria-label="{% if task.saved %}Убрать урок «{{ task.title }}» из сохранённого{% else %}Сохранить урок «{{ task.title }}»{% endif %}">{% if task.saved %}★{% else %}☆{% endif %}</button></form>{% endif %}</div>
           {% endfor %}
         </div>
         {% if topic.next_lesson %}
