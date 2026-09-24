@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Практика · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header practice-hub-header">
+    <div><p class="eyebrow">Тренируй отдельные навыки</p><h1>Практика</h1><p class="muted">Короткие форматы для словаря, слуха, письма и общения — отдельно от последовательного курса.</p></div>
+    <a class="compact-button" href="{% url 'course' %}">Вернуться к курсу →</a>
+  </header>
+  <section class="practice-hub-grid" aria-label="Тренажёры">
+    <a class="card practice-hub-card" href="{% url 'dictionary-practice' %}"><span aria-hidden="true">◇</span><div><p class="eyebrow">SM-2</p><h2>Повторение слов</h2><p>Карточки личного словаря, которые пора повторить сегодня.</p></div><strong>Открыть →</strong></a>
+    <a class="card practice-hub-card" href="{% url 'listening-practice' %}"><span aria-hidden="true">🎧</span><div><p class="eyebrow">A1–B2</p><h2>Аудирование</h2><p>Слова и связные диалоги с транскриптом и проверкой понимания.</p></div><strong>Слушать →</strong></a>
+    <a class="card practice-hub-card" href="{% url 'writing-practice' %}"><span aria-hidden="true">✎</span><div><p class="eyebrow">B1–B2</p><h2>Письмо</h2><p>Локальные черновики и прозрачные жанровые критерии самопроверки.</p></div><strong>Писать →</strong></a>
+    <a class="card practice-hub-card" href="{% url 'interaction-practice' %}"><span aria-hidden="true">↔</span><div><p class="eyebrow">B1–B2</p><h2>Общение и медиация</h2><p>Выбор реплики, последовательность аргументов и свободные сценарии.</p></div><strong>Тренироваться →</strong></a>
+    <a class="card practice-hub-card" href="{% url 'diagnostic' %}"><span aria-hidden="true">◎</span><div><p class="eyebrow">Ориентир</p><h2>Диагностика</h2><p>Предварительная карта навыков без записи результата и заявлений о CEFR.</p></div><strong>Начать →</strong></a>
+    <a class="card practice-hub-card" href="{% url 'learning-history' %}"><span aria-hidden="true">↗</span><div><p class="eyebrow">Прогресс</p><h2>История обучения</h2><p>Завершённые уроки и результаты за выбранный период.</p></div><strong>Посмотреть →</strong></a>
+  </section>
+{% endblock %}

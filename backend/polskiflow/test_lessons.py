@@ -207,10 +207,14 @@ class LessonViewsTests(TestCase):
         self.assertContains(result, "Для совместного планирования проектов")
         self.assertContains(result, "Оборот «żeby wspólnie planować projekty»")
 
-    def test_course_links_to_listening_pilot(self):
+    def test_practice_hub_collects_optional_training_modes(self):
         page = self.client.get("/course/?level=A1")
-        self.assertContains(page, 'href="/listening/"')
-        self.assertContains(page, "Аудиопилот A1")
+        self.assertContains(page, 'href="/practice/"')
+        self.assertNotContains(page, "Аудиопилот A1")
+        hub = self.client.get("/practice/")
+        self.assertContains(hub, "Практика")
+        for href in ("/dictionary/practice/", "/listening/", "/writing/", "/interaction/", "/diagnostic/", "/history/"):
+            self.assertContains(hub, f'href="{href}"')
 
     def test_home_keeps_daily_plan_focused_and_course_page_lists_topics(self):
         course = Course.objects.create(id="catalog-test", title="A1", level="A1")
@@ -541,17 +545,11 @@ class LessonViewsTests(TestCase):
 
         self.assertRedirects(response, "/login/?next=%2Fprofile%2F", fetch_redirect_response=False)
 
-    def test_b1_course_links_to_writing_practice(self):
+    def test_course_keeps_optional_practice_out_of_topic_catalog(self):
         response = self.client.get("/course/?level=B1")
-
-        self.assertContains(response, "Письменная практика B1")
-        self.assertContains(response, 'href="/writing/?level=B1"')
-
-    def test_b2_course_links_to_level_specific_writing_practice(self):
-        response = self.client.get("/course/?level=B2")
-
-        self.assertContains(response, "Письменная практика B2")
-        self.assertContains(response, 'href="/writing/?level=B2"')
+        self.assertNotContains(response, "Письменная практика B1")
+        self.assertNotContains(response, "Договорись и передай смысл")
+        self.assertContains(response, 'href="/practice/"')
 
     def test_writing_practice_has_local_drafts_and_honest_self_check(self):
         response = self.client.get("/writing/")
