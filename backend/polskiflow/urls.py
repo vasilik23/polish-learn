@@ -24,6 +24,7 @@ from polskiflow.reading_views import (
     toggle_reading_bookmark,
     remove_dictionary_word,
 )
+from polskiflow.search_views import global_search
 
 
 @require_supabase_user
@@ -42,6 +43,7 @@ urlpatterns = [
     path("tasks/", daily_tasks, name="daily-tasks"),
     path("course/", course, name="course"),
     path("practice/", practice_hub, name="practice-hub"),
+    path("search/", global_search, name="global-search"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
     path("account/security/", account_security, name="account-security"),

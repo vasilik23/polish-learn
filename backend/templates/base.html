@@ -34,9 +34,9 @@
       }());
     </script>
     <title>{% block title %}PolskiFlow{% endblock %}</title>
-    <link rel="icon" href="{% static 'polskiflow/favicon.svg' %}?shell=v3" type="image/svg+xml">
+    <link rel="icon" href="{% static 'polskiflow/favicon.svg' %}?shell=v4" type="image/svg+xml">
     <link rel="manifest" href="{% url 'web-app-manifest' %}">
-    <link rel="stylesheet" href="{% static 'polskiflow/app.css' %}?shell=v3">
+    <link rel="stylesheet" href="{% static 'polskiflow/app.css' %}?shell=v4">
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous" defer></script>
   </head>
   <body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
@@ -62,6 +62,9 @@
           <a href="{% url 'dictionary' %}" class="nav-link {% if request.resolver_match.url_name == 'dictionary' %}active{% endif %}">
             <span class="nav-icon" aria-hidden="true">◇</span><span>Словарь</span>
           </a>
+          <a href="{% url 'global-search' %}" class="nav-link nav-link-search {% if request.resolver_match.url_name == 'global-search' %}active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">⌕</span><span>Поиск</span>
+          </a>
         </div>
       </nav>
       <details class="user-menu app-user-menu">
@@ -70,6 +73,7 @@
           <span class="user-email">{{ request.supabase_user.email|default:"Пользователь" }}</span>
           <a class="user-menu-link" href="{% url 'profile' %}">Профиль</a>
           <a class="user-menu-link" href="{% url 'practice-hub' %}">Практика</a>
+          <a class="user-menu-link" href="{% url 'global-search' %}">Поиск по приложению</a>
           <a class="user-menu-link" href="{% url 'account-security' %}">Безопасность</a>
           <a class="user-menu-link" href="{% url 'sources' %}">Источники</a>
           <a class="user-menu-link" href="{% url 'privacy' %}">Приватность</a>
