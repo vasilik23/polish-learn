@@ -212,7 +212,9 @@ class LessonViewsTests(TestCase):
         self.assertContains(page, 'href="/practice/"')
         self.assertNotContains(page, "Аудиопилот A1")
         hub = self.client.get("/practice/")
-        self.assertContains(hub, "Практика")
+        self.assertContains(hub, "Практика без лишнего")
+        self.assertContains(hub, 'class="practice-hub-card', count=6)
+        self.assertContains(hub, "Аналитика обучения")
         for href in ("/dictionary/practice/", "/listening/", "/writing/", "/interaction/", "/diagnostic/", "/history/"):
             self.assertContains(hub, f'href="{href}"')
 

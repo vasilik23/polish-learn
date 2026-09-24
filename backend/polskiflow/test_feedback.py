@@ -21,6 +21,7 @@ class FeedbackTests(TestCase):
 
         self.assertContains(response, 'href="/feedback/?from=/course/"')
         self.assertContains(response, 'aria-label="Сообщить об ошибке на этой странице"')
+        self.assertContains(response, 'class="feedback-launcher-label">Сообщить об ошибке</span>')
 
     @patch(
         "polskiflow.feedback_views.load_feedback",

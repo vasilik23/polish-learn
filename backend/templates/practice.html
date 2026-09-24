@@ -1,16 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Практика · PolskiFlow{% endblock %}
 {% block content %}
-  <header class="content-header practice-hub-header">
-    <div><p class="eyebrow">Тренируй отдельные навыки</p><h1>Практика</h1><p class="muted">Короткие форматы для словаря, слуха, письма и общения — отдельно от последовательного курса.</p></div>
-    <a class="compact-button" href="{% url 'course' %}">Вернуться к курсу →</a>
-  </header>
+  <section class="practice-hero" aria-labelledby="practice-title">
+    <div class="practice-hero-copy">
+      <p class="eyebrow">Тренируй отдельные навыки</p>
+      <h1 id="practice-title">Практика без лишнего</h1>
+      <p>Выбери навык под сегодняшнюю задачу: повтори слова, потренируй слух, письмо или живое общение.</p>
+      <div class="practice-hero-meta" aria-label="Возможности практики">
+        <span>6 форматов</span><span>от 5 минут</span><span>результаты в профиле</span>
+      </div>
+    </div>
+    <a class="practice-course-link" href="{% url 'course' %}"><span>Последовательный курс</span><strong>Вернуться к темам →</strong></a>
+  </section>
+
+  <div class="section-heading practice-section-heading">
+    <div><p class="eyebrow">Все тренажёры</p><h2>Что хочешь прокачать?</h2></div>
+    <span>Выбирай один формат или сочетай несколько</span>
+  </div>
   <section class="practice-hub-grid" aria-label="Тренажёры">
-    <a class="card practice-hub-card" href="{% url 'dictionary-practice' %}"><span aria-hidden="true">◇</span><div><p class="eyebrow">SM-2</p><h2>Повторение слов</h2><p>Карточки личного словаря, которые пора повторить сегодня.</p></div><strong>Открыть →</strong></a>
-    <a class="card practice-hub-card" href="{% url 'listening-practice' %}"><span aria-hidden="true">🎧</span><div><p class="eyebrow">A1–B2</p><h2>Аудирование</h2><p>Слова и связные диалоги с транскриптом и проверкой понимания.</p></div><strong>Слушать →</strong></a>
-    <a class="card practice-hub-card" href="{% url 'writing-practice' %}"><span aria-hidden="true">✎</span><div><p class="eyebrow">B1–B2</p><h2>Письмо</h2><p>Локальные черновики и прозрачные жанровые критерии самопроверки.</p></div><strong>Писать →</strong></a>
-    <a class="card practice-hub-card" href="{% url 'interaction-practice' %}"><span aria-hidden="true">↔</span><div><p class="eyebrow">B1–B2</p><h2>Общение и медиация</h2><p>Выбор реплики, последовательность аргументов и свободные сценарии.</p></div><strong>Тренироваться →</strong></a>
-    <a class="card practice-hub-card" href="{% url 'diagnostic' %}"><span aria-hidden="true">◎</span><div><p class="eyebrow">Ориентир</p><h2>Диагностика</h2><p>Предварительная карта навыков без записи результата и заявлений о CEFR.</p></div><strong>Начать →</strong></a>
-    <a class="card practice-hub-card" href="{% url 'learning-history' %}"><span aria-hidden="true">↗</span><div><p class="eyebrow">Прогресс</p><h2>История обучения</h2><p>Завершённые уроки и результаты за выбранный период.</p></div><strong>Посмотреть →</strong></a>
+    <a class="practice-hub-card practice-card--violet" href="{% url 'dictionary-practice' %}">
+      <span class="practice-card-icon" aria-hidden="true">◇</span>
+      <span class="practice-card-badge">SM-2 · сегодня</span>
+      <div><h3>Повторение слов</h3><p>Карточки личного словаря появляются именно тогда, когда их пора вспомнить.</p></div>
+      <span class="practice-card-action">Открыть очередь <b aria-hidden="true">→</b></span>
+    </a>
+    <a class="practice-hub-card practice-card--blue" href="{% url 'listening-practice' %}">
+      <span class="practice-card-icon" aria-hidden="true">◉</span>
+      <span class="practice-card-badge">A1–B2 · аудио</span>
+      <div><h3>Аудирование</h3><p>Слова и связные диалоги со скоростью на выбор, транскриптом и проверкой понимания.</p></div>
+      <span class="practice-card-action">Начать слушать <b aria-hidden="true">→</b></span>
+    </a>
+    <a class="practice-hub-card practice-card--rose" href="{% url 'writing-practice' %}">
+      <span class="practice-card-icon" aria-hidden="true">✎</span>
+      <span class="practice-card-badge">B1–B2 · письмо</span>
+      <div><h3>Письменная практика</h3><p>Жанровые задания, локальный черновик и прозрачные критерии самостоятельной проверки.</p></div>
+      <span class="practice-card-action">Открыть задания <b aria-hidden="true">→</b></span>
+    </a>
+    <a class="practice-hub-card practice-card--green" href="{% url 'interaction-practice' %}">
+      <span class="practice-card-icon" aria-hidden="true">↔</span>
+      <span class="practice-card-badge">B1–B2 · ситуации</span>
+      <div><h3>Общение и медиация</h3><p>Реплики, аргументы и сценарии, где важно договориться или точно передать смысл.</p></div>
+      <span class="practice-card-action">Выбрать сценарий <b aria-hidden="true">→</b></span>
+    </a>
+    <a class="practice-hub-card practice-card--amber" href="{% url 'diagnostic' %}">
+      <span class="practice-card-icon" aria-hidden="true">◎</span>
+      <span class="practice-card-badge">Ориентир · без оценки</span>
+      <div><h3>Карта навыков</h3><p>Осторожная самооценка и короткая проба без записи результата и заявлений о CEFR.</p></div>
+      <span class="practice-card-action">Оценить навыки <b aria-hidden="true">→</b></span>
+    </a>
+    <a class="practice-hub-card practice-card--slate" href="{% url 'learning-history' %}">
+      <span class="practice-card-icon" aria-hidden="true">↗</span>
+      <span class="practice-card-badge">Прогресс · 28 дней</span>
+      <div><h3>Аналитика обучения</h3><p>Ритм занятий, точность по типам практики и полная история завершённых уроков.</p></div>
+      <span class="practice-card-action">Посмотреть прогресс <b aria-hidden="true">→</b></span>
+    </a>
   </section>
 {% endblock %}
