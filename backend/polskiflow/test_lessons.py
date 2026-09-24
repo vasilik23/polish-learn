@@ -798,6 +798,23 @@ class LessonViewsTests(TestCase):
             )
         self.assertContains(response, "5 / 5")
         self.assertContains(response, "Урок завершён")
+        self.assertContains(response, "Следующий урок темы")
+        self.assertContains(response, 'href="/lesson/grammar/"', count=2)
+        self.assertContains(response, "Вернуться к плану")
+
+    def test_final_topic_lesson_returns_to_its_course_topic(self):
+        response = self.client.post(
+            "/lesson/quiz/step/",
+            {"action": "next", "index": 4, "score": 3, "selected": 1},
+        )
+
+        self.assertContains(response, "Тема завершена")
+        self.assertContains(response, "Основы")
+        self.assertContains(
+            response,
+            'href="/course/?level=A1#topic-lesson-test-topic"',
+        )
+        self.assertNotContains(response, "Продолжить тему")
 
     @patch("polskiflow.lesson_views.save_lesson_completion_result")
     def test_words_transient_failure_exposes_token_free_offline_handoff(self, mocked_save):

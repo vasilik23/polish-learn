@@ -10,5 +10,21 @@
       <button class="button button-secondary" type="button" data-sync-retry hidden>Повторить отправку</button>
     </div>
   {% endif %}
-  <a class="button" href="{% url 'home' %}">Вернуться к плану</a>
+  {% if lesson_navigation.next_lesson %}
+    <a class="complete-next" href="{% url 'lesson' lesson_navigation.next_lesson.id %}">
+      <span aria-hidden="true">{{ lesson_navigation.next_lesson.emoji }}</span>
+      <span><small>Следующий урок темы</small><strong>{{ lesson_navigation.next_lesson.title }}</strong><small>{{ lesson_navigation.next_lesson.description }} · ~{{ lesson_navigation.next_lesson.minutes }} мин</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+  {% else %}
+    <a class="complete-next" href="{% url 'course' %}?level={{ lesson_navigation.level }}#topic-{{ lesson_navigation.topic_id }}">
+      <span aria-hidden="true">✓</span>
+      <span><small>Тема завершена</small><strong>{{ lesson_navigation.topic_title }}</strong><small>Вернуться к темам уровня {{ lesson_navigation.level }}</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+  {% endif %}
+  <div class="complete-actions">
+    <a class="button" href="{% url 'home' %}">Вернуться к плану</a>
+    {% if lesson_navigation.next_lesson %}<a class="button secondary" href="{% url 'lesson' lesson_navigation.next_lesson.id %}">Продолжить тему →</a>{% endif %}
+  </div>
 </div>
