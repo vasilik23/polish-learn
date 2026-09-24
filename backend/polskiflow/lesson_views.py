@@ -11,7 +11,7 @@ from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_POST
 
 from polskiflow.auth_views import require_browser_user
-from polskiflow.content import flashcards, grammar, quiz, task
+from polskiflow.content import flashcards, grammar, lesson_navigation, quiz, task
 from polskiflow.progress_store import save_lesson_completion_result
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
 
@@ -285,7 +285,12 @@ def _complete(request: HttpRequest, lesson_id: str, score: int, total: int) -> H
         score,
     )
     delete_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id)
-    context = {"score": score, "total": total, "saved": save_result.saved}
+    context = {
+        "score": score,
+        "total": total,
+        "saved": save_result.saved,
+        "lesson_navigation": lesson_navigation(lesson_id),
+    }
     # Start with one narrowly scoped flow. The browser receives an opaque,
     # stable namespace and an immutable result, never identity or auth tokens.
     if lesson_id in OFFLINE_RESULT_QUEUE_LESSON_IDS and save_result.retryable:

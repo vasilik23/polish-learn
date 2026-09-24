@@ -37,6 +37,43 @@ def task(lesson_id: str) -> dict | None:
     }
 
 
+def lesson_navigation(lesson_id: str) -> dict | None:
+    """Return public navigation metadata for a lesson and its next topic lesson."""
+    lesson = (
+        Lesson.objects.filter(id=lesson_id, is_active=True, topic__is_active=True)
+        .select_related("topic__course")
+        .first()
+    )
+    if lesson is None:
+        return None
+    next_lesson = (
+        Lesson.objects.filter(
+            topic_id=lesson.topic_id,
+            is_active=True,
+            position__gt=lesson.position,
+        )
+        .order_by("position", "id")
+        .only("id", "plan_title", "description", "emoji", "minutes")
+        .first()
+    )
+    return {
+        "level": lesson.topic.course.level or "A1",
+        "topic_id": lesson.topic_id,
+        "topic_title": lesson.topic.title,
+        "next_lesson": (
+            {
+                "id": next_lesson.id,
+                "title": next_lesson.plan_title,
+                "description": next_lesson.description,
+                "emoji": next_lesson.emoji,
+                "minutes": next_lesson.minutes,
+            }
+            if next_lesson
+            else None
+        ),
+    }
+
+
 def course_topics() -> list[dict]:
     """Return an isolated copy of the public catalog cached for five minutes."""
     if str(connection.settings_dict.get("NAME", "")).startswith("file:memorydb"):
