@@ -1,10 +1,36 @@
 {% extends "base.html" %}
-{% block title %}История занятий · PolskiFlow{% endblock %}
+{% block title %}Прогресс и история · PolskiFlow{% endblock %}
 {% block content %}
   <header class="content-header">
-    <div><p class="eyebrow">Твой прогресс</p><h1>История занятий</h1><p class="muted">Завершённые уроки доступны только тебе.</p></div>
+    <div><p class="eyebrow">Твой прогресс</p><h1>Прогресс и история</h1><p class="muted">Динамика за последние 28 дней и завершённые уроки доступны только тебе.</p></div>
     <a class="compact-button secondary-link" href="{% url 'profile' %}">К профилю</a>
   </header>
+  {% if insights.available %}
+    <section class="insights-summary" aria-label="Итоги за 28 дней">
+      <article class="card insight-stat"><span>Занятий</span><strong>{{ insights.completed_28_days }}</strong><small>завершено за 28 дней</small></article>
+      <article class="card insight-stat"><span>Активных дней</span><strong>{{ insights.active_28_days }}</strong><small>из последних 28</small></article>
+      <article class="card insight-stat"><span>Точность</span><strong>{% if insights.accuracy != None %}{{ insights.accuracy }}%{% else %}—{% endif %}</strong><small>по заданиям с результатом</small></article>
+    </section>
+    <section class="insights-grid">
+      <article class="card activity-panel" aria-labelledby="activity-title">
+        <div><p class="eyebrow">Последние 14 дней</p><h2 id="activity-title">Ритм занятий</h2></div>
+        <div class="activity-chart" role="img" aria-label="Количество завершённых уроков по дням">
+          {% for day in insights.activity %}<span class="activity-column"><span class="activity-bar{% if day.count %} has-value{% endif %}" style="--height: {{ day.height }}%" title="{{ day.date }}: {{ day.count }}"></span><small>{{ day.date }}</small><b class="visually-hidden">{{ day.count }} уроков</b></span>{% endfor %}
+        </div>
+      </article>
+      <article class="card recommendation-card">
+        <p class="eyebrow">Следующий шаг</p><h2>{{ insights.recommendation.title }}</h2><p class="muted">{{ insights.recommendation.reason }}</p>
+        <a class="compact-button" href="{{ insights.recommendation.href }}">{{ insights.recommendation.action }} →</a>
+      </article>
+    </section>
+    <section class="skill-breakdown" aria-labelledby="skill-breakdown-title">
+      <div class="section-heading"><div><p class="eyebrow">Последние 30 дней</p><h2 id="skill-breakdown-title">По типам практики</h2></div></div>
+      {% if insights.breakdown %}<div class="skill-breakdown-list">{% for item in insights.breakdown %}<article class="card skill-breakdown-item"><div><strong>{{ item.label }}</strong><small>{{ item.attempts }} заверш.</small></div><div class="skill-meter" role="progressbar" aria-label="{{ item.label }}: {{ item.accuracy }}%" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ item.accuracy }}"><span style="--value: {{ item.accuracy }}%"></span></div><strong>{{ item.accuracy }}%</strong></article>{% endfor %}</div>{% else %}<p class="card muted">Заверши несколько уроков, чтобы увидеть распределение результатов.</p>{% endif %}
+    </section>
+  {% else %}
+    <p class="data-notice">Аналитика временно недоступна. История ниже может оставаться доступной.</p>
+  {% endif %}
+  <div class="section-heading history-heading"><div><p class="eyebrow">Журнал</p><h2>Завершённые занятия</h2></div></div>
   <nav class="history-periods" aria-label="Период истории">
     <a href="?period=7"{% if selected_period == "7" %} aria-current="page"{% endif %}>7 дней</a>
     <a href="?period=30"{% if selected_period == "30" %} aria-current="page"{% endif %}>30 дней</a>
