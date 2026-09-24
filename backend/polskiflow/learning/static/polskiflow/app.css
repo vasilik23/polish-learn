@@ -179,6 +179,15 @@ p { line-height: 1.65; }
 .catalog-filter-actions a { color: var(--primary); font-size: .8rem; font-weight: 800; }
 .course-level-heading { align-items: end; margin-top: 1.35rem; }
 .course-level-heading .eyebrow { margin-bottom: .25rem; }
+.practice-hub-header { align-items: end; }
+.practice-hub-grid { display: grid; gap: 1rem; }
+.practice-hub-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .8rem 1rem; color: var(--text); text-decoration: none; }
+.practice-hub-card > span { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: .9rem; background: var(--primary-soft); color: var(--primary-dark); font-size: 1.4rem; font-weight: 900; }
+.practice-hub-card h2, .practice-hub-card p { margin: 0; }
+.practice-hub-card h2 { margin-bottom: .35rem; font-size: 1.15rem; }
+.practice-hub-card div > p:last-child { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.practice-hub-card > strong { grid-column: 2; color: var(--primary); font-size: .82rem; }
+.practice-hub-card:hover { border-color: var(--primary); transform: translateY(-1px); }
 .writing-callout, .listening-callout, .diagnostic-callout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .8rem 1rem; margin-bottom: 1.2rem; }
 .writing-callout h2 { margin: .1rem 0 .35rem; font-size: 1.15rem; }
 .writing-callout p { margin: 0; }
@@ -562,6 +571,7 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .auth-switch { margin: 1.2rem 0 0; font-size: .85rem; text-align: center; }
 
 @media (min-width: 700px) {
+  .practice-hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .course-levels { display: grid; grid-template-columns: repeat(6, minmax(4.6rem, 1fr)); overflow-x: visible; }
   .course-levels a { min-width: 0; }
   .catalog-filters { grid-template-columns: minmax(14rem, 1fr) auto; align-items: end; }

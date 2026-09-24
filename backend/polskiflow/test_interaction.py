@@ -193,9 +193,8 @@ class InteractionScenarioTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_course_b1_and_b2_link_to_scenarios(self):
-        for level in ("B1", "B2"):
-            with self.subTest(level=level):
-                response = self.client.get(f"/course/?level={level}")
-                self.assertContains(response, f"Сценарии {level}")
-                self.assertContains(response, 'href="/interaction/"')
+    def test_practice_hub_links_to_scenarios(self):
+        response = self.client.get("/practice/")
+
+        self.assertContains(response, 'href="/interaction/"')
+        self.assertContains(response, "Общение и медиация")

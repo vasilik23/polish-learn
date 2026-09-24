@@ -137,6 +137,7 @@ Django Admin с production-подобным PostgreSQL дополнительн�
 | `/api/v1/me/lesson-drafts/{lesson_id}/` | bearer-only сохранение и удаление безопасного черновика |
 | `/api/v1/me/lesson-results/` | bearer-only идемпотентная отправка результата урока |
 | `/api/v1/me/lesson-results/session/` | cookie-only и CSRF-protected отправка результата из браузерной offline-очереди |
+| `/practice/` | единый адаптивный каталог словаря, аудирования, письма, общения, диагностики и истории |
 | `/admin/` | управление учебным контентом |
 | `/health/` | проверка состояния приложения |
 

@@ -3,7 +3,7 @@
 {% block content %}
   <header class="content-header">
     <div><p class="eyebrow">Траектория A1 → C2</p><h1>Курс польского</h1><p class="muted">Проходи темы по порядку: слова, грамматика, повторение, чтение и проверка знаний.</p></div>
-    <a class="compact-button" href="{% url 'reading-library' %}">Все тексты →</a>
+    <a class="compact-button" href="{% url 'practice-hub' %}">Все тренажёры →</a>
   </header>
   {% if diagnostic_level_applied %}
     <p class="save-success" role="status">Уровень {{ selected_level }} сохранён в профиле. Курс и библиотека теперь открываются с него.</p>
@@ -56,32 +56,10 @@
       {% if catalog_filters.q or catalog_filters.topic or catalog_filters.kind or catalog_filters.duration or catalog_filters.completion %}<a href="?level={{ selected_level }}">Сбросить</a>{% endif %}
     </div>
   </form>
-  <aside class="card listening-callout" aria-labelledby="listening-callout-title">
-    <span class="writing-callout-icon" aria-hidden="true">🎧</span>
-    <div><p class="eyebrow">Аудиопилот A1</p><h2 id="listening-callout-title">Узнай три слова на слух</h2><p class="muted">Короткие записи носителей, мгновенная проверка и прозрачная лицензия.</p></div>
-    <a class="compact-button" href="{% url 'listening-practice' %}">Слушать →</a>
-  </aside>
-  <aside class="card diagnostic-callout" aria-labelledby="diagnostic-callout-title">
-    <span class="writing-callout-icon" aria-hidden="true">◎</span>
-    <div><p class="eyebrow">Не знаешь, откуда начать?</p><h2 id="diagnostic-callout-title">Составь предварительную карту навыков</h2><p class="muted">Короткая самооценка восприятия, продукции, взаимодействия и медиации — без записи результата в профиль.</p></div>
-    <a class="compact-button" href="{% url 'diagnostic' %}">Оценить навыки →</a>
-  </aside>
   <div class="section-heading course-level-heading">
     <div><p class="eyebrow">Уровень {{ selected_level }}</p><h2>Темы и уроки</h2></div>
     <span>{{ catalog_result_topic_label }} · {{ catalog_result_lesson_label }}</span>
   </div>
-  {% if selected_level == "B1" or selected_level == "B2" %}
-    <aside class="card writing-callout" aria-labelledby="interaction-callout-title">
-      <span class="writing-callout-icon" aria-hidden="true">↔</span>
-      <div><p class="eyebrow">Сценарии {{ selected_level }}</p><h2 id="interaction-callout-title">Договорись и передай смысл</h2><p class="muted">Короткие ситуации на взаимодействие, медиацию и выбор подходящего регистра.</p></div>
-      <a class="compact-button" href="{% url 'interaction-practice' %}">Открыть сценарии →</a>
-    </aside>
-    <aside class="card writing-callout" aria-labelledby="writing-callout-title">
-      <span class="writing-callout-icon" aria-hidden="true">✎</span>
-      <div><p class="eyebrow">Письменная практика {{ selected_level }}</p><h2 id="writing-callout-title">Сформулируй ответ своими словами</h2><p class="muted">Четыре задания, локальный черновик и критерии для самостоятельной проверки.</p></div>
-      <a class="compact-button" href="{% url 'writing-practice' %}?level={{ selected_level }}">Открыть практику →</a>
-    </aside>
-  {% endif %}
   <div class="topic-list" aria-label="Темы курса">
     {% for topic in course_topics %}
       <section class="topic-card" id="topic-{{ topic.id }}">

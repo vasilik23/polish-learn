@@ -138,11 +138,11 @@ class DiagnosticViewTests(TestCase):
         self.auth_patch.start()
         self.addCleanup(self.auth_patch.stop)
 
-    def test_page_is_discoverable_from_course_and_describes_limitations(self):
-        course = self.client.get("/course/")
+    def test_page_is_discoverable_from_practice_hub_and_describes_limitations(self):
+        practice = self.client.get("/practice/")
         page = self.client.get("/diagnostic/")
 
-        self.assertContains(course, 'href="/diagnostic/"')
+        self.assertContains(practice, 'href="/diagnostic/"')
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Предварительная диагностика")
         self.assertContains(page, "не тест уровня, экзамен или сертификат")

@@ -457,6 +457,12 @@ def daily_tasks(request: HttpRequest) -> HttpResponse:
 
 
 @require_browser_user
+def practice_hub(request: HttpRequest) -> HttpResponse:
+    """Keep optional training modes discoverable without bloating the course catalog."""
+    return render(request, "practice.html")
+
+
+@require_browser_user
 @require_http_methods(["GET", "POST"])
 def profile(request: HttpRequest) -> HttpResponse:
     fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
