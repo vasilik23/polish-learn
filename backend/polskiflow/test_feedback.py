@@ -16,6 +16,24 @@ class FeedbackTests(TestCase):
         self.assertContains(self.client.get("/"), 'href="/feedback/"')
 
     @patch("polskiflow.feedback_views.load_feedback", return_value=[])
+    def test_authenticated_pages_offer_contextual_feedback_link(self, _load):
+        response = self.client.get("/course/?level=B1")
+
+        self.assertContains(response, 'href="/feedback/?from=/course/"')
+        self.assertContains(response, 'aria-label="Сообщить об ошибке на этой странице"')
+
+    @patch(
+        "polskiflow.feedback_views.load_feedback",
+        return_value=[{"category": "interface", "status": "resolved", "message": "Кнопка перекрывала текст.", "page_url": "/course/"}],
+    )
+    def test_history_uses_readable_category_and_status_labels(self, _load):
+        response = self.client.get("/feedback/")
+
+        self.assertContains(response, "Интерфейс")
+        self.assertContains(response, "Исправлено")
+        self.assertContains(response, "/course/")
+
+    @patch("polskiflow.feedback_views.load_feedback", return_value=[])
     @patch("polskiflow.feedback_views.save_feedback", return_value=True)
     def test_valid_feedback_is_owner_scoped(self, save, _load):
         response = self.client.post("/feedback/", {"category": "content", "message": "В упражнении есть неточный вариант ответа.", "page_url": "/lesson/quiz/"})
