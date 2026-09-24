@@ -6,7 +6,8 @@ from django.views.decorators.http import require_GET
 
 from polskiflow.auth_views import require_browser_user
 from polskiflow.content import tasks
-from polskiflow.progress_store import load_completion_history
+from polskiflow.domain.learning_insights import build_learning_insights
+from polskiflow.progress_store import load_completion_history, load_dashboard_progress
 
 
 PERIODS = {"7": 7, "30": 30, "90": 90, "all": None}
@@ -28,7 +29,8 @@ def learning_history(request: HttpRequest) -> HttpResponse:
         page=max(1, page_number),
         days=PERIODS[period],
     )
-    lesson_map = {lesson["id"]: lesson for lesson in tasks()}
+    lesson_tasks = tasks()
+    lesson_map = {lesson["id"]: lesson for lesson in lesson_tasks}
     rows = []
     for completion in page.rows:
         lesson = lesson_map.get(completion.get("lesson_id"), {})
@@ -41,9 +43,16 @@ def learning_history(request: HttpRequest) -> HttpResponse:
             "level": lesson.get("level") or "—",
             "score": f"{known} / {total}" if total else "завершён",
         })
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token,
+        request.supabase_user.id,
+        fallback_name,
+    )
     return render(request, "history.html", {
         "history_rows": rows,
         "history_available": page.available,
         "history_page": page,
         "selected_period": period,
+        "insights": build_learning_insights(dashboard, lesson_tasks),
     })
