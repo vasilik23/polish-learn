@@ -26,6 +26,7 @@ from polskiflow.auth import (
 from polskiflow.content import course_topics, tasks
 from polskiflow.dictionary_store import load_personal_words
 from polskiflow.lesson_draft_store import load_latest_lesson_draft
+from polskiflow.lesson_bookmark_store import load_lesson_bookmarks
 from polskiflow.domain.achievements import build_achievements
 from polskiflow.domain.auth_rate_limit import consume_auth_attempt
 from polskiflow.domain.daily_plan import build_daily_plan
@@ -783,6 +784,9 @@ def course(request: HttpRequest) -> HttpResponse:
     levels = PROFILE_LEVELS
     selected_level = select_cefr_level(request, dashboard.level)
     all_topics = course_topics()
+    lesson_bookmarks = load_lesson_bookmarks(
+        request.supabase_access_token, request.supabase_user.id
+    )
     level_counts = {
         level: sum(topic["level"] == level for topic in all_topics) for level in levels
     }
@@ -801,6 +805,7 @@ def course(request: HttpRequest) -> HttpResponse:
         next_lesson = None
         for lesson in topic["lessons"]:
             lesson["completed"] = lesson["id"] in dashboard.all_completed_lesson_ids
+            lesson["saved"] = lesson["id"] in (lesson_bookmarks or set())
             if lesson["completed"]:
                 completed_count += 1
             elif next_lesson is None:
@@ -865,6 +870,7 @@ def course(request: HttpRequest) -> HttpResponse:
             "catalog_result_lesson_label": count_label(
                 result_lesson_count, ("урок", "урока", "уроков")
             ),
+            "lesson_bookmarks_available": lesson_bookmarks is not None,
         },
     )
 

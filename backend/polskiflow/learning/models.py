@@ -315,6 +315,17 @@ class ReadingBookmark(models.Model):
         managed = False
 
 
+class LessonBookmark(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()
+    lesson_id = models.CharField(max_length=32)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "lesson_bookmarks"
+        managed = False
+
+
 class UserFeedback(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField()

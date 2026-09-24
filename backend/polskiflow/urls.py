@@ -25,6 +25,7 @@ from polskiflow.reading_views import (
     remove_dictionary_word,
 )
 from polskiflow.search_views import global_search
+from polskiflow.saved_views import saved_learning, toggle_lesson_bookmark
 
 
 @require_supabase_user
@@ -44,6 +45,7 @@ urlpatterns = [
     path("course/", course, name="course"),
     path("practice/", practice_hub, name="practice-hub"),
     path("search/", global_search, name="global-search"),
+    path("saved/", saved_learning, name="saved-learning"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
     path("account/security/", account_security, name="account-security"),
@@ -63,6 +65,7 @@ urlpatterns = [
     path("resend-confirmation/", resend_confirmation, name="resend-confirmation"),
     path("logout/", logout_view, name="logout"),
     path("lesson/<slug:lesson_id>/", lesson, name="lesson"),
+    path("lesson/<slug:lesson_id>/bookmark/", toggle_lesson_bookmark, name="toggle-lesson-bookmark"),
     path("lesson/<slug:lesson_id>/step/", lesson_step, name="lesson-step"),
     path("reading/", reading_library, name="reading-library"),
     path("news/", news_library, name="news-library"),

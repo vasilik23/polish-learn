@@ -14,6 +14,7 @@ from polskiflow.auth_views import require_browser_user
 from polskiflow.content import flashcards, grammar, lesson_navigation, quiz, task
 from polskiflow.progress_store import save_lesson_completion_result
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
+from polskiflow.lesson_bookmark_store import load_lesson_bookmarks
 
 
 # Expansion is release-gated by a successful offline -> online recovery smoke
@@ -30,7 +31,10 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
     lesson_kind = lesson_task["kind"]
     draft = load_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id)
     index, score = _valid_draft_state(draft, lesson_id, lesson_kind)
-    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind, "resume_notice": index > 0}
+    bookmarks = load_lesson_bookmarks(
+        request.supabase_access_token, request.supabase_user.id
+    )
+    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind, "resume_notice": index > 0, "is_bookmarked": lesson_id in (bookmarks or set()), "lesson_bookmarks_available": bookmarks is not None}
     if lesson_kind in {"words", "review"}:
         context.update(_flashcard_context(lesson_id, lesson_kind, index, score, False))
     elif lesson_kind == "grammar":
