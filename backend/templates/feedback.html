@@ -1,10 +1,34 @@
-{% extends "base.html" %}{% block title %}Обратная связь · PolskiFlow{% endblock %}{% block content %}
-<header class="content-header"><div><p class="eyebrow">Помоги улучшить PolskiFlow</p><h1>Обратная связь</h1><p class="muted">Сообщи об ошибке или предложи улучшение.</p></div></header>
-<form class="card profile-form" method="post">{% csrf_token %}
-{% if sent %}<p class="save-success" role="status">Спасибо! Сообщение принято.</p>{% endif %}{% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
-<label>Категория<select name="category">{% for value,label in categories %}<option value="{{ value }}"{% if form.category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-<label>Сообщение<textarea name="message" minlength="20" maxlength="2000" rows="6" required>{{ form.message }}</textarea></label>
-<label>Страница<input name="page_url" value="{{ form.page_url }}" maxlength="300" placeholder="/lesson/.../"></label>
-<button type="submit">Отправить</button></form>
-<section aria-labelledby="feedback-history"><h2 id="feedback-history">Мои обращения</h2>{% if available %}<div class="card">{% for item in items %}<p><strong>{{ item.category }}</strong> · {{ item.status }}<br>{{ item.message }}</p>{% empty %}<p class="muted">Обращений пока нет.</p>{% endfor %}</div>{% else %}<p class="data-notice">История временно недоступна.</p>{% endif %}</section>
+{% extends "base.html" %}
+{% block title %}Обратная связь · PolskiFlow{% endblock %}
+{% block content %}
+  <header class="content-header"><div><p class="eyebrow">Помоги улучшить PolskiFlow</p><h1>Обратная связь</h1><p class="muted">Сообщи об ошибке или предложи улучшение. Мы сохраним только текст, категорию и указанный путь страницы.</p></div></header>
+  <div class="feedback-layout">
+    <form class="card profile-form feedback-form" method="post">
+      {% csrf_token %}
+      {% if sent %}<p class="save-success" role="status">Спасибо! Сообщение принято.</p>{% endif %}
+      {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+      <label for="feedback-category">Категория<select id="feedback-category" name="category">{% for value,label in categories %}<option value="{{ value }}"{% if form.category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label for="feedback-message">Что произошло?<textarea id="feedback-message" name="message" minlength="20" maxlength="2000" rows="7" required placeholder="Опиши ожидаемый и фактический результат">{{ form.message }}</textarea><small>От 20 до 2000 символов. Не добавляй пароли и другие секреты.</small></label>
+      <label for="feedback-page">Страница<input id="feedback-page" name="page_url" value="{{ form.page_url }}" maxlength="300" placeholder="/lesson/.../"><small>Подставляется автоматически, но путь можно уточнить.</small></label>
+      <button type="submit">Отправить сообщение</button>
+    </form>
+    <section class="feedback-history" aria-labelledby="feedback-history-title">
+      <div class="section-heading"><div><p class="eyebrow">Статус</p><h2 id="feedback-history-title">Мои обращения</h2></div></div>
+      {% if available %}
+        <ol class="feedback-history-list">
+          {% for item in items %}
+            <li class="card feedback-history-item">
+              <div class="feedback-history-meta"><strong>{{ item.category_label }}</strong><span class="feedback-status">{{ item.status_label }}</span></div>
+              <p>{{ item.message }}</p>
+              {% if item.page_url %}<small>{{ item.page_url }}</small>{% endif %}
+            </li>
+          {% empty %}
+            <li class="card feedback-empty"><strong>Обращений пока нет</strong><p class="muted">Новые сообщения и их статусы появятся здесь.</p></li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <p class="data-notice">История временно недоступна. Форму всё равно можно отправить.</p>
+      {% endif %}
+    </section>
+  </div>
 {% endblock %}

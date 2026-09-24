@@ -88,6 +88,11 @@
           </form>
         </div>
       </details>
+      {% if request.resolver_match.url_name != 'feedback' %}
+        <a class="feedback-launcher" href="{% url 'feedback' %}?from={{ request.path|urlencode }}" aria-label="Сообщить об ошибке на этой странице">
+          <span aria-hidden="true">!</span><span>Сообщить</span>
+        </a>
+      {% endif %}
     {% else %}
       <label class="theme-control theme-control-guest">
         <span class="visually-hidden">Цветовая тема</span>
