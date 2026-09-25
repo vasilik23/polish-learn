@@ -16,6 +16,7 @@ from polskiflow.progress_store import save_lesson_completion_result
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
 from polskiflow.lesson_bookmark_store import load_lesson_bookmarks
 from polskiflow.domain.lesson_state import InvalidLessonState, load_lesson_state, sign_lesson_state
+from polskiflow.mistake_store import set_mistake
 
 
 # Expansion is release-gated by a successful offline -> online recovery smoke
@@ -109,9 +110,9 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
             )
             if answer_order is None:
                 return HttpResponseBadRequest("Составьте предложение из всех слов")
-            context = _question_context(lesson_id, lesson_kind, index, score + _builder_is_correct(
-                answer_order, questions[index], lesson_id, index
-            ), None, answer_order)
+            is_correct = _builder_is_correct(answer_order, questions[index], lesson_id, index)
+            set_mistake(request.supabase_access_token, request.supabase_user.id, lesson_id, index, not is_correct)
+            context = _question_context(lesson_id, lesson_kind, index, score + is_correct, None, answer_order)
             context["state_phase"] = "answered"
             return _render_step(request, "lessons/_question.html", context, lesson_id, lesson_kind)
         try:
@@ -120,9 +121,11 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
             return HttpResponseBadRequest("Выберите ответ")
         if not 0 <= selected < len(questions[index]["options"]):
             return HttpResponseBadRequest("Некорректный ответ")
+        is_correct = selected == questions[index]["correct"]
+        set_mistake(request.supabase_access_token, request.supabase_user.id, lesson_id, index, not is_correct)
         context = _question_context(
             lesson_id, lesson_kind, index,
-            score + (selected == questions[index]["correct"]), selected,
+            score + is_correct, selected,
         )
         context["state_phase"] = "answered"
     elif action == "next":

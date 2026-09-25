@@ -791,9 +791,17 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .history-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .8rem; background: var(--primary-soft); }
 .history-score { color: var(--muted); white-space: nowrap; }
 .history-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+.mistake-list { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.mistake-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; }
+.mistake-item > span { font-size: 1.4rem; }
+.mistake-item div { display: grid; gap: .2rem; }
+.mistake-item small { color: var(--muted); }
+.mistake-item p { margin: .35rem 0 0; }
 @media (max-width: 560px) {
   .insights-summary { grid-template-columns: 1fr; }
   .weekly-review-summary, .weekly-review-columns { grid-template-columns: 1fr; }
+  .mistake-item { grid-template-columns: auto minmax(0, 1fr); }
+  .mistake-item .compact-button { grid-column: 1 / -1; width: 100%; }
   .insight-stat { grid-template-columns: 1fr auto; align-items: center; }
   .insight-stat small { grid-column: 1 / -1; }
   .skill-breakdown-item { grid-template-columns: minmax(0, 1fr) auto; }

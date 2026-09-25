@@ -20,6 +20,7 @@ DATASETS = {
     "personal_words": ("personal_words", "id,word,translation,context,source_text_id,created_at,ease_factor,interval_days,repetitions,next_review_date,last_reviewed_at", "created_at.asc,id.asc"),
     "reading_bookmarks": ("reading_bookmarks", "reading_text_id,created_at", "created_at.asc,reading_text_id.asc"),
     "lesson_bookmarks": ("lesson_bookmarks", "lesson_id,created_at", "created_at.asc,lesson_id.asc"),
+    "learner_mistakes": ("learner_mistakes", "lesson_id,question_position,last_wrong_at", "last_wrong_at.asc,lesson_id.asc,question_position.asc"),
     "feedback": ("user_feedback", "id,category,message,page_url,status,created_at", "created_at.asc,id.asc"),
     "reminder_preferences": ("reminder_preferences", "daily_reminder_enabled,reminder_time,timezone,updated_at", "updated_at.asc"),
 }
