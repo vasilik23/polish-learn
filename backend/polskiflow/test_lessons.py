@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
+from polskiflow.domain.lesson_state import sign_lesson_state
 from polskiflow.learning.models import Course, Flashcard, Lesson, LessonFlashcard, Question, Topic
 from polskiflow.progress_store import CompletionSaveResult, DashboardProgress
 
@@ -77,6 +78,9 @@ class LessonViewsTests(TestCase):
         )
         self.auth_patch.start()
         self.addCleanup(self.auth_patch.stop)
+
+    def lesson_state(self, lesson_id, index=0, score=0, phase="ready"):
+        return sign_lesson_state("user-123", lesson_id, lesson_id, index, score, phase)
 
     def test_home_combines_daily_goal_and_all_tasks(self):
         response = self.client.get("/")
@@ -777,18 +781,27 @@ class LessonViewsTests(TestCase):
 
     @patch("polskiflow.lesson_views.save_lesson_draft")
     def test_advancing_lesson_saves_next_step(self, save):
-        response = self.client.post("/lesson/quiz/step/", {"action": "next", "index": 0, "score": 0, "selected": 1})
+        response = self.client.post("/lesson/quiz/step/", {
+            "action": "next", "state": self.lesson_state("quiz", 0, 1, "answered"), "selected": 1,
+            "index": 4, "score": 4,
+        })
         self.assertContains(response, "Вопрос 2 из 5")
         save.assert_called_once_with("access", "user-123", "quiz", "quiz", 1, 1)
 
+    def test_signed_state_cannot_be_replayed_for_another_lesson(self):
+        response = self.client.post("/lesson/grammar/step/", {
+            "action": "start", "state": self.lesson_state("quiz"),
+        })
+        self.assertEqual(response.status_code, 400)
+
     @patch("polskiflow.lesson_views.delete_lesson_draft")
     def test_completed_lesson_clears_draft(self, delete):
-        self.client.post("/lesson/quiz/step/", {"action": "next", "index": 4, "score": 3, "selected": 1})
+        self.client.post("/lesson/quiz/step/", {"action": "next", "state": self.lesson_state("quiz", 4, 4, "answered"), "selected": 1})
         delete.assert_called_once_with("access", "user-123", "quiz")
 
     def test_flashcard_can_be_revealed_and_completed(self):
         revealed = self.client.post(
-            "/lesson/words/step/", {"action": "reveal", "index": 0, "score": 0}
+            "/lesson/words/step/", {"action": "reveal", "state": self.lesson_state("words")}
         )
         self.assertContains(revealed, "привет")
 
@@ -796,7 +809,7 @@ class LessonViewsTests(TestCase):
         for index in range(5):
             response = self.client.post(
                 "/lesson/words/step/",
-                {"action": "know", "index": index, "score": index},
+                {"action": "know", "state": self.lesson_state("words", index, index)},
             )
         self.assertContains(response, "5 / 5")
         self.assertContains(response, "Урок завершён")
@@ -807,7 +820,7 @@ class LessonViewsTests(TestCase):
     def test_final_topic_lesson_returns_to_its_course_topic(self):
         response = self.client.post(
             "/lesson/quiz/step/",
-            {"action": "next", "index": 4, "score": 3, "selected": 1},
+            {"action": "next", "state": self.lesson_state("quiz", 4, 4, "answered"), "selected": 1},
         )
 
         self.assertContains(response, "Тема завершена")
@@ -824,7 +837,7 @@ class LessonViewsTests(TestCase):
 
         response = self.client.post(
             "/lesson/words/step/",
-            {"action": "know", "index": 4, "score": 4},
+            {"action": "know", "state": self.lesson_state("words", 4, 4)},
         )
 
         self.assertContains(response, "data-lesson-result-sync")
@@ -840,7 +853,7 @@ class LessonViewsTests(TestCase):
 
         response = self.client.post(
             "/lesson/quiz/step/",
-            {"action": "next", "index": 4, "score": 3, "selected": 1},
+            {"action": "next", "state": self.lesson_state("quiz", 4, 4, "answered"), "selected": 1},
         )
 
         self.assertContains(response, "data-lesson-result-sync")
@@ -855,8 +868,7 @@ class LessonViewsTests(TestCase):
             "/lesson/grammar/step/",
             {
                 "action": "next",
-                "index": 3,
-                "score": 2,
+                "state": self.lesson_state("grammar", 3, 2, "answered"),
                 "answer_order": "[0,1,2,3,4]",
             },
         )
@@ -874,7 +886,7 @@ class LessonViewsTests(TestCase):
 
         response = self.client.post(
             "/lesson/review/step/",
-            {"action": "know", "index": 0, "score": 0},
+            {"action": "know", "state": self.lesson_state("review")},
         )
 
         self.assertContains(response, "data-lesson-result-sync")
@@ -887,7 +899,7 @@ class LessonViewsTests(TestCase):
 
         response = self.client.post(
             "/lesson/words/step/",
-            {"action": "know", "index": 4, "score": 4},
+            {"action": "know", "state": self.lesson_state("words", 4, 4)},
         )
 
         self.assertNotContains(response, "data-lesson-result-sync")
@@ -895,12 +907,12 @@ class LessonViewsTests(TestCase):
     def test_quiz_answer_shows_explanation_and_next_question(self):
         answered = self.client.post(
             "/lesson/quiz/step/",
-            {"action": "answer", "index": 0, "score": 0, "choice": 1},
+            {"action": "answer", "state": self.lesson_state("quiz"), "choice": 1},
         )
         self.assertContains(answered, "Cześć — неформальное")
         next_question = self.client.post(
             "/lesson/quiz/step/",
-            {"action": "next", "index": 0, "score": 0, "selected": 1},
+            {"action": "next", "state": self.lesson_state("quiz", 0, 1, "answered"), "selected": 1},
         )
         self.assertContains(next_question, "Что значит")
 
@@ -908,14 +920,14 @@ class LessonViewsTests(TestCase):
         page = self.client.get("/lesson/grammar/")
         self.assertContains(page, "Род существительных")
         exercise = self.client.post(
-            "/lesson/grammar/step/", {"action": "start", "index": 0, "score": 0}
+            "/lesson/grammar/step/", {"action": "start", "state": self.lesson_state("grammar")}
         )
         self.assertContains(exercise, "Слово «kawa»")
 
     def test_grammar_sentence_builder_is_accessible_and_server_validated(self):
         question = self.client.post(
             "/lesson/grammar/step/",
-            {"action": "next", "index": 2, "score": 0, "selected": 2},
+            {"action": "next", "state": self.lesson_state("grammar", 2, 1, "answered"), "selected": 2},
         )
         self.assertContains(question, "Составь предложение")
         self.assertContains(question, "data-sentence-builder")
@@ -925,7 +937,7 @@ class LessonViewsTests(TestCase):
 
         missing_word = self.client.post(
             "/lesson/grammar/step/",
-            {"action": "answer", "index": 3, "score": 0, "answer_order": "[0]"},
+            {"action": "answer", "state": self.lesson_state("grammar", 3, 0), "answer_order": "[0]"},
         )
         self.assertEqual(missing_word.status_code, 400)
 
@@ -937,8 +949,7 @@ class LessonViewsTests(TestCase):
             "/lesson/grammar/step/",
             {
                 "action": "answer",
-                "index": 3,
-                "score": 0,
+                "state": self.lesson_state("grammar", 3, 0),
                 "answer_order": __import__("json").dumps(correct_order),
             },
         )
@@ -947,7 +958,7 @@ class LessonViewsTests(TestCase):
 
         tampered_next = self.client.post(
             "/lesson/grammar/step/",
-            {"action": "next", "index": 3, "score": 0, "answer_order": "[0, 0, 1, 2, 3]"},
+            {"action": "next", "state": self.lesson_state("grammar", 3, 0, "answered"), "answer_order": "[0, 0, 1, 2, 3]"},
         )
         self.assertEqual(tampered_next.status_code, 400)
 
@@ -961,6 +972,6 @@ class LessonViewsTests(TestCase):
     def test_invalid_lesson_state_is_rejected(self):
         response = self.client.post(
             "/lesson/quiz/step/",
-            {"action": "answer", "index": 999, "score": 0, "choice": 0},
+            {"action": "answer", "state": "tampered", "choice": 0},
         )
         self.assertEqual(response.status_code, 400)
