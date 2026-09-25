@@ -232,6 +232,18 @@ class LessonDraft(models.Model):
         managed = False
 
 
+class LearnerMistake(models.Model):
+    pk = models.CompositePrimaryKey("user_id", "lesson_id", "question_position")
+    user_id = models.UUIDField()
+    lesson_id = models.TextField()
+    question_position = models.PositiveSmallIntegerField()
+    last_wrong_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "learner_mistakes"
+        managed = False
+
+
 class FlashcardReview(models.Model):
     pk = models.CompositePrimaryKey("user_id", "card_id")
     user_id = models.UUIDField()

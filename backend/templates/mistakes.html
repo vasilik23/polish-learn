@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Работа над ошибками · PolskiFlow{% endblock %}
+{% block content %}
+<header class="content-header"><div><p class="eyebrow">Личная практика</p><h1>Работа над ошибками</h1><p class="muted">Здесь остаются задания, в которых последний ответ был неверным. Правильный ответ при следующем прохождении уберёт запись автоматически.</p></div><a class="compact-button secondary-link" href="{% url 'practice-hub' %}">К тренажёрам</a></header>
+{% if not mistakes_available %}<p class="data-notice" role="status">Список временно недоступен. Уроки продолжают работать.</p>
+{% elif mistakes %}<ul class="mistake-list" aria-label="Задания для повторения">{% for item in mistakes %}<li class="card mistake-item"><span aria-hidden="true">{{ item.emoji }}</span><div><strong>{{ item.title }}</strong><small>{{ item.level }}</small><p>{{ item.prompt }}</p></div><a class="compact-button" href="{% url 'lesson' item.lesson_id %}">Повторить урок</a></li>{% endfor %}</ul>
+{% else %}<div class="card empty-state"><h2>Ошибок для повторения пока нет</h2><p>Неверные ответы из грамматики и тестов появятся здесь автоматически.</p><a class="compact-button" href="{% url 'home' %}#daily-tasks">К плану на сегодня</a></div>{% endif %}
+<p class="profile-note">Мы сохраняем только урок и номер задания — не выбранный тобой ответ.</p>
+{% endblock %}

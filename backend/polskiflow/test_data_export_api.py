@@ -22,7 +22,7 @@ class LearnerDataExportApiTests(TestCase):
             "profile": [{"display_name": "Anna"}],
             "lesson_completions": [{"lesson_id": "words"}],
             "lesson_result_events": [], "lesson_drafts": [],
-            "personal_words": [], "reading_bookmarks": [], "lesson_bookmarks": [],
+            "personal_words": [], "reading_bookmarks": [], "lesson_bookmarks": [], "learner_mistakes": [],
             "feedback": [], "reminder_preferences": [],
         })
 
