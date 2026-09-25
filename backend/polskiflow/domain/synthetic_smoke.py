@@ -1,10 +1,13 @@
 """Read-only production smoke checks for public and owner-scoped contracts."""
 
 import json
+import ssl
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
+
+import certifi
 
 
 PUBLIC_CHECKS = (
@@ -17,6 +20,7 @@ PRIVATE_CHECKS = (
     ("bootstrap", "api/v1/me/bootstrap/"),
     ("export", "api/v1/me/export/"),
 )
+SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 
 @dataclass(frozen=True)
@@ -30,23 +34,34 @@ class SmokeFailure(ValueError):
     pass
 
 
-def run_synthetic_smoke(base_url: str, access_token: str, *, timeout: float = 10) -> tuple[SmokeResult, ...]:
+def run_synthetic_smoke(
+    base_url: str,
+    access_token: str = "",
+    *,
+    timeout: float = 10,
+    include_private: bool = True,
+) -> tuple[SmokeResult, ...]:
     """Verify the read-only cold-start path without logging credentials or data."""
 
     base_url = _validated_base_url(base_url)
     if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not 0 < timeout <= 60:
         raise SmokeFailure("timeout must be between 0 and 60 seconds")
-    if not access_token or any(character.isspace() for character in access_token):
+    if include_private and (
+        not access_token or any(character.isspace() for character in access_token)
+    ):
         raise SmokeFailure("access token must be a non-empty single-line value")
+    if not include_private and access_token:
+        raise SmokeFailure("public-only smoke must not receive an access token")
     results = []
-    for name, path in (*PUBLIC_CHECKS, *PRIVATE_CHECKS):
+    checks = (*PUBLIC_CHECKS, *PRIVATE_CHECKS) if include_private else PUBLIC_CHECKS
+    for name, path in checks:
         private = (name, path) in PRIVATE_CHECKS
         headers = {"Accept": "application/json", "User-Agent": "PolskiFlow-Synthetic-Smoke/1.0"}
         if private:
             headers["Authorization"] = f"Bearer {access_token}"
         request = Request(urljoin(base_url, path), headers=headers)
         try:
-            with urlopen(request, timeout=timeout) as response:
+            with urlopen(request, timeout=timeout, context=SSL_CONTEXT) as response:
                 payload = json.load(response)
                 status = response.status
                 response_headers = response.headers
