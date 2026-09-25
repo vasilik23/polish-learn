@@ -5,6 +5,31 @@
     <div><p class="eyebrow">Твой прогресс</p><h1>Прогресс и история</h1><p class="muted">Динамика за последние 28 дней и завершённые уроки доступны только тебе.</p></div>
     <a class="compact-button secondary-link" href="{% url 'profile' %}">К профилю</a>
   </header>
+  {% if weekly_review.available %}
+    <section class="weekly-review" aria-labelledby="weekly-review-title">
+      <div class="section-heading"><div><p class="eyebrow">Последние 7 дней</p><h2 id="weekly-review-title">Итог недели</h2></div></div>
+      <div class="weekly-review-summary">
+        <article class="card insight-stat"><span>Активных дней</span><strong>{{ weekly_review.active_days }}</strong><small>из последних 7</small></article>
+        <article class="card insight-stat"><span>Завершено</span><strong>{{ weekly_review.completed_lessons }}</strong><small>{% if weekly_review.completed_delta > 0 %}на {{ weekly_review.completed_delta }} больше прошлой недели{% elif weekly_review.completed_delta < 0 %}на {{ weekly_review.completed_delta|stringformat:"d"|slice:"1:" }} меньше прошлой недели{% else %}как на прошлой неделе{% endif %}</small></article>
+        <article class="card insight-stat"><span>Точность</span><strong>{% if weekly_review.accuracy != None %}{{ weekly_review.accuracy }}%{% else %}—{% endif %}</strong><small>по последнему результату каждого урока</small></article>
+      </div>
+      {% if weekly_review.has_results %}
+        <div class="weekly-review-columns">
+          <article class="card weekly-review-card">
+            <p class="eyebrow">Получается уверенно</p><h3>Сильные результаты</h3>
+            {% if weekly_review.strongest %}<ul>{% for item in weekly_review.strongest %}<li><span aria-hidden="true">{{ item.emoji }}</span><div><strong>{{ item.title }}</strong><small>{{ item.level }} · {{ item.known }} из {{ item.total }}</small></div><b>{{ item.accuracy }}%</b></li>{% endfor %}</ul>{% else %}<p class="muted">Здесь появятся уроки с результатом от 80%.</p>{% endif %}
+          </article>
+          <article class="card weekly-review-card weekly-review-focus">
+            <p class="eyebrow">Можно закрепить</p><h3>Фокус на следующую неделю</h3>
+            {% if weekly_review.reinforcement %}<ul>{% for item in weekly_review.reinforcement %}<li><span aria-hidden="true">{{ item.emoji }}</span><div><strong>{{ item.title }}</strong><small>{{ item.level }} · {{ item.known }} из {{ item.total }}</small></div><a href="{% url 'lesson' item.id %}" aria-label="Повторить {{ item.title }}">Повторить</a></li>{% endfor %}</ul>{% else %}<p class="muted">Нет результатов ниже 70%. Продолжай план — это не оценка уровня, а подсказка по недавним ответам.</p>{% endif %}
+          </article>
+        </div>
+      {% else %}
+        <div class="card empty-state"><h3>Для недельного итога нужны результаты</h3><p>Заверши урок с заданиями — после этого здесь появятся сильные стороны и темы для закрепления.</p><a class="compact-button" href="{% url 'home' %}#daily-tasks">К плану на сегодня</a></div>
+      {% endif %}
+      <p class="profile-note">Итог использует только твои результаты за 7 дней, не является экзаменом и не определяет уровень CEFR.</p>
+    </section>
+  {% endif %}
   {% if insights.available %}
     <section class="insights-summary" aria-label="Итоги за 28 дней">
       <article class="card insight-stat"><span>Занятий</span><strong>{{ insights.completed_28_days }}</strong><small>завершено за 28 дней</small></article>

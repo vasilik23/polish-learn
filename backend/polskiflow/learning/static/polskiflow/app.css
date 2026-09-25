@@ -752,6 +752,16 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 }
 
 .insights-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.weekly-review { margin-bottom: 1.5rem; }
+.weekly-review-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.weekly-review-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: .75rem; }
+.weekly-review-card h3 { margin: .2rem 0 .9rem; }
+.weekly-review-card ul { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+.weekly-review-card li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding-top: .65rem; border-top: 1px solid var(--line); }
+.weekly-review-card li div { display: grid; gap: .15rem; }
+.weekly-review-card li small { color: var(--muted); }
+.weekly-review-card li > b { color: var(--success); }
+.weekly-review-card li > a { color: var(--primary); font-weight: 700; }
 .insight-stat { display: grid; gap: .25rem; padding: 1rem; }
 .insight-stat span, .insight-stat small { color: var(--muted); font-size: .75rem; }
 .insight-stat strong { font-size: clamp(1.6rem, 5vw, 2.15rem); }
@@ -783,6 +793,7 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .history-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
 @media (max-width: 560px) {
   .insights-summary { grid-template-columns: 1fr; }
+  .weekly-review-summary, .weekly-review-columns { grid-template-columns: 1fr; }
   .insight-stat { grid-template-columns: 1fr auto; align-items: center; }
   .insight-stat small { grid-column: 1 / -1; }
   .skill-breakdown-item { grid-template-columns: minmax(0, 1fr) auto; }

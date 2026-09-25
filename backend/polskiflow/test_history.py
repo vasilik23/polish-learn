@@ -1,10 +1,50 @@
+import datetime
 import json
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from polskiflow.auth import ACCESS_COOKIE, SupabaseUser
+from polskiflow.domain.weekly_review import build_weekly_review
 from polskiflow.progress_store import CompletionHistoryPage, DashboardProgress, load_completion_history
+
+
+class WeeklyReviewTests(SimpleTestCase):
+    def test_builds_strong_and_reinforcement_lists_from_latest_results(self):
+        dashboard = DashboardProgress(
+            "Learner", "A2", 2, frozenset(), True,
+            weekly_active_days=3, weekly_completed_count=2,
+            previous_week_completed_count=1,
+            recent_completion_results=(
+                {"lesson_id": "strong", "plan_date": "2026-09-23", "cards_total": 10, "cards_known": 9},
+                {"lesson_id": "focus", "plan_date": "2026-09-22", "cards_total": 10, "cards_known": 5},
+                {"lesson_id": "focus", "plan_date": "2026-09-24", "cards_total": 10, "cards_known": 6},
+            ),
+        )
+        review = build_weekly_review(dashboard, [
+            {"id": "strong", "title": "Сильный урок", "level": "A2"},
+            {"id": "focus", "title": "Повторить тему", "level": "A2"},
+        ], today=datetime.date(2026, 9, 25))
+
+        self.assertEqual(review["accuracy"], 75)
+        self.assertEqual(review["completed_delta"], 1)
+        self.assertEqual([item["id"] for item in review["strongest"]], ["strong"])
+        self.assertEqual([item["id"] for item in review["reinforcement"]], ["focus"])
+
+    def test_ignores_stale_unknown_and_invalid_results(self):
+        dashboard = DashboardProgress(
+            "Learner", "A1", 0, frozenset(), True,
+            recent_completion_results=(
+                {"lesson_id": "known", "plan_date": "2026-09-01", "cards_total": 5, "cards_known": 2},
+                {"lesson_id": "missing", "plan_date": "2026-09-24", "cards_total": 5, "cards_known": 2},
+                {"lesson_id": "known", "plan_date": "2026-09-24", "cards_total": 0, "cards_known": 0},
+            ),
+        )
+        review = build_weekly_review(
+            dashboard, [{"id": "known", "title": "Урок"}],
+            today=datetime.date(2026, 9, 25),
+        )
+        self.assertFalse(review["has_results"])
 
 
 class CompletionHistoryStoreTests(SimpleTestCase):
@@ -48,16 +88,19 @@ class LearningHistoryViewTests(TestCase):
         )
         progress.return_value = DashboardProgress(
             "Learner", "A1", 2, frozenset(), True,
+            weekly_active_days=1, weekly_completed_count=1,
             recent_daily_completion_counts=(0,) * 27 + (1,),
-            recent_completion_results=({"lesson_id": "words", "cards_total": 8, "cards_known": 7},),
+            recent_completion_results=({"lesson_id": "words", "plan_date": datetime.date.today().isoformat(), "cards_total": 8, "cards_known": 7},),
         )
 
         response = self.client.get("/history/?period=30")
 
         self.assertContains(response, "Прогресс и история")
+        self.assertContains(response, "Итог недели")
+        self.assertContains(response, "Сильные результаты")
         self.assertContains(response, "Ритм занятий")
         self.assertContains(response, "Новые слова")
-        self.assertContains(response, "88%", count=4)
+        self.assertContains(response, "88%", count=6)
         self.assertContains(response, "Первые слова")
         self.assertContains(response, "7 / 8")
         self.assertContains(response, "Старее")
