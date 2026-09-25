@@ -18,14 +18,21 @@ class Command(BaseCommand):
             help="Environment variable containing a short-lived learner access token",
         )
         parser.add_argument("--timeout", type=float, default=10)
+        parser.add_argument(
+            "--public-only",
+            action="store_true",
+            help="Check public contracts without a learner token",
+        )
 
     def handle(self, *args, **options):
-        token = os.environ.get(options["token_env"], "")
-        if not token:
+        public_only = options["public_only"]
+        token = os.environ.get(options["token_env"], "") if not public_only else ""
+        if not public_only and not token:
             raise CommandError(f"Missing access token in {options['token_env']}")
         try:
             results = run_synthetic_smoke(
-                options["base_url"], token, timeout=options["timeout"]
+                options["base_url"], token, timeout=options["timeout"],
+                include_private=not public_only,
             )
         except SmokeFailure as error:
             raise CommandError(str(error)) from error

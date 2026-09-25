@@ -67,9 +67,35 @@ class SyntheticSmokeTests(SimpleTestCase):
         output = io.StringIO()
         with patch.dict(os.environ, {"CUSTOM_SMOKE_TOKEN": "token-value"}):
             call_command("production_smoke", "https://example.com", token_env="CUSTOM_SMOKE_TOKEN", stdout=output)
-        run.assert_called_once_with("https://example.com", "token-value", timeout=10)
+        run.assert_called_once_with(
+            "https://example.com", "token-value", timeout=10, include_private=True
+        )
         self.assertNotIn("token-value", output.getvalue())
 
     def test_command_requires_configured_token(self):
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(CommandError):
             call_command("production_smoke", "https://example.com")
+
+    @patch("polskiflow.domain.synthetic_smoke.urlopen")
+    def test_public_only_checks_need_no_token(self, urlopen):
+        urlopen.side_effect = [
+            _response({"status": "ok"}),
+            _response({"status": "ready"}),
+            _response({"paths": {"/api/v1/me/bootstrap/": {}}}),
+            _response({"data": {"courses": []}}),
+        ]
+        results = run_synthetic_smoke("https://example.com", include_private=False)
+        self.assertEqual(
+            [result.name for result in results],
+            ["health", "ready", "openapi", "catalog"],
+        )
+        self.assertTrue(all("Authorization" not in call.args[0].headers for call in urlopen.call_args_list))
+
+    @patch("polskiflow.learning.management.commands.production_smoke.run_synthetic_smoke", return_value=())
+    def test_command_public_only_does_not_read_token(self, run):
+        output = io.StringIO()
+        with patch.dict(os.environ, {"POLSKIFLOW_SMOKE_ACCESS_TOKEN": "must-not-be-used"}):
+            call_command("production_smoke", "https://example.com", public_only=True, stdout=output)
+        run.assert_called_once_with(
+            "https://example.com", "", timeout=10, include_private=False
+        )

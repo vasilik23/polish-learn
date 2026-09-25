@@ -45,7 +45,14 @@ backend/.venv/bin/python backend/manage.py production_smoke \
 ```
 
 The token is accepted only through an environment variable, not a CLI argument.
-Do not store it in Git, workflow logs or long-lived repository variables. The
-command is a release/synthetic building block; continuous scheduling and alerts
-remain pending until secure token rotation for the dedicated account is in
-place.
+Do not store it in Git, workflow logs or long-lived repository variables.
+
+The public half runs automatically every four hours from
+`.github/workflows/production-smoke.yml`. It sends no credentials and checks
+health, readiness, OpenAPI and catalog. A failure marks the workflow red and
+uses normal GitHub Actions notifications as the initial alert channel.
+
+The authenticated half remains an explicit release smoke until a dedicated
+non-privileged account has automatic short-lived token rotation. Never turn a
+static learner token into a long-lived GitHub secret merely to schedule it.
+An external paging channel and an authenticated schedule remain launch gaps.
