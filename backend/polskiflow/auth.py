@@ -127,8 +127,13 @@ def sign_in(email: str, password: str) -> SupabaseSession:
     return _parse_session(payload)
 
 
-def sign_up(email: str, password: str) -> SupabaseSession | None:
-    payload = _auth_request("/auth/v1/signup", {"email": email, "password": password})
+def sign_up(
+    email: str, password: str, *, email_redirect_to: str | None = None
+) -> SupabaseSession | None:
+    signup_payload = {"email": email, "password": password}
+    if email_redirect_to:
+        signup_payload["options"] = {"email_redirect_to": email_redirect_to}
+    payload = _auth_request("/auth/v1/signup", signup_payload)
     if not payload.get("access_token"):
         return None
     return _parse_session(payload)

@@ -329,7 +329,12 @@ def register_view(request: HttpRequest) -> HttpResponse:
             return _auth_rate_limit_response(request, context, "auth/form.html", rate[1])
         else:
             try:
-                session = sign_up(email, password)
+                welcome_login = request.build_absolute_uri(
+                    f"{reverse('login')}?{urlencode({'next': reverse('onboarding')})}"
+                )
+                session = sign_up(
+                    email, password, email_redirect_to=welcome_login
+                )
             except SupabaseAuthError as error:
                 context["error"] = str(error)
             else:
@@ -338,7 +343,7 @@ def register_view(request: HttpRequest) -> HttpResponse:
                         "Аккаунт создан. Подтвердите email, затем войдите."
                     )
                 else:
-                    response = redirect("home")
+                    response = redirect("onboarding")
                     set_auth_cookies(response, session)
                     return response
     return render(request, "auth/form.html", context)
@@ -402,7 +407,10 @@ def resend_confirmation(request: HttpRequest) -> HttpResponse:
             return _auth_rate_limit_response(request, context, "auth/recovery.html", rate[1])
         else:
             try:
-                resend_signup_confirmation(email, request.build_absolute_uri(reverse("login")))
+                welcome_login = request.build_absolute_uri(
+                    f"{reverse('login')}?{urlencode({'next': reverse('onboarding')})}"
+                )
+                resend_signup_confirmation(email, welcome_login)
             except SupabaseAuthError:
                 pass
             context["message"] = "Если подтверждение ожидается, новое письмо уже отправлено."
@@ -461,6 +469,56 @@ def daily_tasks(request: HttpRequest) -> HttpResponse:
 def practice_hub(request: HttpRequest) -> HttpResponse:
     """Keep optional training modes discoverable without bloating the course catalog."""
     return render(request, "practice.html")
+
+
+@require_browser_user
+@require_http_methods(["GET", "POST"])
+def onboarding(request: HttpRequest) -> HttpResponse:
+    """Give a new learner one short, reversible setup step."""
+    fallback_name = (request.supabase_user.email or "ученик").split("@", 1)[0]
+    dashboard = load_dashboard_progress(
+        request.supabase_access_token, request.supabase_user.id, fallback_name
+    )
+    form = {
+        "display_name": request.POST.get("display_name", dashboard.display_name).strip(),
+        "level": request.POST.get("level", dashboard.level).upper(),
+        "daily_goal_lessons": request.POST.get(
+            "daily_goal_lessons", str(dashboard.daily_goal_lessons)
+        ),
+    }
+    error = ""
+    if request.method == "POST":
+        if not form["display_name"] or len(form["display_name"]) > 80:
+            error = "Укажи имя длиной до 80 символов."
+        elif form["level"] not in PROFILE_LEVELS:
+            error = "Выбери уровень от A1 до C2."
+        else:
+            try:
+                daily_goal = int(form["daily_goal_lessons"])
+            except (TypeError, ValueError):
+                daily_goal = 0
+            if daily_goal not in (1, 2, 3, 4):
+                error = "Выбери дневную цель от одного до четырёх уроков."
+            elif save_profile_settings(
+                request.supabase_access_token,
+                request.supabase_user.id,
+                form["display_name"],
+                form["level"],
+                daily_goal,
+            ):
+                return redirect(f"{reverse('home')}?welcome=1")
+            else:
+                error = "Не удалось сохранить настройки. Попробуй ещё раз."
+    return render(
+        request,
+        "onboarding.html",
+        {
+            "onboarding_form": form,
+            "onboarding_levels": PROFILE_LEVELS,
+            "onboarding_error": error,
+        },
+        status=400 if error else 200,
+    )
 
 
 @require_browser_user

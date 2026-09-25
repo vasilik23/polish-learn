@@ -16,6 +16,7 @@ from polskiflow.auth import (
     request_password_reset,
     resend_signup_confirmation,
     sign_in,
+    sign_up,
     update_password,
 )
 
@@ -160,6 +161,22 @@ class SupabaseAuthTests(SimpleTestCase):
         })
         self.assertIn("context", urlopen.call_args.kwargs)
 
+    @patch("polskiflow.auth.urlopen")
+    def test_signup_sets_safe_welcome_redirect(self, urlopen):
+        urlopen.return_value = _Response(b'{}')
+        self.assertIsNone(
+            sign_up(
+                "learner@example.com",
+                "Bezpieczne2026",
+                email_redirect_to="https://polish.example/login/?next=%2Fwelcome%2F",
+            )
+        )
+        payload = json.loads(urlopen.call_args.args[0].data)
+        self.assertEqual(
+            payload["options"]["email_redirect_to"],
+            "https://polish.example/login/?next=%2Fwelcome%2F",
+        )
+
     @patch("polskiflow.auth.time.sleep")
     @patch("polskiflow.auth.urlopen")
     def test_password_sign_in_retries_one_network_failure(self, urlopen, sleep):
@@ -294,7 +311,8 @@ class BrowserAuthTests(SimpleTestCase):
 
         self.assertContains(response, "Если подтверждение ожидается")
         resend.assert_called_once_with(
-            "learner@example.com", "http://testserver/login/"
+            "learner@example.com",
+            "http://testserver/login/?next=%2Fwelcome%2F",
         )
 
     @patch("polskiflow.auth_views.sign_in")
@@ -348,6 +366,22 @@ class BrowserAuthTests(SimpleTestCase):
             "/register/", {"email": "new@example.com", "password": "Bezpieczne2026"}
         )
         self.assertContains(response, "Подтвердите email")
+        signup.assert_called_once_with(
+            "new@example.com",
+            "Bezpieczne2026",
+            email_redirect_to="http://testserver/login/?next=%2Fwelcome%2F",
+        )
+
+    @patch("polskiflow.auth_views.sign_up")
+    def test_registration_with_session_opens_onboarding(self, signup):
+        signup.return_value = SupabaseSession(
+            "access", "refresh", 3600, SupabaseUser("user-123", "new@example.com")
+        )
+        response = self.client.post(
+            "/register/", {"email": "new@example.com", "password": "Bezpieczne2026"}
+        )
+        self.assertRedirects(response, "/welcome/", fetch_redirect_response=False)
+        self.assertTrue(response.cookies[ACCESS_COOKIE]["httponly"])
 
     @patch("polskiflow.auth_views.sign_up")
     def test_registration_rejects_weak_password_before_supabase(self, signup):
