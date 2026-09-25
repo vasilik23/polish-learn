@@ -7,6 +7,7 @@ from django.views.decorators.http import require_GET
 from polskiflow.auth_views import require_browser_user
 from polskiflow.content import tasks
 from polskiflow.domain.learning_insights import build_learning_insights
+from polskiflow.domain.weekly_review import build_weekly_review
 from polskiflow.progress_store import load_completion_history, load_dashboard_progress
 
 
@@ -55,4 +56,5 @@ def learning_history(request: HttpRequest) -> HttpResponse:
         "history_page": page,
         "selected_period": period,
         "insights": build_learning_insights(dashboard, lesson_tasks),
+        "weekly_review": build_weekly_review(dashboard, lesson_tasks),
     })
