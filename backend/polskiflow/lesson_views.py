@@ -15,6 +15,7 @@ from polskiflow.content import flashcards, grammar, lesson_navigation, quiz, tas
 from polskiflow.progress_store import save_lesson_completion_result
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
 from polskiflow.lesson_bookmark_store import load_lesson_bookmarks
+from polskiflow.domain.lesson_state import InvalidLessonState, load_lesson_state, sign_lesson_state
 
 
 # Expansion is release-gated by a successful offline -> online recovery smoke
@@ -45,6 +46,9 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
             context["grammar"] = grammar(lesson_id)
     else:
         context.update(_question_context(lesson_id, lesson_kind, index, score, None))
+    context["lesson_state"] = sign_lesson_state(
+        request.supabase_user.id, lesson_id, lesson_kind, index, score
+    )
     return render(request, "lessons/page.html", context)
 
 
@@ -56,10 +60,12 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         raise Http404
     lesson_kind = lesson_task["kind"]
     try:
-        index = int(request.POST.get("index", "0"))
-        score = int(request.POST.get("score", "0"))
-    except ValueError:
+        state = load_lesson_state(
+            request.POST.get("state", ""), request.supabase_user.id, lesson_id, lesson_kind
+        )
+    except InvalidLessonState:
         return HttpResponseBadRequest("Некорректное состояние урока")
+    index, score = state.index, state.score
     action = request.POST.get("action", "")
 
     if lesson_kind in {"words", "review"}:
@@ -81,7 +87,7 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
                 )
         else:
             return HttpResponseBadRequest("Неизвестное действие")
-        return render(request, "lessons/_flashcard.html", context)
+        return _render_step(request, "lessons/_flashcard.html", context, lesson_id, lesson_kind)
 
     grammar_content = grammar(lesson_id)
     questions = (
@@ -89,52 +95,54 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         if lesson_kind == "grammar" and grammar_content
         else quiz(lesson_id)
     )
-    if not 0 <= index < len(questions) or not 0 <= score <= index:
+    max_score = index + (state.phase == "answered")
+    if not 0 <= index < len(questions) or not 0 <= score <= max_score:
         return HttpResponseBadRequest("Некорректное состояние урока")
     if action == "start" and lesson_kind == "grammar":
         context = _question_context(lesson_id, lesson_kind, 0, 0, None)
     elif action == "answer":
+        if state.phase != "ready":
+            return HttpResponseBadRequest("Ответ уже проверен")
         if _is_sentence_builder(questions[index], lesson_kind):
             answer_order = _validated_builder_order(
                 request.POST.get("answer_order", ""), questions[index], lesson_id, index
             )
             if answer_order is None:
                 return HttpResponseBadRequest("Составьте предложение из всех слов")
-            context = _question_context(
-                lesson_id, lesson_kind, index, score, None, answer_order
-            )
-            return render(request, "lessons/_question.html", context)
+            context = _question_context(lesson_id, lesson_kind, index, score + _builder_is_correct(
+                answer_order, questions[index], lesson_id, index
+            ), None, answer_order)
+            context["state_phase"] = "answered"
+            return _render_step(request, "lessons/_question.html", context, lesson_id, lesson_kind)
         try:
             selected = int(request.POST["choice"])
         except (KeyError, ValueError):
             return HttpResponseBadRequest("Выберите ответ")
         if not 0 <= selected < len(questions[index]["options"]):
             return HttpResponseBadRequest("Некорректный ответ")
-        context = _question_context(lesson_id, lesson_kind, index, score, selected)
+        context = _question_context(
+            lesson_id, lesson_kind, index,
+            score + (selected == questions[index]["correct"]), selected,
+        )
+        context["state_phase"] = "answered"
     elif action == "next":
+        if state.phase != "answered":
+            return HttpResponseBadRequest("Сначала ответьте")
         if _is_sentence_builder(questions[index], lesson_kind):
             answer_order = _validated_builder_order(
                 request.POST.get("answer_order", ""), questions[index], lesson_id, index
             )
             if answer_order is None:
                 return HttpResponseBadRequest("Некорректный ответ")
-            next_score = score + _builder_is_correct(
-                answer_order, questions[index], lesson_id, index
-            )
+            next_score = score
             if index + 1 >= len(questions):
                 return _complete(request, lesson_id, next_score, len(questions))
             save_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id, lesson_kind, index + 1, next_score)
             context = _question_context(
                 lesson_id, lesson_kind, index + 1, next_score, None
             )
-            return render(request, "lessons/_question.html", context)
-        try:
-            selected = int(request.POST["selected"])
-        except (KeyError, ValueError):
-            return HttpResponseBadRequest("Сначала ответьте")
-        if not 0 <= selected < len(questions[index]["options"]):
-            return HttpResponseBadRequest("Некорректный ответ")
-        next_score = score + (selected == questions[index]["correct"])
+            return _render_step(request, "lessons/_question.html", context, lesson_id, lesson_kind)
+        next_score = score
         if index + 1 >= len(questions):
             return _complete(request, lesson_id, next_score, len(questions))
         save_lesson_draft(request.supabase_access_token, request.supabase_user.id, lesson_id, lesson_kind, index + 1, next_score)
@@ -143,7 +151,15 @@ def lesson_step(request: HttpRequest, lesson_id: str) -> HttpResponse:
         )
     else:
         return HttpResponseBadRequest("Неизвестное действие")
-    return render(request, "lessons/_question.html", context)
+    return _render_step(request, "lessons/_question.html", context, lesson_id, lesson_kind)
+
+
+def _render_step(request, template, context, lesson_id, lesson_kind):
+    context["lesson_state"] = sign_lesson_state(
+        request.supabase_user.id, lesson_id, lesson_kind, context["index"], context["score"],
+        context.get("state_phase", "ready"),
+    )
+    return render(request, template, context)
 
 
 def _lesson_flashcards(lesson_id: str, lesson_kind: str) -> list[dict]:

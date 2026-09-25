@@ -211,7 +211,8 @@
 5. ✅ **Базовая launch safety реализована:** RLS, распределённые mutation
    limits, privacy center, полный fail-closed экспорт, смена пароля и
    self-service deletion, health/readiness, request IDs, privacy-safe logs,
-   lab performance budgets и read-only production synthetic smoke.
+   lab performance budgets, read-only production synthetic smoke и подписанное
+   owner-bound состояние server-rendered уроков вместо доверия скрытым полям.
 6. 🟡 **Продукт готов к закрытому beta-тесту, но не к широкому публичному
    запуску.** Главные пробелы теперь не в количестве уроков или API, а во
    внешней валидации контента, юридических данных, наблюдаемости и проверке
