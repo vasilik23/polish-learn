@@ -21,6 +21,20 @@
         {% include "lessons/_question.html" %}
       {% endif %}
     </section>
+    <section class="card lesson-note-card" id="lesson-note" aria-labelledby="lesson-note-title">
+      <div class="lesson-note-heading"><div><p class="eyebrow">Личное</p><h2 id="lesson-note-title">Заметка к уроку</h2></div><span class="muted">до 2000 символов</span></div>
+      {% if request.GET.note == "saved" %}<p class="form-success" role="status">Заметка сохранена и доступна на других устройствах.</p>{% elif request.GET.note == "deleted" %}<p class="form-success" role="status">Заметка удалена.</p>{% elif request.GET.note == "error" %}<p class="form-error" role="alert">Не удалось сохранить заметку. Попробуй ещё раз.</p>{% endif %}
+      {% if lesson_note.available %}
+        <form method="post" action="{% url 'lesson-note' lesson_id %}" class="lesson-note-form">
+          {% csrf_token %}
+          <label for="lesson-note-body">Запиши правило, пример или вопрос</label>
+          <textarea id="lesson-note-body" name="body" maxlength="2000" rows="5" placeholder="Например: после ‘szukać’ нужен родительный падеж.">{{ lesson_note.body }}</textarea>
+          <div class="lesson-note-actions"><button type="submit">Сохранить заметку</button>{% if lesson_note.body %}<button class="secondary danger-soft" type="submit" name="action" value="delete" formnovalidate>Удалить</button>{% endif %}</div>
+        </form>
+      {% else %}
+        <p class="muted" role="status">Сервис заметок сейчас недоступен. Сам урок продолжает работать.</p>
+      {% endif %}
+    </section>
   </div>
 {% endblock %}
 {% block scripts %}
