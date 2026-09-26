@@ -615,6 +615,16 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .lesson-note-actions button { width: auto; margin: 0; }
 .danger-soft { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
 @media (max-width: 520px) { .lesson-note-heading { align-items: flex-start; flex-direction: column; gap: 0; } .lesson-note-actions button { flex: 1 1 10rem; } }
+.notes-header { align-items: flex-end; }
+.notes-filter { margin-bottom: 1rem; }
+.notes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.note-library-card { display: flex; flex-direction: column; min-width: 0; }
+.note-library-card h2 { margin: .55rem 0; font-size: 1.05rem; }
+.note-library-meta { display: flex; justify-content: space-between; gap: .75rem; color: var(--muted); font-size: .75rem; }
+.note-library-body { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+.note-library-actions { display: flex; align-items: center; gap: .5rem; margin-top: auto; padding-top: .75rem; }
+.note-library-actions form { margin: 0; }
+@media (max-width: 700px) { .notes-grid { grid-template-columns: 1fr; } .notes-header { align-items: flex-start; } .note-library-meta { flex-direction: column; gap: .15rem; } }
 .saved-section { margin-top: 1.5rem; }
 .saved-grid { display: grid; gap: 1rem; }
 .saved-card { display: grid; gap: .85rem; align-content: start; }

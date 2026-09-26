@@ -36,6 +36,21 @@ def load_lesson_note(token, user_id, lesson_id):
         return LessonNote(False)
 
 
+def load_lesson_notes(token, user_id):
+    """Load the owner's note index, newest first, without exposing other rows."""
+    if not _configured(token):
+        return None
+    query = urlencode({"select": "lesson_id,body,updated_at", "user_id": f"eq.{user_id}", "order": "updated_at.desc", "limit": "200"})
+    try:
+        with urlopen(_request(f"lesson_notes?{query}", token), timeout=settings.SUPABASE_AUTH_TIMEOUT) as response:
+            rows = json.load(response)
+        if not isinstance(rows, list):
+            return None
+        return [row for row in rows if isinstance(row, dict) and isinstance(row.get("lesson_id"), str) and isinstance(row.get("body"), str)]
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, TypeError):
+        return None
+
+
 def save_lesson_note(token, user_id, lesson_id, body):
     if not _configured(token):
         return False

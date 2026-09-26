@@ -27,6 +27,7 @@ from polskiflow.reading_views import (
 from polskiflow.search_views import global_search
 from polskiflow.saved_views import saved_learning, toggle_lesson_bookmark
 from polskiflow.mistake_views import mistake_notebook, mistake_practice
+from polskiflow.note_views import delete_lesson_note, lesson_notes
 
 
 @require_supabase_user
@@ -50,6 +51,8 @@ urlpatterns = [
     path("saved/", saved_learning, name="saved-learning"),
     path("mistakes/", mistake_notebook, name="mistake-notebook"),
     path("mistakes/practice/", mistake_practice, name="mistake-practice"),
+    path("notes/", lesson_notes, name="lesson-notes"),
+    path("notes/<slug:lesson_id>/delete/", delete_lesson_note, name="delete-lesson-note"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
     path("account/security/", account_security, name="account-security"),
