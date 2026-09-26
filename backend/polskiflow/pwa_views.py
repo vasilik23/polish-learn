@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.templatetags.static import static
 
 
-PWA_SHELL_VERSION = "v8"
+PWA_SHELL_VERSION = "v9"
 PWA_CACHE_VERSION = f"polskiflow-shell-{PWA_SHELL_VERSION}"
 
 

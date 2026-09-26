@@ -797,6 +797,10 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .mistake-item div { display: grid; gap: .2rem; }
 .mistake-item small { color: var(--muted); }
 .mistake-item p { margin: .35rem 0 0; }
+.mistake-practice-shell { max-width: 46rem; }
+.mistake-result { display: grid; gap: .25rem; margin: 1rem 0; padding: 1rem; border-radius: 1rem; }
+.mistake-result.correct { background: var(--green-soft); }
+.mistake-result.wrong { background: var(--red-soft); }
 @media (max-width: 560px) {
   .insights-summary { grid-template-columns: 1fr; }
   .weekly-review-summary, .weekly-review-columns { grid-template-columns: 1fr; }
