@@ -22,6 +22,8 @@ DATASETS = {
     "lesson_bookmarks": ("lesson_bookmarks", "lesson_id,created_at", "created_at.asc,lesson_id.asc"),
     "learner_mistakes": ("learner_mistakes", "lesson_id,question_position,last_wrong_at", "last_wrong_at.asc,lesson_id.asc,question_position.asc"),
     "lesson_notes": ("lesson_notes", "lesson_id,body,updated_at", "updated_at.asc,lesson_id.asc"),
+    "learning_collections": ("learning_collections", "id,name,created_at", "created_at.asc,id.asc"),
+    "learning_collection_items": ("learning_collection_items", "id,collection_id,content_type,content_id,created_at", "created_at.asc,id.asc"),
     "feedback": ("user_feedback", "id,category,message,page_url,status,created_at", "created_at.asc,id.asc"),
     "reminder_preferences": ("reminder_preferences", "daily_reminder_enabled,reminder_time,timezone,updated_at", "updated_at.asc"),
 }

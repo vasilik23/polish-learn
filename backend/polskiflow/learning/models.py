@@ -256,6 +256,28 @@ class LessonNote(models.Model):
         managed = False
 
 
+class LearningCollection(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()
+    name = models.CharField(max_length=60)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = "learning_collections"
+        managed = False
+
+
+class LearningCollectionItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    collection_id = models.UUIDField()
+    user_id = models.UUIDField()
+    content_type = models.CharField(max_length=16)
+    content_id = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        db_table = "learning_collection_items"
+        managed = False
+
+
 class FlashcardReview(models.Model):
     pk = models.CompositePrimaryKey("user_id", "card_id")
     user_id = models.UUIDField()

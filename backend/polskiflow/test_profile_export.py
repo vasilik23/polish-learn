@@ -24,6 +24,8 @@ class ProfileExportTests(TestCase):
             "lesson_bookmarks": [{"lesson_id": "words"}],
             "learner_mistakes": [{"lesson_id": "quiz", "question_position": 1}],
             "lesson_notes": [{"lesson_id": "words", "body": "Моя заметка"}],
+            "learning_collections": [],
+            "learning_collection_items": [],
             "feedback": [{"category": "idea", "message": "Dłuższa wiadomość"}],
             "reminder_preferences": [{"daily_reminder_enabled": False}],
         })
