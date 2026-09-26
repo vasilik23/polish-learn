@@ -607,6 +607,14 @@ button.secondary { background: white; color: var(--text); border: 1px solid #dcd
 .lesson-header form { margin: 0; }
 .bookmark-button { width: auto; margin: 0; padding: .55rem .8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .76rem; }
 .bookmark-button.is-saved { background: var(--primary-soft); color: var(--primary-dark); }
+.lesson-note-card { margin-top: 1rem; }
+.lesson-note-heading, .lesson-note-actions { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.lesson-note-heading h2 { margin: .1rem 0 .75rem; }
+.lesson-note-form textarea { min-height: 8rem; resize: vertical; }
+.lesson-note-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: .75rem; }
+.lesson-note-actions button { width: auto; margin: 0; }
+.danger-soft { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+@media (max-width: 520px) { .lesson-note-heading { align-items: flex-start; flex-direction: column; gap: 0; } .lesson-note-actions button { flex: 1 1 10rem; } }
 .saved-section { margin-top: 1.5rem; }
 .saved-grid { display: grid; gap: 1rem; }
 .saved-card { display: grid; gap: .85rem; align-content: start; }

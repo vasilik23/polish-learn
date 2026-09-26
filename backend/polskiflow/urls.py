@@ -9,7 +9,7 @@ from polskiflow.auth_views import course, daily_tasks, forgot_password, home, li
 from polskiflow.diagnostic_views import diagnostic
 from polskiflow.feedback_views import feedback
 from polskiflow.history_views import learning_history
-from polskiflow.lesson_views import lesson, lesson_step
+from polskiflow.lesson_views import lesson, lesson_note, lesson_step
 from polskiflow.interaction_views import interaction_practice
 from polskiflow.operational_views import health, readiness
 from polskiflow.pwa_views import offline_shell, service_worker, web_app_manifest
@@ -71,6 +71,7 @@ urlpatterns = [
     path("lesson/<slug:lesson_id>/", lesson, name="lesson"),
     path("lesson/<slug:lesson_id>/bookmark/", toggle_lesson_bookmark, name="toggle-lesson-bookmark"),
     path("lesson/<slug:lesson_id>/step/", lesson_step, name="lesson-step"),
+    path("lesson/<slug:lesson_id>/note/", lesson_note, name="lesson-note"),
     path("reading/", reading_library, name="reading-library"),
     path("news/", news_library, name="news-library"),
     path("reading/<slug:text_id>/", reader, name="reader"),

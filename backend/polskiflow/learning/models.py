@@ -244,6 +244,18 @@ class LearnerMistake(models.Model):
         managed = False
 
 
+class LessonNote(models.Model):
+    pk = models.CompositePrimaryKey("user_id", "lesson_id")
+    user_id = models.UUIDField()
+    lesson_id = models.TextField()
+    body = models.TextField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "lesson_notes"
+        managed = False
+
+
 class FlashcardReview(models.Model):
     pk = models.CompositePrimaryKey("user_id", "card_id")
     user_id = models.UUIDField()

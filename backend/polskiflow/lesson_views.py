@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.crypto import salted_hmac
 from django.views.decorators.http import require_POST
 
@@ -15,6 +15,7 @@ from polskiflow.content import flashcards, grammar, lesson_navigation, quiz, tas
 from polskiflow.progress_store import save_lesson_completion_result
 from polskiflow.lesson_draft_store import delete_lesson_draft, load_lesson_draft, save_lesson_draft
 from polskiflow.lesson_bookmark_store import load_lesson_bookmarks
+from polskiflow.lesson_note_store import load_lesson_note, save_lesson_note
 from polskiflow.domain.lesson_state import InvalidLessonState, load_lesson_state, sign_lesson_state
 from polskiflow.mistake_store import set_mistake
 
@@ -36,7 +37,8 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
     bookmarks = load_lesson_bookmarks(
         request.supabase_access_token, request.supabase_user.id
     )
-    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind, "resume_notice": index > 0, "is_bookmarked": lesson_id in (bookmarks or set()), "lesson_bookmarks_available": bookmarks is not None}
+    note = load_lesson_note(request.supabase_access_token, request.supabase_user.id, lesson_id)
+    context = {"task": lesson_task, "lesson_id": lesson_id, "lesson_kind": lesson_kind, "resume_notice": index > 0, "is_bookmarked": lesson_id in (bookmarks or set()), "lesson_bookmarks_available": bookmarks is not None, "lesson_note": note}
     if lesson_kind in {"words", "review"}:
         context.update(_flashcard_context(lesson_id, lesson_kind, index, score, False))
     elif lesson_kind == "grammar":
@@ -51,6 +53,21 @@ def lesson(request: HttpRequest, lesson_id: str) -> HttpResponse:
         request.supabase_user.id, lesson_id, lesson_kind, index, score
     )
     return render(request, "lessons/page.html", context)
+
+
+@require_POST
+@require_browser_user
+def lesson_note(request: HttpRequest, lesson_id: str) -> HttpResponse:
+    if task(lesson_id) is None:
+        raise Http404
+    body = "" if request.POST.get("action") == "delete" else request.POST.get("body", "").strip()
+    if len(body) > 2000:
+        return HttpResponseBadRequest("Заметка не может быть длиннее 2000 символов")
+    saved = save_lesson_note(
+        request.supabase_access_token, request.supabase_user.id, lesson_id, body
+    )
+    status = "saved" if saved and body else "deleted" if saved else "error"
+    return redirect(f"/lesson/{lesson_id}/?note={status}#lesson-note")
 
 
 @require_POST
