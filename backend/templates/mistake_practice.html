@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Тренировка ошибок · PolskiFlow{% endblock %}
+{% block content %}<div class="lesson-shell mistake-practice-shell">
+<header class="lesson-header"><a class="back-button" href="{% url 'mistake-notebook' %}" aria-label="Вернуться к списку ошибок">←</a><strong>Тренировка ошибок</strong><span>{{ remaining|default:0 }}</span></header>
+{% if not available %}<p class="data-notice" role="alert">Тренировка временно недоступна. Попробуй позже.</p>
+{% elif not question %}<div class="card empty-state"><p class="eyebrow">Готово</p><h1>Очередь ошибок пуста</h1><p>Все сохранённые задания решены правильно.</p><a class="compact-button" href="{% url 'home' %}#daily-tasks">К плану на сегодня</a></div>
+{% else %}<div class="lesson-progress"><span>{{ lesson_level }} · {{ question.lesson.plan_title }}</span><strong>{{ remaining }} в очереди</strong></div>
+<div class="card question-card"><p class="eyebrow">Исправь ошибку</p><h1>{{ question.prompt }}</h1></div>
+{% if result %}<div class="options">{% for option in question.options %}<button disabled class="{% if forloop.counter0 == question.correct %}correct{% elif forloop.counter0 == result.selected %}wrong{% endif %}">{{ option }}</button>{% endfor %}</div><p class="card feedback">{{ question.explanation }}</p><div class="mistake-result {% if result.correct %}correct{% else %}wrong{% endif %}" role="status"><strong>{% if result.correct %}Верно — ошибка убрана из очереди{% else %}Пока неверно{% endif %}</strong>{% if not result.correct %}<span>Правильно: {{ result.correct_answer }}</span>{% endif %}</div><a class="compact-button" href="{% url 'mistake-practice' %}">{% if result.correct %}Следующая ошибка{% else %}Попробовать ещё раз{% endif %} →</a>
+{% else %}<form class="options" method="post">{% csrf_token %}<input type="hidden" name="state" value="{{ state }}">{% for option in question.options %}<button type="submit" name="choice" value="{{ forloop.counter0 }}"><span>{{ forloop.counter }}.</span>&nbsp; {{ option }}</button>{% endfor %}</form>{% endif %}
+{% endif %}</div>{% endblock %}

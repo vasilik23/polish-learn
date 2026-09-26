@@ -26,7 +26,7 @@ from polskiflow.reading_views import (
 )
 from polskiflow.search_views import global_search
 from polskiflow.saved_views import saved_learning, toggle_lesson_bookmark
-from polskiflow.mistake_views import mistake_notebook
+from polskiflow.mistake_views import mistake_notebook, mistake_practice
 
 
 @require_supabase_user
@@ -49,6 +49,7 @@ urlpatterns = [
     path("search/", global_search, name="global-search"),
     path("saved/", saved_learning, name="saved-learning"),
     path("mistakes/", mistake_notebook, name="mistake-notebook"),
+    path("mistakes/practice/", mistake_practice, name="mistake-practice"),
     path("diagnostic/", diagnostic, name="diagnostic"),
     path("profile/", profile, name="profile"),
     path("account/security/", account_security, name="account-security"),
